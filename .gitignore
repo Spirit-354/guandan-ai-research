@@ -1,0 +1,52 @@
+# Local credentials and machine-specific configuration
+.env
+.env.*
+!.env.example
+*.pem
+*.key
+*.token
+
+# Python caches and virtual environments
+__pycache__/
+*.py[cod]
+.pytest_cache/
+.mypy_cache/
+.ruff_cache/
+.venv/
+venv/
+
+# Codex and local workspace metadata
+.agents/
+.codex/
+.external/
+
+# Game and research logs
+daily_logs/
+game_logs*/
+logs*/
+*.stdout.txt
+*.stderr.txt
+
+# Generated models and large datasets
+models*/
+*.pth
+*.pt
+*.pkl
+*.pickle
+*.ckpt
+*.onnx
+*.jsonl
+
+# Generated experiment output. Curate durable findings under docs/progress/.
+*.json
+!strategy_profiles.json
+
+# Local research references and rendered extracts
+*.pdf
+*.pdf.txt
+
+# OS and editor files
+.DS_Store
+Thumbs.db
+.idea/
+.vscode/
