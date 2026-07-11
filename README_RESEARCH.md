@@ -197,3 +197,31 @@ control cards early. It stops baiting when any opponent has 6 or fewer cards or
 when high-Elo risk is active.
 
 Both profiles are experiments. `tempo_baseline` remains the live default.
+
+## Paired Hybrid Audit
+
+Use paired counterfactual evaluation to measure whether a recorded hybrid
+override caused a better result than the baseline action in the same state:
+
+```powershell
+python -u -B .\play_research_adaptive.py `
+  --offline-hybrid-paired-audit `
+  --paired-audit-source arena_eval_dmc_hybrid_whitelist_controlpass_m038_300.json `
+  --paired-audit-out paired_hybrid_audit_m038.json `
+  --paired-target-states 9 `
+  --paired-max-games 7 `
+  --paired-rollouts-per-state 1 `
+  --paired-depth-turns 1200 `
+  --paired-continuation-profile greedy_bot `
+  --device cuda
+```
+
+When a source arena JSON contains full override records, the command replays
+only the referenced game indices by default. Each matching state is cloned;
+one branch executes the baseline action and the other executes the recorded
+hybrid override. Both branches use the same continuation seed and policy.
+
+`threshold_passed` reports tool correctness. `policy_gate_passed` separately
+requires at least 30 states, a causal win-rate improvement of at least 0.05,
+an entirely positive 95% interval, and exact terminal outcomes. Generated audit
+JSON remains a local artifact; durable conclusions belong in `docs/progress/`.
