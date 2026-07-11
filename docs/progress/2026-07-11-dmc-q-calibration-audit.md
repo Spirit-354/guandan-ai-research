@@ -48,3 +48,39 @@ continuations to terminal.
 The smoke is a mechanics check only. The next evidence-producing run should
 audit at least 30 states before deciding whether to build a pairwise
 action-value dataset or reconsider hybrid validation.
+
+## Balanced50k 30-State Audit
+
+The first evidence-producing run evaluated 30 differing DMC/baseline states
+from a deterministic baseline trajectory. Each candidate used one greedy-bot
+continuation rollout to terminal.
+
+- Evaluated states: 30
+- Evaluated candidate actions: 115
+- Q top-1 versus rollout-best agreement: 20/30 (66.67%)
+- Pairwise comparable action pairs: 97
+- Pairwise Q-order agreement: 54/97 (55.67%)
+- Q value MSE: 0.8713
+- Q value MAE: 0.7445
+- Q probability Brier score: 0.1979
+- DMC action better than baseline: 3 states
+- Baseline action better than DMC: 1 state
+- Equal terminal outcome: 26 states
+- Average DMC-minus-baseline win value: +0.0667
+- Average DMC team-rank improvement: +0.05
+- High-margin harmful choices: 1
+- Scanner and rollout legality failures: 0
+- Website-rule option fallbacks: 2
+- Correctness threshold: passed
+- Q calibration gate: failed
+
+The high-margin harmful case occurred on the opening lead. DMC preferred a
+triple over the baseline gangban with a Q margin of 0.3001. Both branches won,
+but the DMC branch had a worse average team rank (2.0 versus 1.5), so the model
+was confidently wrong about the action ordering.
+
+This sample is sufficient to reject immediate hybrid promotion, but not to
+claim a stable +0.0667 policy gain: all states came from one trajectory and
+each action received one rollout. The next training step should use these
+counterfactual action pairs to build a pairwise action-value dataset and train
+with an ordering loss before another arena candidate is created.
