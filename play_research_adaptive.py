@@ -12817,6 +12817,553 @@ def offline_paired_delta_interval(deltas: list[float]) -> tuple[float, float, fl
     return mean, mean - half_width, mean + half_width
 
 
+def offline_dmc_ranked_candidates(
+    game: Any,
+    components: dict,
+    model: Any,
+    device: Any,
+) -> tuple[Any, list[dict]]:
+    import numpy as np
+    import torch
+
+    player_id = int(game.current_player)
+    hand = list(game.players[player_id].hand)
+    last_play = list(game.last_play or [])
+    was_lead = bool(game.is_free_turn or not last_play)
+    state = game._get_obs()
+    _oracle, candidates = offline_oracle_candidates_fast(game, components, hand, last_play, was_lead)
+    if not candidates:
+        return state, []
+    hand_sizes = [len(player.hand) for player in game.players]
+    features = [
+        dmc_action_features(
+            components,
+            int(action_id),
+            list(cards),
+            player_id,
+            hand_sizes,
+            was_lead,
+            int(game.active_level),
+        )
+        for action_id, cards in candidates
+    ]
+    with torch.no_grad():
+        states = torch.tensor(
+            np.asarray([state] * len(candidates), dtype=np.float32),
+            dtype=torch.float32,
+            device=device,
+        )
+        action_features = torch.tensor(
+            np.asarray(features, dtype=np.float32),
+            dtype=torch.float32,
+            device=device,
+        )
+        q_values = model(states, action_features).detach().cpu().numpy().tolist()
+    ranked = [
+        {
+            "action_id": int(action_id),
+            "cards": list(cards),
+            "action_type": dmc_sample_action_type(components, int(action_id)),
+            "q_value": float(q_value),
+            "is_bomb": bool(offline_action_is_bomb(components["action_by_id"].get(int(action_id)))),
+        }
+        for (action_id, cards), q_value in zip(candidates, q_values)
+    ]
+    ranked.sort(key=lambda item: item["q_value"], reverse=True)
+    return state, ranked
+
+
+def offline_dmc_calibration_bucket(q_margin: float) -> str:
+    if q_margin < 0.10:
+        return "lt_0.10"
+    if q_margin < 0.25:
+        return "0.10_to_0.25"
+    if q_margin < 0.50:
+        return "0.25_to_0.50"
+    return "ge_0.50"
+
+
+def offline_dmc_calibration_candidate_set(
+    components: dict,
+    ranked: list[dict],
+    baseline_action_id: int,
+    baseline_cards: list[str],
+    top_k: int,
+) -> list[dict]:
+    selected: list[dict] = []
+    seen: set[tuple] = set()
+
+    def add(item: dict, source: str) -> None:
+        key = rollout_action_key(int(item["action_id"]), list(item["cards"]))
+        if key in seen:
+            for existing in selected:
+                if rollout_action_key(int(existing["action_id"]), list(existing["cards"])) == key:
+                    existing["sources"] = sorted(set(existing["sources"] + [source]))
+                    return
+        seen.add(key)
+        selected.append({**item, "sources": [source]})
+
+    by_key = {
+        rollout_action_key(int(item["action_id"]), list(item["cards"])): item
+        for item in ranked
+    }
+    baseline_key = rollout_action_key(int(baseline_action_id), list(baseline_cards))
+    baseline_item = by_key.get(baseline_key)
+    if baseline_item is None:
+        baseline_item = {
+            "action_id": int(baseline_action_id),
+            "cards": list(baseline_cards),
+            "action_type": dmc_sample_action_type(components, int(baseline_action_id)),
+            "q_value": None,
+            "is_bomb": bool(offline_action_is_bomb(components["action_by_id"].get(int(baseline_action_id)))),
+        }
+    add(baseline_item, "tempo_baseline")
+    for item in ranked[: max(1, int(top_k))]:
+        add(item, "dmc_top_k")
+    pass_item = next((item for item in ranked if not item["cards"]), None)
+    if pass_item is not None:
+        add(pass_item, "pass")
+    non_pass = [item for item in ranked if item["cards"] and not item["is_bomb"]]
+    if non_pass:
+        smallest = min(
+            non_pass,
+            key=lambda item: corrective_action_sort_key(
+                components,
+                int(item["action_id"]),
+                list(item["cards"]),
+            ),
+        )
+        add(smallest, "smallest_non_bomb")
+    bombs = [item for item in ranked if item["is_bomb"]]
+    if bombs:
+        smallest_bomb = min(
+            bombs,
+            key=lambda item: corrective_action_sort_key(
+                components,
+                int(item["action_id"]),
+                list(item["cards"]),
+            ),
+        )
+        add(smallest_bomb, "smallest_bomb")
+    return selected
+
+
+def offline_dmc_calibration_rollouts(
+    base_game: Any,
+    components: dict,
+    profile_config: dict,
+    candidates: list[dict],
+    team_id: int,
+    state_index: int,
+    args: argparse.Namespace,
+) -> list[dict]:
+    evaluated: list[dict] = []
+    rollout_count = max(1, int(args.dmc_calibration_rollouts_per_action))
+    for candidate in candidates:
+        branch_results: list[dict] = []
+        for rollout_index in range(rollout_count):
+            seed = int(args.dmc_calibration_seed) + state_index * 100_000 + rollout_index
+            branch_results.append(
+                offline_paired_rollout_branch(
+                    base_game,
+                    components,
+                    profile_config,
+                    int(candidate["action_id"]),
+                    list(candidate["cards"]),
+                    team_id,
+                    str(args.dmc_calibration_continuation_profile),
+                    seed,
+                    int(args.dmc_calibration_depth_turns),
+                )
+            )
+        win_rate = sum(float(item["team_win_value"]) for item in branch_results) / len(branch_results)
+        average_team_rank = sum(float(item["team_rank"]) for item in branch_results) / len(branch_results)
+        team_value = win_rate * 2.0 - 1.0
+        q_value = candidate.get("q_value")
+        evaluated.append(
+            {
+                **candidate,
+                "rollout_win_rate": win_rate,
+                "rollout_average_team_rank": average_team_rank,
+                "rollout_team_value": team_value,
+                "q_error": None if q_value is None else float(q_value) - team_value,
+                "absolute_q_error": None if q_value is None else abs(float(q_value) - team_value),
+                "terminal_rollout_count": sum(1 for item in branch_results if item["terminal"]),
+                "rollouts": branch_results,
+            }
+        )
+    return evaluated
+
+
+def offline_dmc_calibration_context_summary(states: list[dict], predicate: Any) -> dict:
+    subset = [state for state in states if predicate(state)]
+    if not subset:
+        return {
+            "state_count": 0,
+            "dmc_better_count": 0,
+            "baseline_better_count": 0,
+            "equal_count": 0,
+            "average_realized_delta": 0.0,
+            "overconfident_wrong_count": 0,
+        }
+    deltas = [float(state["realized_dmc_minus_baseline"]) for state in subset]
+    return {
+        "state_count": len(subset),
+        "dmc_better_count": sum(1 for value in deltas if value > 0),
+        "baseline_better_count": sum(1 for value in deltas if value < 0),
+        "equal_count": sum(1 for value in deltas if value == 0),
+        "average_realized_delta": sum(deltas) / len(deltas),
+        "overconfident_wrong_count": sum(1 for state in subset if state["overconfident_wrong"]),
+    }
+
+
+def run_offline_dmc_q_calibration_audit(args: argparse.Namespace) -> None:
+    if args.baseline_profile != "tempo_baseline":
+        raise RuntimeError("DMC Q calibration currently only supports --baseline-profile tempo_baseline")
+    components = offline_load_guandan_components()
+    GuandanGame = components["GuandanGame"]
+    device_info = offline_resolve_device(args.device)
+    model_path = Path(args.dmc_model)
+    if not model_path.exists():
+        raise RuntimeError(f"DMC model not found: {model_path}")
+    model = offline_load_dmc_value_model(model_path, device_info)
+    profiles = load_json(PROFILE_PATH, {})
+    profile_config = profiles.get("tempo_baseline", {"engine_mode": "tempo"})
+    equivalence = offline_baseline_equivalence_check(
+        components,
+        profile_config,
+        sample_count=max(200, int(args.dmc_calibration_equivalence_samples)),
+    )
+    out_path = Path(args.dmc_calibration_out)
+    result = {
+        "status": "running",
+        "backend": device_info["backend"],
+        "requested_device": device_info["requested_device"],
+        "actual_device": device_info["actual_device"],
+        "legal_mask_source": "website_oracle",
+        "dmc_model": str(model_path),
+        "baseline_profile": args.baseline_profile,
+        "target_states": int(args.dmc_calibration_states),
+        "top_k_actions": int(args.dmc_calibration_top_k),
+        "rollouts_per_action": int(args.dmc_calibration_rollouts_per_action),
+        "depth_turns": int(args.dmc_calibration_depth_turns),
+        "continuation_profile": str(args.dmc_calibration_continuation_profile),
+        "minimum_q_margin": float(args.dmc_calibration_min_q_margin),
+        "first_player_policy": "random_each_game",
+        "first_player_distribution": {"0": 0, "1": 0, "2": 0, "3": 0},
+        "scanned_games": 0,
+        "scanned_decisions": 0,
+        "evaluated_states": 0,
+        "evaluated_actions": 0,
+        "states": [],
+        "scanner_illegal_action_count": 0,
+        "scanner_fallback_count": 0,
+        "scanner_materialization_fail_count": 0,
+        "scanner_hand_card_mismatch_count": 0,
+        **equivalence,
+    }
+    if (
+        int(equivalence["baseline_equivalence_samples"]) < 200
+        or int(equivalence["baseline_equivalence_mismatch_count"]) != 0
+    ):
+        save_json(out_path, result)
+        raise RuntimeError("baseline equivalence check failed; DMC Q calibration blocked")
+
+    target_states = max(1, int(args.dmc_calibration_states))
+    rng = random.Random(int(args.dmc_calibration_seed))
+    restore_baseline = offline_install_arena_baseline_optimizations()
+    started = time.monotonic()
+    try:
+        for game_index in range(max(1, int(args.dmc_calibration_max_games))):
+            if len(result["states"]) >= target_states:
+                break
+            random.seed(int(args.dmc_calibration_seed) + game_index)
+            game = GuandanGame(verbose=False, print_history=False)
+            first_player = offline_set_random_first_player(game, rng)
+            result["first_player_distribution"][str(first_player)] += 1
+            steps = 0
+            while not game.is_game_over and steps < OFFLINE_MAX_GAME_STEPS:
+                offline_prepare_turn(game)
+                if game.current_player in game.ranking:
+                    steps += 1
+                    continue
+                result["scanned_decisions"] += 1
+                baseline_info = offline_baseline_action_info(
+                    game,
+                    components,
+                    "tempo_baseline",
+                    profile_config,
+                    rng,
+                )
+                state, ranked = offline_dmc_ranked_candidates(
+                    game,
+                    components,
+                    model,
+                    device_info["device"],
+                )
+                baseline_cards = list(baseline_info.get("chosen_cards") or [])
+                baseline_action_id = int(baseline_info.get("action_id", 0))
+                if ranked:
+                    baseline_q = offline_dmc_score_action(
+                        game,
+                        components,
+                        model,
+                        device_info["device"],
+                        state,
+                        baseline_action_id,
+                        baseline_cards,
+                    )
+                    best = ranked[0]
+                    same_action = rollout_action_key(baseline_action_id, baseline_cards) == rollout_action_key(
+                        int(best["action_id"]),
+                        list(best["cards"]),
+                    )
+                    q_margin = float(best["q_value"]) - float(baseline_q)
+                    if not same_action and q_margin >= float(args.dmc_calibration_min_q_margin):
+                        base_game = copy.deepcopy(game)
+                        candidates = offline_dmc_calibration_candidate_set(
+                            components,
+                            ranked,
+                            baseline_action_id,
+                            baseline_cards,
+                            int(args.dmc_calibration_top_k),
+                        )
+                        for candidate in candidates:
+                            if candidate.get("q_value") is None:
+                                candidate["q_value"] = offline_dmc_score_action(
+                                    game,
+                                    components,
+                                    model,
+                                    device_info["device"],
+                                    state,
+                                    int(candidate["action_id"]),
+                                    list(candidate["cards"]),
+                                )
+                        evaluated = offline_dmc_calibration_rollouts(
+                            base_game,
+                            components,
+                            profile_config,
+                            candidates,
+                            offline_team_id(int(game.current_player)),
+                            len(result["states"]),
+                            args,
+                        )
+                        baseline_eval = next(item for item in evaluated if "tempo_baseline" in item["sources"])
+                        dmc_eval = next(item for item in evaluated if "dmc_top_k" in item["sources"])
+                        rollout_best = max(
+                            evaluated,
+                            key=lambda item: (
+                                float(item["rollout_win_rate"]),
+                                -float(item["rollout_average_team_rank"]),
+                                float(item["q_value"]),
+                            ),
+                        )
+                        pairwise_comparable = 0
+                        pairwise_agree = 0
+                        for left_index, left in enumerate(evaluated):
+                            for right in evaluated[left_index + 1 :]:
+                                q_delta = float(left["q_value"]) - float(right["q_value"])
+                                rollout_delta = float(left["rollout_win_rate"]) - float(right["rollout_win_rate"])
+                                if rollout_delta == 0.0:
+                                    rollout_delta = float(right["rollout_average_team_rank"]) - float(
+                                        left["rollout_average_team_rank"]
+                                    )
+                                if q_delta == 0.0 or rollout_delta == 0.0:
+                                    continue
+                                pairwise_comparable += 1
+                                pairwise_agree += int((q_delta > 0.0) == (rollout_delta > 0.0))
+                        realized_delta = float(dmc_eval["rollout_win_rate"]) - float(
+                            baseline_eval["rollout_win_rate"]
+                        )
+                        realized_rank_improvement = float(baseline_eval["rollout_average_team_rank"]) - float(
+                            dmc_eval["rollout_average_team_rank"]
+                        )
+                        state_result = {
+                            "state_index": len(result["states"]),
+                            "game_index": game_index,
+                            "step": steps,
+                            "first_player": first_player,
+                            "player_id": int(game.current_player),
+                            "team_id": offline_team_id(int(game.current_player)),
+                            "level": website_level_from_local_level(game.active_level),
+                            "was_follow": bool(baseline_info.get("was_follow")),
+                            "is_endgame": offline_hybrid_is_endgame(game, int(game.current_player)),
+                            "opponent_min": offline_hybrid_opponent_min(game, int(game.current_player)),
+                            "teammate_min": offline_hybrid_teammate_min(game, int(game.current_player)),
+                            "hand_sizes": [len(player.hand) for player in game.players],
+                            "hand_before": local_cards_to_website(list(game.players[int(game.current_player)].hand)),
+                            "last_play": local_cards_to_website(list(game.last_play or [])),
+                            "baseline_action_id": baseline_action_id,
+                            "baseline_action": local_cards_to_website(baseline_cards),
+                            "baseline_action_type": str(baseline_info.get("action_type") or "unknown"),
+                            "baseline_q": float(baseline_q),
+                            "dmc_action_id": int(best["action_id"]),
+                            "dmc_action": local_cards_to_website(list(best["cards"])),
+                            "dmc_action_type": str(best["action_type"]),
+                            "dmc_q": float(best["q_value"]),
+                            "q_margin": q_margin,
+                            "q_margin_bucket": offline_dmc_calibration_bucket(q_margin),
+                            "baseline_rollout_win_rate": float(baseline_eval["rollout_win_rate"]),
+                            "dmc_rollout_win_rate": float(dmc_eval["rollout_win_rate"]),
+                            "realized_dmc_minus_baseline": realized_delta,
+                            "baseline_rollout_average_team_rank": float(
+                                baseline_eval["rollout_average_team_rank"]
+                            ),
+                            "dmc_rollout_average_team_rank": float(dmc_eval["rollout_average_team_rank"]),
+                            "realized_dmc_rank_improvement": realized_rank_improvement,
+                            "rollout_best_action_id": int(rollout_best["action_id"]),
+                            "rollout_best_action": local_cards_to_website(list(rollout_best["cards"])),
+                            "rollout_best_action_type": str(rollout_best["action_type"]),
+                            "q_top1_matches_rollout_best": rollout_action_key(
+                                int(best["action_id"]), list(best["cards"])
+                            ) == rollout_action_key(int(rollout_best["action_id"]), list(rollout_best["cards"])),
+                            "q_top1_rollout_regret": float(rollout_best["rollout_win_rate"])
+                            - float(dmc_eval["rollout_win_rate"]),
+                            "q_top1_rollout_rank_regret": float(dmc_eval["rollout_average_team_rank"])
+                            - float(rollout_best["rollout_average_team_rank"]),
+                            "pairwise_comparable_count": pairwise_comparable,
+                            "pairwise_q_order_agree_count": pairwise_agree,
+                            "pairwise_q_order_agreement_rate": pairwise_agree / max(1, pairwise_comparable),
+                            "overconfident_wrong": bool(
+                                q_margin >= 0.25
+                                and (realized_delta < 0.0 or (realized_delta == 0.0 and realized_rank_improvement < 0.0))
+                            ),
+                            "actions": evaluated,
+                        }
+                        result["states"].append(state_result)
+                        result["evaluated_states"] = len(result["states"])
+                        result["evaluated_actions"] += len(evaluated)
+                        result["elapsed_seconds"] = time.monotonic() - started
+                        save_json(out_path, result)
+                        print(
+                            "dmc_calibration_hit "
+                            f"state={len(result['states'])}/{target_states} game={game_index} step={steps} "
+                            f"q_margin={q_margin:.3f} realized_delta={realized_delta:.3f}",
+                            flush=True,
+                        )
+                        if len(result["states"]) >= target_states:
+                            break
+                record = offline_apply_action(game, baseline_info)
+                result["scanner_illegal_action_count"] += int(bool(record.get("illegal")))
+                result["scanner_fallback_count"] += int(bool(record.get("fallback")))
+                result["scanner_materialization_fail_count"] += int(bool(record.get("materialization_fail")))
+                result["scanner_hand_card_mismatch_count"] += int(bool(record.get("hand_card_mismatch")))
+                steps += 1
+            result["scanned_games"] += 1
+    finally:
+        restore_baseline()
+
+    states = result["states"]
+    actions = [action for state in states for action in state.get("actions") or []]
+    q_actions = [action for action in actions if action.get("q_value") is not None]
+    squared_errors = [float(action["q_error"]) ** 2 for action in q_actions]
+    absolute_errors = [float(action["absolute_q_error"]) for action in q_actions]
+    brier_errors = [
+        ((max(-1.0, min(1.0, float(action["q_value"]))) + 1.0) / 2.0 - float(action["rollout_win_rate"])) ** 2
+        for action in q_actions
+    ]
+    bucket_summary: dict[str, dict] = {}
+    for bucket in ("lt_0.10", "0.10_to_0.25", "0.25_to_0.50", "ge_0.50"):
+        bucket_states = [state for state in states if state["q_margin_bucket"] == bucket]
+        bucket_summary[bucket] = offline_dmc_calibration_context_summary(bucket_states, lambda _state: True)
+    contexts = {
+        "follow": offline_dmc_calibration_context_summary(states, lambda state: state["was_follow"]),
+        "lead": offline_dmc_calibration_context_summary(states, lambda state: not state["was_follow"]),
+        "endgame": offline_dmc_calibration_context_summary(states, lambda state: state["is_endgame"]),
+        "dmc_pass": offline_dmc_calibration_context_summary(states, lambda state: not state["dmc_action"]),
+        "dmc_bomb": offline_dmc_calibration_context_summary(
+            states,
+            lambda state: "bomb" in str(state["dmc_action_type"]),
+        ),
+    }
+    branch_counter_names = (
+        "illegal_action_count",
+        "fallback_count",
+        "materialization_fail_count",
+        "hand_card_mismatch_count",
+        "oracle_candidate_validation_fail_count",
+    )
+    for name in branch_counter_names:
+        result[f"rollout_{name}"] = sum(
+            int(rollout.get(name) or 0)
+            for action in actions
+            for rollout in action.get("rollouts") or []
+        )
+    result["rollout_oracle_option_fallback_count"] = sum(
+        int(rollout.get("oracle_option_fallback_count") or 0)
+        for action in actions
+        for rollout in action.get("rollouts") or []
+    )
+    pairwise_comparable = sum(int(state["pairwise_comparable_count"]) for state in states)
+    pairwise_agree = sum(int(state["pairwise_q_order_agree_count"]) for state in states)
+    result.update(
+        {
+            "status": "completed",
+            "elapsed_seconds": time.monotonic() - started,
+            "q_value_mse": sum(squared_errors) / max(1, len(squared_errors)),
+            "q_value_mae": sum(absolute_errors) / max(1, len(absolute_errors)),
+            "q_probability_brier_score": sum(brier_errors) / max(1, len(brier_errors)),
+            "q_top1_matches_rollout_best_count": sum(1 for state in states if state["q_top1_matches_rollout_best"]),
+            "q_top1_matches_rollout_best_rate": sum(1 for state in states if state["q_top1_matches_rollout_best"])
+            / max(1, len(states)),
+            "average_q_top1_rollout_regret": sum(float(state["q_top1_rollout_regret"]) for state in states)
+            / max(1, len(states)),
+            "average_q_top1_rollout_rank_regret": sum(
+                float(state["q_top1_rollout_rank_regret"]) for state in states
+            )
+            / max(1, len(states)),
+            "pairwise_comparable_count": pairwise_comparable,
+            "pairwise_q_order_agree_count": pairwise_agree,
+            "pairwise_q_order_agreement_rate": pairwise_agree / max(1, pairwise_comparable),
+            "dmc_outperforms_baseline_count": sum(
+                1 for state in states if state["realized_dmc_minus_baseline"] > 0
+            ),
+            "baseline_outperforms_dmc_count": sum(
+                1 for state in states if state["realized_dmc_minus_baseline"] < 0
+            ),
+            "equal_outcome_count": sum(1 for state in states if state["realized_dmc_minus_baseline"] == 0),
+            "average_realized_dmc_minus_baseline": sum(
+                float(state["realized_dmc_minus_baseline"]) for state in states
+            )
+            / max(1, len(states)),
+            "average_realized_dmc_rank_improvement": sum(
+                float(state["realized_dmc_rank_improvement"]) for state in states
+            )
+            / max(1, len(states)),
+            "overconfident_wrong_count": sum(1 for state in states if state["overconfident_wrong"]),
+            "q_margin_bucket_summary": bucket_summary,
+            "context_summary": contexts,
+        }
+    )
+    correctness_passed = bool(
+        len(states) >= target_states
+        and result["scanner_illegal_action_count"] == 0
+        and result["scanner_fallback_count"] == 0
+        and result["scanner_materialization_fail_count"] == 0
+        and result["scanner_hand_card_mismatch_count"] == 0
+        and all(result[f"rollout_{name}"] == 0 for name in branch_counter_names)
+    )
+    result["threshold_passed"] = correctness_passed
+    result["q_calibration_acceptable"] = bool(
+        correctness_passed
+        and len(states) >= 30
+        and result["q_top1_matches_rollout_best_rate"] >= 0.60
+        and result["average_realized_dmc_minus_baseline"] > 0.0
+        and result["overconfident_wrong_count"] == 0
+    )
+    result["recommendation"] = (
+        "build_pairwise_action_value_dataset"
+        if correctness_passed and not result["q_calibration_acceptable"]
+        else "q_calibration_supports_larger_hybrid_validation"
+        if result["q_calibration_acceptable"]
+        else "fix_calibration_audit_before_policy_work"
+    )
+    save_json(out_path, result)
+    print(json.dumps(result, ensure_ascii=False, indent=2))
+    if not correctness_passed:
+        raise RuntimeError("DMC Q calibration audit correctness threshold failed")
+
+
 def run_offline_hybrid_paired_audit(args: argparse.Namespace) -> None:
     source_path = Path(args.paired_audit_source) if args.paired_audit_source else None
     source = load_json(source_path, {}) if source_path else {}
@@ -16626,6 +17173,7 @@ def parse_args() -> argparse.Namespace:
     parser.add_argument("--offline-dmc-arena-eval", action="store_true")
     parser.add_argument("--offline-dmc-hybrid-arena-eval", action="store_true")
     parser.add_argument("--offline-hybrid-paired-audit", action="store_true")
+    parser.add_argument("--offline-dmc-q-calibration-audit", action="store_true")
     parser.add_argument("--dmc-model")
     parser.add_argument("--hybrid-q-margin", type=float, default=0.25)
     parser.add_argument("--hybrid-max-override-rate", type=float, default=0.05)
@@ -16649,6 +17197,20 @@ def parse_args() -> argparse.Namespace:
     parser.add_argument("--paired-min-win-delta", type=float, default=0.05)
     parser.add_argument("--paired-seed", type=int, default=20260708)
     parser.add_argument("--paired-equivalence-samples", type=int, default=200)
+    parser.add_argument("--dmc-calibration-out", default="dmc_q_calibration_audit.json")
+    parser.add_argument("--dmc-calibration-states", type=int, default=30)
+    parser.add_argument("--dmc-calibration-max-games", type=int, default=100)
+    parser.add_argument("--dmc-calibration-top-k", type=int, default=3)
+    parser.add_argument("--dmc-calibration-rollouts-per-action", type=int, default=1)
+    parser.add_argument("--dmc-calibration-depth-turns", type=int, default=1200)
+    parser.add_argument(
+        "--dmc-calibration-continuation-profile",
+        choices=("tempo_baseline", "greedy_bot"),
+        default="greedy_bot",
+    )
+    parser.add_argument("--dmc-calibration-min-q-margin", type=float, default=0.0)
+    parser.add_argument("--dmc-calibration-seed", type=int, default=20260711)
+    parser.add_argument("--dmc-calibration-equivalence-samples", type=int, default=200)
     parser.add_argument("--train-from-imitation-dataset")
     parser.add_argument("--imitation-out-dir", default="models_imitation_baseline_smoke")
     parser.add_argument("--imitation-log-out", default="imitation_train_smoke.json")
@@ -16741,6 +17303,11 @@ def main() -> None:
         return
     if args.offline_hybrid_paired_audit:
         run_offline_hybrid_paired_audit(args)
+        return
+    if args.offline_dmc_q_calibration_audit:
+        if not args.dmc_model:
+            raise RuntimeError("--dmc-model is required with --offline-dmc-q-calibration-audit")
+        run_offline_dmc_q_calibration_audit(args)
         return
     if args.train_from_imitation_dataset:
         run_train_from_imitation_dataset(args)
