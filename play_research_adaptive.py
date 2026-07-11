@@ -12605,6 +12605,565 @@ def offline_hybrid_override_audit_summary(records: list[dict]) -> dict:
     }
 
 
+def offline_paired_oracle_action_id(
+    game: Any,
+    components: dict,
+    action_id: int,
+    cards: list[str],
+) -> tuple[int | None, str]:
+    hand = list(game.players[int(game.current_player)].hand)
+    last_play = list(game.last_play or [])
+    was_lead = bool(game.is_free_turn or not last_play)
+    _oracle, candidates = offline_oracle_candidates_fast(game, components, hand, last_play, was_lead)
+    target = rollout_action_key(int(action_id), list(cards))
+    for candidate_id, candidate_cards in candidates:
+        if rollout_action_key(candidate_id, candidate_cards) == target:
+            return int(candidate_id), "oracle_exact"
+    target_cards = tuple(sorted(cards))
+    for candidate_id, candidate_cards in candidates:
+        if tuple(sorted(candidate_cards)) == target_cards:
+            return int(candidate_id), "oracle_physical_cards"
+    ok, _reason = offline_action_is_legal(
+        game,
+        components["actions"],
+        list(cards),
+        hand,
+        last_play,
+        was_lead,
+    )
+    if ok and offline_cards_in_hand(cards, hand):
+        mapped_action_id = offline_action_id_for_cards(game, components, cards, last_play, was_lead)
+        if mapped_action_id is not None:
+            return int(mapped_action_id), "website_rule_fallback"
+    return None, "not_legal"
+
+
+def offline_paired_rollout_branch(
+    base_game: Any,
+    components: dict,
+    profile_config: dict,
+    action_id: int,
+    cards: list[str],
+    team_id: int,
+    continuation_profile: str,
+    simulation_seed: int,
+    depth_turns: int,
+) -> dict:
+    rng = random.Random(simulation_seed)
+    game = copy.deepcopy(base_game)
+    result = {
+        "terminal": False,
+        "winner_team": None,
+        "team_win_value": 0.0,
+        "team_rank": 4.0,
+        "steps": 0,
+        "illegal_action_count": 0,
+        "fallback_count": 0,
+        "materialization_fail_count": 0,
+        "hand_card_mismatch_count": 0,
+        "oracle_candidate_validation_fail_count": 0,
+        "oracle_option_fallback_count": 0,
+        "failure": None,
+    }
+    resolved_action_id, resolution_source = offline_paired_oracle_action_id(
+        game,
+        components,
+        action_id,
+        cards,
+    )
+    result["requested_action_id"] = int(action_id)
+    result["resolved_action_id"] = resolved_action_id
+    result["action_id_resolution_source"] = resolution_source
+    result["oracle_option_fallback_count"] = int(resolution_source == "website_rule_fallback")
+    if resolved_action_id is None:
+        result["oracle_candidate_validation_fail_count"] = 1
+        result["failure"] = "initial_action_not_in_oracle_options"
+        return result
+    action_info = offline_make_action_info_from_cards(
+        game,
+        components,
+        list(cards),
+        rng,
+        policy="paired_counterfactual",
+        sampled_action_id=int(resolved_action_id),
+        audit_masks=False,
+    )
+    record = offline_apply_action(game, action_info)
+
+    def observe(action_record: dict) -> bool:
+        result["illegal_action_count"] += int(bool(action_record.get("illegal")))
+        result["fallback_count"] += int(bool(action_record.get("fallback")))
+        result["materialization_fail_count"] += int(bool(action_record.get("materialization_fail")))
+        result["hand_card_mismatch_count"] += int(bool(action_record.get("hand_card_mismatch")))
+        return not bool(
+            action_record.get("illegal")
+            or action_record.get("materialization_fail")
+            or action_record.get("hand_card_mismatch")
+        )
+
+    if not observe(record):
+        result["failure"] = "initial_action_apply_failed"
+        return result
+    result["steps"] = 1
+    max_steps = int(depth_turns) if int(depth_turns) > 0 else OFFLINE_MAX_GAME_STEPS
+    while not game.is_game_over and int(result["steps"]) < max_steps:
+        offline_prepare_turn(game)
+        if game.current_player in game.ranking:
+            result["steps"] += 1
+            continue
+        if continuation_profile == "greedy_bot":
+            next_action = rollout_greedy_action_info(game, components, rng, policy="paired_greedy_bot")
+        else:
+            next_action = offline_baseline_action_info(
+                game,
+                components,
+                "tempo_baseline",
+                profile_config,
+                rng,
+            )
+        next_record = offline_apply_action(game, next_action)
+        result["steps"] += 1
+        if not observe(next_record):
+            result["failure"] = "continuation_action_apply_failed"
+            return result
+    result["terminal"] = bool(game.is_game_over)
+    result["winner_team"] = offline_winner_team_id(game) if game.is_game_over else None
+    result["team_win_value"] = (
+        1.0 if result["winner_team"] == team_id else 0.0
+    ) if game.is_game_over else rollout_estimated_team_win(game, team_id)
+    result["team_rank"] = rollout_estimated_team_rank(game, team_id)
+    if not game.is_game_over:
+        result["failure"] = "depth_limit_reached"
+    return result
+
+
+def offline_paired_state_evaluation(
+    base_game: Any,
+    components: dict,
+    profile_config: dict,
+    baseline_action: dict,
+    override_action: dict,
+    team_id: int,
+    state_index: int,
+    args: argparse.Namespace,
+) -> dict:
+    simulations: list[dict] = []
+    deltas: list[float] = []
+    rank_deltas: list[float] = []
+    for simulation_index in range(max(1, int(args.paired_rollouts_per_state))):
+        simulation_seed = int(args.paired_seed) + state_index * 100_000 + simulation_index
+        baseline_result = offline_paired_rollout_branch(
+            base_game,
+            components,
+            profile_config,
+            int(baseline_action["action_id"]),
+            list(baseline_action["cards"]),
+            team_id,
+            str(args.paired_continuation_profile),
+            simulation_seed,
+            int(args.paired_depth_turns),
+        )
+        override_result = offline_paired_rollout_branch(
+            base_game,
+            components,
+            profile_config,
+            int(override_action["action_id"]),
+            list(override_action["cards"]),
+            team_id,
+            str(args.paired_continuation_profile),
+            simulation_seed,
+            int(args.paired_depth_turns),
+        )
+        delta = float(override_result["team_win_value"]) - float(baseline_result["team_win_value"])
+        rank_delta = float(baseline_result["team_rank"]) - float(override_result["team_rank"])
+        deltas.append(delta)
+        rank_deltas.append(rank_delta)
+        simulations.append(
+            {
+                "simulation_index": simulation_index,
+                "simulation_seed": simulation_seed,
+                "baseline": baseline_result,
+                "override": override_result,
+                "win_value_delta": delta,
+                "rank_improvement": rank_delta,
+            }
+        )
+    baseline_values = [float(item["baseline"]["team_win_value"]) for item in simulations]
+    override_values = [float(item["override"]["team_win_value"]) for item in simulations]
+    return {
+        "simulation_count": len(simulations),
+        "baseline_win_rate": sum(baseline_values) / max(1, len(baseline_values)),
+        "override_win_rate": sum(override_values) / max(1, len(override_values)),
+        "causal_win_rate_delta": sum(deltas) / max(1, len(deltas)),
+        "average_rank_improvement": sum(rank_deltas) / max(1, len(rank_deltas)),
+        "improved_pair_count": sum(1 for value in deltas if value > 0),
+        "harmed_pair_count": sum(1 for value in deltas if value < 0),
+        "neutral_pair_count": sum(1 for value in deltas if value == 0),
+        "terminal_pair_count": sum(
+            1 for item in simulations if item["baseline"]["terminal"] and item["override"]["terminal"]
+        ),
+        "simulations": simulations,
+    }
+
+
+def offline_paired_delta_interval(deltas: list[float]) -> tuple[float, float, float]:
+    if not deltas:
+        return 0.0, 0.0, 0.0
+    mean = sum(deltas) / len(deltas)
+    if len(deltas) == 1:
+        return mean, mean, mean
+    variance = sum((value - mean) ** 2 for value in deltas) / (len(deltas) - 1)
+    half_width = 1.96 * (variance / len(deltas)) ** 0.5
+    return mean, mean - half_width, mean + half_width
+
+
+def run_offline_hybrid_paired_audit(args: argparse.Namespace) -> None:
+    source_path = Path(args.paired_audit_source) if args.paired_audit_source else None
+    source = load_json(source_path, {}) if source_path else {}
+    if source_path and not source_path.exists():
+        raise RuntimeError(f"paired audit source not found: {source_path}")
+    model_value = args.dmc_model or source.get("dmc_model")
+    if not model_value:
+        raise RuntimeError("--dmc-model is required unless --paired-audit-source contains dmc_model")
+    model_path = Path(str(model_value))
+    if not model_path.exists():
+        raise RuntimeError(f"DMC model not found: {model_path}")
+    baseline_profile = str(source.get("baseline_profile") or args.baseline_profile)
+    if baseline_profile != "tempo_baseline":
+        raise RuntimeError("paired hybrid audit only supports tempo_baseline")
+
+    paired_args = copy.copy(args)
+    for field in (
+        "hybrid_q_margin",
+        "hybrid_max_override_rate",
+        "hybrid_only_follow",
+        "hybrid_only_endgame",
+        "hybrid_forbid_pass_over_non_pass",
+        "hybrid_block_only_when_opponent_le",
+        "hybrid_non_pass_margin",
+        "hybrid_avoid_bomb_unless_opponent_le",
+        "hybrid_control_pass_margin",
+    ):
+        if source.get(field) is not None:
+            setattr(paired_args, field, source[field])
+    paired_args.simulate_hybrid_override_whitelist = True
+    paired_args.baseline_profile = baseline_profile
+    paired_args.swap_seats = bool(source.get("seat_swap_enabled")) if source else bool(args.swap_seats)
+
+    components = offline_load_guandan_components()
+    GuandanGame = components["GuandanGame"]
+    device_info = offline_resolve_device(args.device)
+    model = offline_load_dmc_value_model(model_path, device_info)
+    profiles = load_json(PROFILE_PATH, {})
+    profile_config = profiles.get("tempo_baseline", {"engine_mode": "tempo"})
+    equivalence_samples = max(1, int(args.paired_equivalence_samples))
+    equivalence = offline_baseline_equivalence_check(
+        components,
+        profile_config,
+        sample_count=equivalence_samples,
+    )
+    if int(equivalence["baseline_equivalence_mismatch_count"]) != 0:
+        raise RuntimeError("baseline equivalence check failed; paired audit blocked")
+
+    requested_target_states = max(1, int(args.paired_target_states))
+    max_games = max(1, int(args.paired_max_games))
+    source_reference_games = max(1, int(source.get("arena_games") or max_games))
+    source_override_records = list(source.get("hybrid_override_records") or [])
+    source_override_keys = {
+        (int(record.get("game_index")), int(record.get("step")))
+        for record in source_override_records
+        if record.get("game_index") is not None and record.get("step") is not None
+    }
+    source_game_indices = sorted({game_index for game_index, _step in source_override_keys})
+    source_overrides_only = bool(args.paired_source_overrides_only and source_game_indices)
+    if source_overrides_only:
+        planned_game_indices = source_game_indices[:max_games]
+        target_states = min(requested_target_states, len(source_override_keys))
+        paired_args.hybrid_max_override_rate = 1.0
+    else:
+        planned_game_indices = list(range(max_games))
+        target_states = requested_target_states
+    first_player_rng = random.Random(int(args.paired_seed))
+    first_player_by_game = {
+        game_index: int(first_player_rng.randrange(4))
+        for game_index in range(max(planned_game_indices or [0]) + 1)
+    }
+    hybrid_stats = offline_dmc_hybrid_stats_template()
+    cases: list[dict] = []
+    result = {
+        "status": "running",
+        "backend": device_info["backend"],
+        "requested_device": device_info["requested_device"],
+        "actual_device": device_info["actual_device"],
+        "device_fallback": device_info["device_fallback"],
+        "legal_mask_source": "website_oracle",
+        "paired_audit_source": str(source_path) if source_path else None,
+        "dmc_model": str(model_path),
+        "baseline_profile": baseline_profile,
+        "paired_requested_target_states": requested_target_states,
+        "paired_target_states": target_states,
+        "paired_min_states_for_gate": max(1, int(args.paired_min_states_for_gate)),
+        "paired_max_games": max_games,
+        "paired_source_overrides_only": source_overrides_only,
+        "source_override_record_count": len(source_override_keys),
+        "source_rate_limit_bypassed": source_overrides_only,
+        "planned_game_count": len(planned_game_indices),
+        "planned_game_indices": planned_game_indices,
+        "paired_rollouts_per_state": max(1, int(args.paired_rollouts_per_state)),
+        "paired_depth_turns": int(args.paired_depth_turns),
+        "paired_continuation_profile": str(args.paired_continuation_profile),
+        "paired_seed": int(args.paired_seed),
+        "paired_equivalence_samples_requested": equivalence_samples,
+        "hybrid_control_pass_margin": float(paired_args.hybrid_control_pass_margin),
+        "seat_swap_enabled": bool(paired_args.swap_seats),
+        "scanned_games": 0,
+        "completed_scanner_games": 0,
+        "collected_override_states": 0,
+        "matched_source_override_count": 0,
+        "source_expected_not_triggered_count": 0,
+        "source_unrecorded_candidate_block_count": 0,
+        "scanner_illegal_action_count": 0,
+        "scanner_fallback_count": 0,
+        "scanner_materialization_fail_count": 0,
+        "scanner_hand_card_mismatch_count": 0,
+        "cases": cases,
+        **equivalence,
+    }
+    out_path = Path(args.paired_audit_out)
+    restore_baseline = offline_install_arena_baseline_optimizations()
+    started = time.monotonic()
+    try:
+        for scan_index, game_index in enumerate(planned_game_indices, start=1):
+            if len(cases) >= target_states:
+                break
+            random.seed(int(args.paired_seed) + game_index)
+            game = GuandanGame(verbose=False, print_history=False)
+            first_player = int(first_player_by_game[game_index])
+            game.current_player = first_player
+            rng = random.Random(int(args.paired_seed) + game_index * 1_000_003 + 17)
+            model_seats, baseline_seats = offline_arena_profile_seats(
+                game_index,
+                source_reference_games,
+                bool(paired_args.swap_seats),
+            )
+            model_team = offline_team_id(next(iter(model_seats)))
+            result["scanned_games"] += 1
+            steps = 0
+            stop_after_case = False
+            while not game.is_game_over and steps < OFFLINE_MAX_GAME_STEPS:
+                offline_prepare_turn(game)
+                if game.current_player in game.ranking:
+                    steps += 1
+                    continue
+                if int(game.current_player) in model_seats:
+                    base_game = copy.deepcopy(game)
+                    action_info = offline_dmc_hybrid_action_info(
+                        game,
+                        components,
+                        model,
+                        device_info["device"],
+                        paired_args,
+                        profile_config,
+                        rng,
+                        hybrid_stats,
+                        game_index=game_index,
+                        step=steps,
+                    )
+                    source_key = (game_index, steps)
+                    is_source_target = source_key in source_override_keys
+                    if source_overrides_only and is_source_target and not action_info.get("hybrid_used"):
+                        result["source_expected_not_triggered_count"] += 1
+                    should_evaluate = bool(
+                        action_info.get("hybrid_used")
+                        and (not source_overrides_only or is_source_target)
+                    )
+                    if should_evaluate:
+                        baseline_cards = list(action_info.get("hybrid_baseline_cards") or [])
+                        baseline_action_id = int(action_info.get("hybrid_baseline_action_id") or 0)
+                        override_cards = list(action_info.get("chosen_cards") or [])
+                        override_action_id = int(action_info.get("action_id") or 0)
+                        evaluation = offline_paired_state_evaluation(
+                            base_game,
+                            components,
+                            profile_config,
+                            {"action_id": baseline_action_id, "cards": baseline_cards},
+                            {"action_id": override_action_id, "cards": override_cards},
+                            model_team,
+                            len(cases),
+                            args,
+                        )
+                        case = {
+                            "state_index": len(cases),
+                            "game_index": game_index,
+                            "step": steps,
+                            "first_player": first_player,
+                            "player_id": int(game.current_player),
+                            "model_team": model_team,
+                            "level": website_level_from_local_level(game.active_level),
+                            "hand_sizes": [len(player.hand) for player in game.players],
+                            "hand_before": local_cards_to_website(list(game.players[int(game.current_player)].hand)),
+                            "last_play": local_cards_to_website(list(game.last_play or [])),
+                            "last_player": game.last_player,
+                            "baseline_action_id": baseline_action_id,
+                            "baseline_action": local_cards_to_website(baseline_cards),
+                            "baseline_action_type": str(
+                                (components["action_by_id"].get(baseline_action_id) or {}).get("type") or "unknown"
+                            ),
+                            "override_action_id": override_action_id,
+                            "override_action": local_cards_to_website(override_cards),
+                            "override_action_type": str(action_info.get("action_type") or "unknown"),
+                            "baseline_q": float(action_info.get("hybrid_baseline_q") or 0.0),
+                            "override_q": float(action_info.get("hybrid_best_q") or 0.0),
+                            "q_margin": float(action_info.get("hybrid_q_margin") or 0.0),
+                            "matched_source_override": (game_index, steps) in source_override_keys,
+                            **evaluation,
+                        }
+                        cases.append(case)
+                        result["collected_override_states"] = len(cases)
+                        result["matched_source_override_count"] += int(case["matched_source_override"])
+                        result["elapsed_seconds"] = time.monotonic() - started
+                        save_json(out_path, result)
+                        print(
+                            "paired_audit_hit "
+                            f"state={len(cases)}/{target_states} game={game_index} step={steps} "
+                            f"delta={evaluation['causal_win_rate_delta']:.3f}",
+                            flush=True,
+                        )
+                        stop_after_case = len(cases) >= target_states
+                    elif source_overrides_only and action_info.get("hybrid_used"):
+                        result["source_unrecorded_candidate_block_count"] += 1
+                        baseline_cards = list(action_info.get("hybrid_baseline_cards") or [])
+                        baseline_action_id = int(action_info.get("hybrid_baseline_action_id") or 0)
+                        action_info = offline_make_action_info_from_cards(
+                            game,
+                            components,
+                            baseline_cards,
+                            rng,
+                            policy="paired_source_baseline",
+                            sampled_action_id=baseline_action_id,
+                            audit_masks=False,
+                        )
+                elif int(game.current_player) in baseline_seats:
+                    action_info = offline_baseline_action_info(
+                        game,
+                        components,
+                        baseline_profile,
+                        profile_config,
+                        rng,
+                    )
+                else:
+                    action_info = offline_first_oracle_action_info(
+                        game,
+                        components,
+                        rng,
+                        policy="paired_scanner_unknown",
+                        fallback_reason="seat_not_assigned",
+                    )
+                if stop_after_case:
+                    break
+                record = offline_apply_action(game, action_info)
+                result["scanner_illegal_action_count"] += int(bool(record.get("illegal")))
+                result["scanner_fallback_count"] += int(bool(record.get("fallback")))
+                result["scanner_materialization_fail_count"] += int(bool(record.get("materialization_fail")))
+                result["scanner_hand_card_mismatch_count"] += int(bool(record.get("hand_card_mismatch")))
+                steps += 1
+            if game.is_game_over:
+                result["completed_scanner_games"] += 1
+            if scan_index % 10 == 0:
+                print(
+                    f"paired_audit_progress games={scan_index}/{len(planned_game_indices)} "
+                    f"states={len(cases)}/{target_states}",
+                    flush=True,
+                )
+    finally:
+        restore_baseline()
+
+    paired_deltas = [
+        float(simulation["win_value_delta"])
+        for case in cases
+        for simulation in case.get("simulations") or []
+    ]
+    baseline_values = [
+        float(simulation["baseline"]["team_win_value"])
+        for case in cases
+        for simulation in case.get("simulations") or []
+    ]
+    override_values = [
+        float(simulation["override"]["team_win_value"])
+        for case in cases
+        for simulation in case.get("simulations") or []
+    ]
+    branch_counter_names = (
+        "illegal_action_count",
+        "fallback_count",
+        "materialization_fail_count",
+        "hand_card_mismatch_count",
+        "oracle_candidate_validation_fail_count",
+    )
+    for counter_name in branch_counter_names:
+        result[f"paired_{counter_name}"] = sum(
+            int(simulation[branch].get(counter_name) or 0)
+            for case in cases
+            for simulation in case.get("simulations") or []
+            for branch in ("baseline", "override")
+        )
+    result["paired_oracle_option_fallback_count"] = sum(
+        int(simulation[branch].get("oracle_option_fallback_count") or 0)
+        for case in cases
+        for simulation in case.get("simulations") or []
+        for branch in ("baseline", "override")
+    )
+    delta_mean, delta_low, delta_high = offline_paired_delta_interval(paired_deltas)
+    result.update(
+        {
+            "status": "completed",
+            "elapsed_seconds": time.monotonic() - started,
+            "paired_simulation_count": len(paired_deltas),
+            "baseline_win_rate": sum(baseline_values) / max(1, len(baseline_values)),
+            "override_win_rate": sum(override_values) / max(1, len(override_values)),
+            "causal_win_rate_delta": delta_mean,
+            "causal_win_rate_delta_ci95_low": delta_low,
+            "causal_win_rate_delta_ci95_high": delta_high,
+            "improved_pair_count": sum(1 for value in paired_deltas if value > 0),
+            "harmed_pair_count": sum(1 for value in paired_deltas if value < 0),
+            "neutral_pair_count": sum(1 for value in paired_deltas if value == 0),
+            "exact_terminal_pair_count": sum(
+                1
+                for case in cases
+                for simulation in case.get("simulations") or []
+                if simulation["baseline"]["terminal"] and simulation["override"]["terminal"]
+            ),
+        }
+    )
+    correctness_passed = bool(
+        len(cases) >= target_states
+        and (not source_overrides_only or result["matched_source_override_count"] >= target_states)
+        and result["source_expected_not_triggered_count"] == 0
+        and result["scanner_illegal_action_count"] == 0
+        and result["scanner_fallback_count"] == 0
+        and result["scanner_materialization_fail_count"] == 0
+        and result["scanner_hand_card_mismatch_count"] == 0
+        and all(result[f"paired_{name}"] == 0 for name in branch_counter_names)
+    )
+    result["threshold_passed"] = correctness_passed
+    result["policy_gate_passed"] = bool(
+        correctness_passed
+        and len(cases) >= max(1, int(args.paired_min_states_for_gate))
+        and delta_mean >= float(args.paired_min_win_delta)
+        and delta_low > 0.0
+        and result["exact_terminal_pair_count"] == len(paired_deltas)
+    )
+    result["recommendation"] = (
+        "control_pass_override_worth_larger_validation"
+        if result["policy_gate_passed"]
+        else "do_not_promote_control_pass_override"
+    )
+    save_json(out_path, result)
+    print(json.dumps(result, ensure_ascii=False, indent=2))
+    if not correctness_passed:
+        raise RuntimeError("paired hybrid audit correctness threshold failed")
+
+
 def run_offline_dmc_hybrid_arena_eval(args: argparse.Namespace) -> None:
     if args.baseline_profile != "tempo_baseline":
         raise RuntimeError("DMC hybrid arena currently only supports --baseline-profile tempo_baseline")
@@ -16066,6 +16625,7 @@ def parse_args() -> argparse.Namespace:
     parser.add_argument("--dmc-pass-weight", type=float, default=0.5)
     parser.add_argument("--offline-dmc-arena-eval", action="store_true")
     parser.add_argument("--offline-dmc-hybrid-arena-eval", action="store_true")
+    parser.add_argument("--offline-hybrid-paired-audit", action="store_true")
     parser.add_argument("--dmc-model")
     parser.add_argument("--hybrid-q-margin", type=float, default=0.25)
     parser.add_argument("--hybrid-max-override-rate", type=float, default=0.05)
@@ -16077,6 +16637,18 @@ def parse_args() -> argparse.Namespace:
     parser.add_argument("--hybrid-avoid-bomb-unless-opponent-le", type=int, default=3)
     parser.add_argument("--hybrid-control-pass-margin", type=float, default=0.30)
     parser.add_argument("--simulate-hybrid-override-whitelist", action="store_true")
+    parser.add_argument("--paired-audit-source")
+    parser.add_argument("--paired-audit-out", default="paired_hybrid_audit.json")
+    parser.add_argument("--paired-target-states", type=int, default=30)
+    parser.add_argument("--paired-min-states-for-gate", type=int, default=30)
+    parser.add_argument("--paired-max-games", type=int, default=1000)
+    parser.add_argument("--paired-source-overrides-only", action=argparse.BooleanOptionalAction, default=True)
+    parser.add_argument("--paired-rollouts-per-state", type=int, default=1)
+    parser.add_argument("--paired-depth-turns", type=int, default=0)
+    parser.add_argument("--paired-continuation-profile", choices=("tempo_baseline", "greedy_bot"), default="tempo_baseline")
+    parser.add_argument("--paired-min-win-delta", type=float, default=0.05)
+    parser.add_argument("--paired-seed", type=int, default=20260708)
+    parser.add_argument("--paired-equivalence-samples", type=int, default=200)
     parser.add_argument("--train-from-imitation-dataset")
     parser.add_argument("--imitation-out-dir", default="models_imitation_baseline_smoke")
     parser.add_argument("--imitation-log-out", default="imitation_train_smoke.json")
@@ -16166,6 +16738,9 @@ def main() -> None:
         if not args.dmc_model:
             raise RuntimeError("--dmc-model is required with --offline-dmc-hybrid-arena-eval")
         run_offline_dmc_hybrid_arena_eval(args)
+        return
+    if args.offline_hybrid_paired_audit:
+        run_offline_hybrid_paired_audit(args)
         return
     if args.train_from_imitation_dataset:
         run_train_from_imitation_dataset(args)
