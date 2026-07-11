@@ -257,3 +257,41 @@ wrong decisions. `threshold_passed` only validates
 the audit mechanics and action legality. `q_calibration_acceptable` additionally
 requires at least 30 states, useful ranking agreement, positive realized value,
 and no high-margin harmful override.
+
+## DMC Pairwise Ranking
+
+Build action-preference pairs from one or more enriched Q-calibration reports:
+
+```powershell
+python -u -B .\play_research_adaptive.py `
+  --build-dmc-pairwise-dataset `
+  --dmc-calibration-source dmc_q_calibration_balanced50k_30_pairwise.json `
+  --dmc-pairwise-dataset-out dmc_pairwise_balanced50k_30.pth `
+  --dmc-pairwise-min-rank-delta 0.25 `
+  --dmc-pairwise-max-pairs-per-state 20 `
+  --device cuda
+```
+
+Train from an existing DMC value model with pairwise ranking loss and a frozen
+reference-value anchor:
+
+```powershell
+python -u -B .\play_research_adaptive.py `
+  --train-dmc-pairwise `
+  --dmc-pairwise-dataset dmc_pairwise_balanced50k_30.pth `
+  --init-dmc-model models_dmc_action_value_balanced50k\dmc_action_value_best.pth `
+  --dmc-pairwise-out-dir models_dmc_pairwise_balanced50k_smoke `
+  --dmc-pairwise-log-out dmc_pairwise_balanced50k_smoke_train.json `
+  --dmc-pairwise-epochs 15 `
+  --batch-size 64 `
+  --dmc-pairwise-lr 0.00001 `
+  --dmc-pairwise-anchor-weight 0.25 `
+  --validation-split 0.20 `
+  --device cuda
+```
+
+Train/validation splits are grouped by source state, so action pairs from the
+same decision point cannot leak across the split. A successful training smoke
+only validates the learning pipeline; it does not authorize arena or website
+use. See `docs/progress/2026-07-11-dmc-pairwise-ranking.md` for the failed first
+arena result.
