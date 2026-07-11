@@ -225,3 +225,35 @@ hybrid override. Both branches use the same continuation seed and policy.
 requires at least 30 states, a causal win-rate improvement of at least 0.05,
 an entirely positive 95% interval, and exact terminal outcomes. Generated audit
 JSON remains a local artifact; durable conclusions belong in `docs/progress/`.
+
+## DMC Q Calibration Audit
+
+Audit whether DMC Q-value ordering agrees with paired counterfactual outcomes:
+
+```powershell
+python -u -B .\play_research_adaptive.py `
+  --offline-dmc-q-calibration-audit `
+  --dmc-model models_dmc_action_value_balanced50k\dmc_action_value_best.pth `
+  --baseline-profile tempo_baseline `
+  --dmc-calibration-out dmc_q_calibration_audit.json `
+  --dmc-calibration-states 30 `
+  --dmc-calibration-top-k 3 `
+  --dmc-calibration-rollouts-per-action 1 `
+  --dmc-calibration-depth-turns 1200 `
+  --dmc-calibration-continuation-profile greedy_bot `
+  --device cuda
+```
+
+The scanner follows deterministic local `tempo_baseline` trajectories. At a
+state where the highest-Q DMC action differs from baseline, the audit evaluates
+the baseline action, DMC top-K actions, pass, the smallest non-bomb action, and
+the smallest bomb when legal. Every branch starts from the same cloned state
+and uses the same continuation seed.
+
+The report includes Q MSE/MAE, a probability Brier score, Q top-1 versus rollout
+top-1 agreement, realized DMC-minus-baseline value, q-margin buckets, context
+breakdowns, pairwise Q-order agreement, rollout rank regret, and overconfident
+wrong decisions. `threshold_passed` only validates
+the audit mechanics and action legality. `q_calibration_acceptable` additionally
+requires at least 30 states, useful ranking agreement, positive realized value,
+and no high-margin harmful override.
