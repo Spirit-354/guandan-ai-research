@@ -12959,6 +12959,9 @@ def offline_dmc_calibration_rollouts(
 ) -> list[dict]:
     evaluated: list[dict] = []
     rollout_count = max(1, int(args.dmc_calibration_rollouts_per_action))
+    player_id = int(base_game.current_player)
+    hand_sizes = [len(player.hand) for player in base_game.players]
+    was_lead = bool(base_game.is_free_turn or not (base_game.last_play or []))
     for candidate in candidates:
         branch_results: list[dict] = []
         for rollout_index in range(rollout_count):
@@ -12983,6 +12986,15 @@ def offline_dmc_calibration_rollouts(
         evaluated.append(
             {
                 **candidate,
+                "action_features": dmc_action_features(
+                    components,
+                    int(candidate["action_id"]),
+                    list(candidate["cards"]),
+                    player_id,
+                    hand_sizes,
+                    was_lead,
+                    int(base_game.active_level),
+                ),
                 "rollout_win_rate": win_rate,
                 "rollout_average_team_rank": average_team_rank,
                 "rollout_team_value": team_value,
@@ -13049,6 +13061,7 @@ def run_offline_dmc_q_calibration_audit(args: argparse.Namespace) -> None:
         "depth_turns": int(args.dmc_calibration_depth_turns),
         "continuation_profile": str(args.dmc_calibration_continuation_profile),
         "minimum_q_margin": float(args.dmc_calibration_min_q_margin),
+        "calibration_seed": int(args.dmc_calibration_seed),
         "first_player_policy": "random_each_game",
         "first_player_distribution": {"0": 0, "1": 0, "2": 0, "3": 0},
         "scanned_games": 0,
@@ -13180,6 +13193,7 @@ def run_offline_dmc_q_calibration_audit(args: argparse.Namespace) -> None:
                         )
                         state_result = {
                             "state_index": len(result["states"]),
+                            "obs": state.tolist() if hasattr(state, "tolist") else list(state),
                             "game_index": game_index,
                             "step": steps,
                             "first_player": first_player,
@@ -13362,6 +13376,365 @@ def run_offline_dmc_q_calibration_audit(args: argparse.Namespace) -> None:
     print(json.dumps(result, ensure_ascii=False, indent=2))
     if not correctness_passed:
         raise RuntimeError("DMC Q calibration audit correctness threshold failed")
+
+
+def dmc_pairwise_preference(
+    left: dict,
+    right: dict,
+    min_win_delta: float,
+    min_rank_delta: float,
+) -> tuple[dict, dict, float, float] | None:
+    win_delta = float(left.get("rollout_win_rate") or 0.0) - float(right.get("rollout_win_rate") or 0.0)
+    if abs(win_delta) > float(min_win_delta):
+        return (left, right, win_delta, 0.0) if win_delta > 0.0 else (right, left, -win_delta, 0.0)
+    if win_delta != 0.0:
+        return None
+    rank_delta = float(right.get("rollout_average_team_rank") or 4.0) - float(
+        left.get("rollout_average_team_rank") or 4.0
+    )
+    if abs(rank_delta) < float(min_rank_delta):
+        return None
+    return (left, right, 0.0, rank_delta) if rank_delta > 0.0 else (right, left, 0.0, -rank_delta)
+
+
+def dmc_pairwise_sample_valid(sample: dict) -> tuple[bool, str | None]:
+    if len(sample.get("obs") or []) != OFFLINE_STATE_DIM:
+        return False, "obs_dim_mismatch"
+    if len(sample.get("preferred_action_features") or []) != DMC_ACTION_FEATURE_DIM:
+        return False, "preferred_action_feature_dim_mismatch"
+    if len(sample.get("rejected_action_features") or []) != DMC_ACTION_FEATURE_DIM:
+        return False, "rejected_action_feature_dim_mismatch"
+    preferred_id = int(sample.get("preferred_action_id", -1))
+    rejected_id = int(sample.get("rejected_action_id", -1))
+    if not 0 <= preferred_id < OFFLINE_ACTION_DIM:
+        return False, "preferred_action_id_out_of_range"
+    if not 0 <= rejected_id < OFFLINE_ACTION_DIM:
+        return False, "rejected_action_id_out_of_range"
+    if preferred_id == rejected_id and tuple(sorted(sample.get("preferred_cards") or [])) == tuple(
+        sorted(sample.get("rejected_cards") or [])
+    ):
+        return False, "identical_action_pair"
+    return True, None
+
+
+def run_build_dmc_pairwise_dataset(args: argparse.Namespace) -> None:
+    source_paths = [Path(item.strip()) for item in str(args.dmc_calibration_source or "").split(",") if item.strip()]
+    if not source_paths:
+        raise RuntimeError("--dmc-calibration-source is required with --build-dmc-pairwise-dataset")
+    samples: list[dict] = []
+    reject_reasons: Counter = Counter()
+    source_counts: Counter = Counter()
+    action_type_pairs: Counter = Counter()
+    state_count = 0
+    raw_pair_count = 0
+    for source_path in source_paths:
+        source = load_json(source_path, {})
+        if not source_path.exists():
+            reject_reasons["source_not_found"] += 1
+            continue
+        if source.get("legal_mask_source") != "website_oracle":
+            reject_reasons["not_website_oracle"] += 1
+            continue
+        for state in source.get("states") or []:
+            state_count += 1
+            obs = list(state.get("obs") or [])
+            actions = list(state.get("actions") or [])
+            state_samples: list[dict] = []
+            for left_index, left in enumerate(actions):
+                for right in actions[left_index + 1 :]:
+                    raw_pair_count += 1
+                    preference = dmc_pairwise_preference(
+                        left,
+                        right,
+                        float(args.dmc_pairwise_min_win_delta),
+                        float(args.dmc_pairwise_min_rank_delta),
+                    )
+                    if preference is None:
+                        reject_reasons["no_material_rollout_difference"] += 1
+                        continue
+                    preferred, rejected, win_delta, rank_improvement = preference
+                    sample = {
+                        "obs": obs,
+                        "preferred_action_id": int(preferred.get("action_id", -1)),
+                        "preferred_action_features": list(preferred.get("action_features") or []),
+                        "preferred_cards": list(preferred.get("cards") or []),
+                        "preferred_action_type": str(preferred.get("action_type") or "unknown"),
+                        "preferred_sources": list(preferred.get("sources") or []),
+                        "preferred_rollout_win_rate": float(preferred.get("rollout_win_rate") or 0.0),
+                        "preferred_rollout_average_team_rank": float(
+                            preferred.get("rollout_average_team_rank") or 4.0
+                        ),
+                        "rejected_action_id": int(rejected.get("action_id", -1)),
+                        "rejected_action_features": list(rejected.get("action_features") or []),
+                        "rejected_cards": list(rejected.get("cards") or []),
+                        "rejected_action_type": str(rejected.get("action_type") or "unknown"),
+                        "rejected_sources": list(rejected.get("sources") or []),
+                        "rejected_rollout_win_rate": float(rejected.get("rollout_win_rate") or 0.0),
+                        "rejected_rollout_average_team_rank": float(
+                            rejected.get("rollout_average_team_rank") or 4.0
+                        ),
+                        "rollout_win_delta": float(win_delta),
+                        "rollout_rank_improvement": float(rank_improvement),
+                        "weight": float(max(1.0, 1.0 + win_delta * 2.0 + rank_improvement / 2.0)),
+                        "state_group": f"{source_path}:{state.get('game_index')}:{state.get('step')}",
+                        "source_path": str(source_path),
+                        "game_index": state.get("game_index"),
+                        "step": state.get("step"),
+                        "player_id": state.get("player_id"),
+                        "was_follow": bool(state.get("was_follow")),
+                        "is_endgame": bool(state.get("is_endgame")),
+                        "opponent_min": state.get("opponent_min"),
+                        "teammate_min": state.get("teammate_min"),
+                        "metric_source": "paired_offline_rollout",
+                    }
+                    valid, reason = dmc_pairwise_sample_valid(sample)
+                    if not valid:
+                        reject_reasons[str(reason or "invalid_pair")] += 1
+                        continue
+                    state_samples.append(sample)
+            state_samples.sort(
+                key=lambda sample: (
+                    float(sample["rollout_win_delta"]),
+                    float(sample["rollout_rank_improvement"]),
+                    float(sample["weight"]),
+                ),
+                reverse=True,
+            )
+            limit = max(1, int(args.dmc_pairwise_max_pairs_per_state))
+            for sample in state_samples[:limit]:
+                samples.append(sample)
+                source_counts[str(source_path)] += 1
+                action_type_pairs[
+                    f"{sample['preferred_action_type']}>{sample['rejected_action_type']}"
+                ] += 1
+            if len(state_samples) > limit:
+                reject_reasons["per_state_limit"] += len(state_samples) - limit
+    summary = {
+        "format": "dmc_pairwise_action_value_dataset_v1",
+        "source_paths": [str(path) for path in source_paths],
+        "source_file_count": len(source_paths),
+        "source_state_count": state_count,
+        "raw_pair_count": raw_pair_count,
+        "pairwise_sample_count": len(samples),
+        "unique_state_group_count": len({sample["state_group"] for sample in samples}),
+        "source_sample_counts": dict(source_counts),
+        "action_type_pair_distribution": dict(action_type_pairs),
+        "reject_reasons": dict(reject_reasons),
+        "state_dim": OFFLINE_STATE_DIM,
+        "action_feature_dim": DMC_ACTION_FEATURE_DIM,
+        "metric_source": "paired_offline_rollout",
+        "legal_mask_source": "website_oracle",
+        "threshold_passed": bool(samples),
+    }
+    out_path = Path(args.dmc_pairwise_dataset_out)
+    write_dmc_dataset(out_path, dmc_dataset_format(out_path), samples, summary)
+    print(json.dumps(summary, ensure_ascii=False, indent=2))
+    if not summary["threshold_passed"]:
+        raise RuntimeError("no valid DMC pairwise samples were built")
+
+
+def dmc_pairwise_split_indices(samples: list[dict], validation_split: float, rng: random.Random) -> tuple[list[int], list[int]]:
+    groups: dict[str, list[int]] = {}
+    for index, sample in enumerate(samples):
+        groups.setdefault(str(sample.get("state_group") or index), []).append(index)
+    group_names = list(groups)
+    rng.shuffle(group_names)
+    val_group_count = max(1, int(round(len(group_names) * float(validation_split)))) if len(group_names) > 1 else 0
+    val_groups = set(group_names[:val_group_count])
+    train_indices = [index for name, indices in groups.items() if name not in val_groups for index in indices]
+    val_indices = [index for name, indices in groups.items() if name in val_groups for index in indices]
+    return train_indices, val_indices
+
+
+def dmc_pairwise_metrics(model: Any, samples: list[dict], indices: list[int], batch_size: int, device: Any) -> dict:
+    import numpy as np
+    import torch
+    import torch.nn.functional as F
+
+    if not indices:
+        return {"pairwise_loss": 0.0, "pairwise_accuracy": 0.0, "average_q_margin": 0.0}
+    loss_sum = 0.0
+    correct = 0
+    margin_sum = 0.0
+    sample_count = 0
+    with torch.no_grad():
+        for start in range(0, len(indices), batch_size):
+            batch_indices = indices[start : start + batch_size]
+            states = torch.tensor(
+                np.asarray([samples[index]["obs"] for index in batch_indices], dtype=np.float32),
+                dtype=torch.float32,
+                device=device,
+            )
+            preferred = torch.tensor(
+                np.asarray([samples[index]["preferred_action_features"] for index in batch_indices], dtype=np.float32),
+                dtype=torch.float32,
+                device=device,
+            )
+            rejected = torch.tensor(
+                np.asarray([samples[index]["rejected_action_features"] for index in batch_indices], dtype=np.float32),
+                dtype=torch.float32,
+                device=device,
+            )
+            margins = model(states, preferred) - model(states, rejected)
+            loss_sum += float(F.softplus(-margins).sum().item())
+            correct += int((margins > 0.0).sum().item())
+            margin_sum += float(margins.sum().item())
+            sample_count += len(batch_indices)
+    return {
+        "pairwise_loss": loss_sum / max(1, sample_count),
+        "pairwise_accuracy": correct / max(1, sample_count),
+        "average_q_margin": margin_sum / max(1, sample_count),
+    }
+
+
+def run_train_dmc_pairwise(args: argparse.Namespace) -> None:
+    device_info = offline_resolve_device(args.device)
+    torch = device_info.get("torch")
+    if torch is None:
+        raise RuntimeError("torch backend is required for DMC pairwise training")
+    samples, dataset_summary, dataset_format = load_dmc_dataset(Path(args.dmc_pairwise_dataset))
+    invalid_reasons: Counter = Counter()
+    for sample in samples:
+        valid, reason = dmc_pairwise_sample_valid(sample)
+        if not valid:
+            invalid_reasons[str(reason or "invalid_pair")] += 1
+    if invalid_reasons:
+        raise RuntimeError(f"invalid DMC pairwise samples: {dict(invalid_reasons)}")
+    model_path = Path(args.init_dmc_model)
+    if not model_path.exists():
+        raise RuntimeError(f"initial DMC model not found: {model_path}")
+    model = offline_load_dmc_value_model(model_path, device_info)
+    reference = offline_load_dmc_value_model(model_path, device_info)
+    for parameter in reference.parameters():
+        parameter.requires_grad_(False)
+    rng = random.Random(int(args.dmc_pairwise_seed))
+    train_indices, val_indices = dmc_pairwise_split_indices(samples, float(args.validation_split), rng)
+    if not train_indices or not val_indices:
+        raise RuntimeError("DMC pairwise dataset needs at least two state groups for train/validation split")
+    optimizer = torch.optim.Adam(model.parameters(), lr=float(args.dmc_pairwise_lr))
+    out_dir = Path(args.dmc_pairwise_out_dir)
+    out_dir.mkdir(parents=True, exist_ok=True)
+    best_path = out_dir / "dmc_pairwise_best.pth"
+    log = {
+        "backend": device_info["backend"],
+        "requested_device": device_info["requested_device"],
+        "actual_device": device_info["actual_device"],
+        "dataset_path": str(args.dmc_pairwise_dataset),
+        "dataset_format": dataset_format,
+        "dataset_summary": dataset_summary,
+        "init_dmc_model": str(model_path),
+        "sample_count": len(samples),
+        "train_sample_count": len(train_indices),
+        "val_sample_count": len(val_indices),
+        "train_state_group_count": len({samples[index]["state_group"] for index in train_indices}),
+        "val_state_group_count": len({samples[index]["state_group"] for index in val_indices}),
+        "epochs": int(args.dmc_pairwise_epochs),
+        "batch_size": int(args.batch_size),
+        "learning_rate": float(args.dmc_pairwise_lr),
+        "ranking_margin": float(args.dmc_pairwise_margin),
+        "anchor_weight": float(args.dmc_pairwise_anchor_weight),
+        "train_pairwise_loss_by_epoch": [],
+        "val_pairwise_loss_by_epoch": [],
+        "train_pairwise_accuracy_by_epoch": [],
+        "val_pairwise_accuracy_by_epoch": [],
+        "val_average_q_margin_by_epoch": [],
+        "best_epoch": None,
+        "best_val_pairwise_accuracy": None,
+        "best_val_pairwise_loss": None,
+        "saved_checkpoints": [],
+        "threshold_passed": False,
+    }
+    import numpy as np
+    import torch.nn.functional as F
+
+    best_key = (-1.0, float("inf"))
+    for epoch in range(1, int(args.dmc_pairwise_epochs) + 1):
+        rng.shuffle(train_indices)
+        model.train()
+        for start in range(0, len(train_indices), int(args.batch_size)):
+            batch_indices = train_indices[start : start + int(args.batch_size)]
+            states = torch.tensor(
+                np.asarray([samples[index]["obs"] for index in batch_indices], dtype=np.float32),
+                dtype=torch.float32,
+                device=device_info["device"],
+            )
+            preferred = torch.tensor(
+                np.asarray([samples[index]["preferred_action_features"] for index in batch_indices], dtype=np.float32),
+                dtype=torch.float32,
+                device=device_info["device"],
+            )
+            rejected = torch.tensor(
+                np.asarray([samples[index]["rejected_action_features"] for index in batch_indices], dtype=np.float32),
+                dtype=torch.float32,
+                device=device_info["device"],
+            )
+            weights = torch.tensor(
+                [float(samples[index].get("weight", 1.0)) for index in batch_indices],
+                dtype=torch.float32,
+                device=device_info["device"],
+            )
+            preferred_q = model(states, preferred)
+            rejected_q = model(states, rejected)
+            ranking_loss = (
+                F.softplus(-(preferred_q - rejected_q - float(args.dmc_pairwise_margin))) * weights
+            ).sum() / weights.sum().clamp_min(1e-8)
+            with torch.no_grad():
+                reference_preferred = reference(states, preferred)
+                reference_rejected = reference(states, rejected)
+            anchor_loss = F.mse_loss(preferred_q, reference_preferred) + F.mse_loss(
+                rejected_q,
+                reference_rejected,
+            )
+            loss = ranking_loss + float(args.dmc_pairwise_anchor_weight) * anchor_loss
+            optimizer.zero_grad()
+            loss.backward()
+            optimizer.step()
+        model.eval()
+        train_metrics = dmc_pairwise_metrics(
+            model, samples, train_indices, int(args.batch_size), device_info["device"]
+        )
+        val_metrics = dmc_pairwise_metrics(model, samples, val_indices, int(args.batch_size), device_info["device"])
+        log["train_pairwise_loss_by_epoch"].append(train_metrics["pairwise_loss"])
+        log["val_pairwise_loss_by_epoch"].append(val_metrics["pairwise_loss"])
+        log["train_pairwise_accuracy_by_epoch"].append(train_metrics["pairwise_accuracy"])
+        log["val_pairwise_accuracy_by_epoch"].append(val_metrics["pairwise_accuracy"])
+        log["val_average_q_margin_by_epoch"].append(val_metrics["average_q_margin"])
+        key = (float(val_metrics["pairwise_accuracy"]), -float(val_metrics["pairwise_loss"]))
+        if key > best_key:
+            best_key = key
+            log["best_epoch"] = epoch
+            log["best_val_pairwise_accuracy"] = val_metrics["pairwise_accuracy"]
+            log["best_val_pairwise_loss"] = val_metrics["pairwise_loss"]
+            torch.save(
+                {
+                    "model_state_dict": model.state_dict(),
+                    "state_dim": OFFLINE_STATE_DIM,
+                    "action_feature_dim": DMC_ACTION_FEATURE_DIM,
+                    "method": "dmc_pairwise_action_value",
+                    "init_model": str(model_path),
+                },
+                best_path,
+            )
+        if int(args.dmc_pairwise_save_every) > 0 and epoch % int(args.dmc_pairwise_save_every) == 0:
+            checkpoint = out_dir / f"dmc_pairwise_epoch{epoch}.pth"
+            torch.save(
+                {
+                    "model_state_dict": model.state_dict(),
+                    "state_dim": OFFLINE_STATE_DIM,
+                    "action_feature_dim": DMC_ACTION_FEATURE_DIM,
+                    "method": "dmc_pairwise_action_value",
+                    "init_model": str(model_path),
+                },
+                checkpoint,
+            )
+            log["saved_checkpoints"].append(str(checkpoint))
+    log["best_checkpoint"] = str(best_path) if best_path.exists() else None
+    log["threshold_passed"] = bool(best_path.exists() and log["best_val_pairwise_accuracy"] is not None)
+    save_json(out_dir / "dmc_pairwise_training_state.json", log)
+    save_json(Path(args.dmc_pairwise_log_out), log)
+    print(json.dumps(log, ensure_ascii=False, indent=2))
+    if not log["threshold_passed"]:
+        raise RuntimeError("DMC pairwise training threshold failed")
 
 
 def run_offline_hybrid_paired_audit(args: argparse.Namespace) -> None:
@@ -17159,6 +17532,8 @@ def parse_args() -> argparse.Namespace:
     parser.add_argument("--dmc-candidate-snapshot-limit", type=int, default=DMC_SELFPLAY_CANDIDATE_SNAPSHOT_LIMIT)
     parser.add_argument("--dmc-max-pass-ratio", type=float, default=1.0)
     parser.add_argument("--train-dmc-action-value", action="store_true")
+    parser.add_argument("--build-dmc-pairwise-dataset", action="store_true")
+    parser.add_argument("--train-dmc-pairwise", action="store_true")
     parser.add_argument("--dmc-dataset")
     parser.add_argument("--dmc-out-dir", default="models_dmc_action_value")
     parser.add_argument("--dmc-log-out", default="dmc_action_value_train.json")
@@ -17170,6 +17545,21 @@ def parse_args() -> argparse.Namespace:
     parser.add_argument("--dmc-endgame-weight", type=float, default=2.0)
     parser.add_argument("--dmc-bomb-weight", type=float, default=2.0)
     parser.add_argument("--dmc-pass-weight", type=float, default=0.5)
+    parser.add_argument("--dmc-calibration-source")
+    parser.add_argument("--dmc-pairwise-dataset-out", default="dmc_pairwise_dataset.pth")
+    parser.add_argument("--dmc-pairwise-min-win-delta", type=float, default=0.0)
+    parser.add_argument("--dmc-pairwise-min-rank-delta", type=float, default=0.25)
+    parser.add_argument("--dmc-pairwise-max-pairs-per-state", type=int, default=20)
+    parser.add_argument("--dmc-pairwise-dataset")
+    parser.add_argument("--init-dmc-model")
+    parser.add_argument("--dmc-pairwise-out-dir", default="models_dmc_pairwise")
+    parser.add_argument("--dmc-pairwise-log-out", default="dmc_pairwise_train.json")
+    parser.add_argument("--dmc-pairwise-epochs", type=int, default=10)
+    parser.add_argument("--dmc-pairwise-lr", type=float, default=0.00001)
+    parser.add_argument("--dmc-pairwise-margin", type=float, default=0.10)
+    parser.add_argument("--dmc-pairwise-anchor-weight", type=float, default=0.25)
+    parser.add_argument("--dmc-pairwise-save-every", type=int, default=1)
+    parser.add_argument("--dmc-pairwise-seed", type=int, default=20260711)
     parser.add_argument("--offline-dmc-arena-eval", action="store_true")
     parser.add_argument("--offline-dmc-hybrid-arena-eval", action="store_true")
     parser.add_argument("--offline-hybrid-paired-audit", action="store_true")
@@ -17290,6 +17680,16 @@ def main() -> None:
         if not args.dmc_dataset:
             raise RuntimeError("--dmc-dataset is required with --train-dmc-action-value")
         run_train_dmc_action_value(args)
+        return
+    if args.build_dmc_pairwise_dataset:
+        if not args.dmc_calibration_source:
+            raise RuntimeError("--dmc-calibration-source is required with --build-dmc-pairwise-dataset")
+        run_build_dmc_pairwise_dataset(args)
+        return
+    if args.train_dmc_pairwise:
+        if not args.dmc_pairwise_dataset or not args.init_dmc_model:
+            raise RuntimeError("--dmc-pairwise-dataset and --init-dmc-model are required with --train-dmc-pairwise")
+        run_train_dmc_pairwise(args)
         return
     if args.offline_dmc_arena_eval:
         if not args.dmc_model:
