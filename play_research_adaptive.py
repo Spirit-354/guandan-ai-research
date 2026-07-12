@@ -19,6 +19,7 @@ from urllib.parse import urlencode
 from urllib.request import Request, urlopen
 
 import play_step_0902 as engine
+import website_shadow as live_shadow
 
 
 PROFILE_PATH = Path("strategy_profiles.json")
@@ -6458,6 +6459,13 @@ def run_game(
                 decision.update(state.get("_plate_delay_guard_meta") or plate_delay_guard_base_meta())
             decision.update(lead_probe_metadata(state, game_id, turn_count, selected_profile, scenario, coord))
             decision.update(bait_attempt_observation_metadata(state, selected_profile, coord, decision))
+            if args.website_shadow:
+                decision["website_shadow"] = live_shadow.build_shadow_audit(
+                    state,
+                    coord,
+                    coord,
+                    suggestion_source=live_shadow.SHADOW_SUGGESTION_SOURCE,
+                )
             decisions.append(decision)
             print(
                 f"turn={turn_count} profile={selected_profile} scenario={scenario} "
@@ -6471,12 +6479,14 @@ def run_game(
                 print(f"submit_timeout game_id={game_id} error={type(exc).__name__}")
                 status, checked_state = confirm_submit_state(game_id, decision, "submit_timeout")
                 if status == "completed":
+                    live_shadow.mark_submit_acceptance_inferred(decision.get("website_shadow"))
                     final_state = checked_state
                     rating_after = extract_rating_fields(checked_state)
                     print("completed_after_submit_timeout")
                     break
                 if status == "accepted":
                     decision["submit_timeout_assumed_accepted"] = True
+                    live_shadow.mark_submit_acceptance_inferred(decision.get("website_shadow"))
                     submit_desync_count = 0
                     continue
                 if status in {"game_disappeared", "transient_game_unavailable"}:
@@ -6501,6 +6511,7 @@ def run_game(
                     ) from exc
                 continue
             decision["result"] = result
+            live_shadow.mark_submit_result(decision.get("website_shadow"), result)
             rating_after = merge_rating_fields(rating_after, extract_rating_fields(result))
             print(json.dumps(result, ensure_ascii=False))
             if not result.get("is_success"):
@@ -6558,11 +6569,13 @@ def run_game(
                     decision["not_your_turn_after_submit"] = True
                     status, checked_state = confirm_submit_state(game_id, decision, "not_your_turn_after_submit")
                     if status == "completed":
+                        live_shadow.mark_submit_acceptance_inferred(decision.get("website_shadow"))
                         final_state = checked_state
                         rating_after = extract_rating_fields(checked_state)
                         print("completed_after_not_your_turn")
                         break
                     if status == "accepted":
+                        live_shadow.mark_submit_acceptance_inferred(decision.get("website_shadow"))
                         submit_desync_count = 0
                         continue
                     if status in {"game_disappeared", "transient_game_unavailable"}:
@@ -6716,6 +6729,7 @@ def save_game_log(
     path = target / f"research_game_{game_id}_{profile}_{outcome}_{time.strftime('%Y%m%d_%H%M%S')}.json"
     failure_counts = failure_reasons(final_state, decisions)
     bait_summary = summarize_bait_and_overblock(decisions, failure_counts, elo_result)
+    website_shadow_summary = live_shadow.summarize_decisions(decisions)
     payload = {
         "game_id": game_id,
         "scenario": scenario,
@@ -6744,6 +6758,11 @@ def save_game_log(
         "elo_unavailable": elo_result.get("elo_unavailable"),
         "proxy_points": elo_result.get("proxy_points"),
         "proxy_metric_source": elo_result.get("proxy_metric_source"),
+        **(
+            {"website_shadow_summary": website_shadow_summary}
+            if website_shadow_summary.get("shadow_decision_count")
+            else {}
+        ),
         "decisions": decisions,
         "final_state": final_state,
     }
@@ -17382,6 +17401,17 @@ def parse_args() -> argparse.Namespace:
     parser.add_argument("--probe-rating-fields", action="store_true")
     parser.add_argument("--probe-leaderboard", help="Probe an HTML leaderboard page for the current user's Elo.")
     parser.add_argument("--leaderboard-url", default=DEFAULT_LEADERBOARD_URL)
+    parser.add_argument(
+        "--website-shadow",
+        action="store_true",
+        help="Audit website state/actions while frozen tempo_baseline remains the only submitting policy.",
+    )
+    parser.add_argument("--website-shadow-replay", help="Replay historical website logs for a profile without networking.")
+    parser.add_argument("--shadow-replay-out", default="website_shadow_replay.json")
+    parser.add_argument("--shadow-replay-max-games", type=int, default=0)
+    parser.add_argument("--website-shadow-summary", help="Summarize completed online Shadow logs in a directory.")
+    parser.add_argument("--shadow-summary-out", default="website_shadow_summary.json")
+    parser.add_argument("--shadow-minimum-games", type=int, default=20)
     parser.add_argument("--summary", help="Print an Elo research summary from research_results.json.")
     parser.add_argument("--recent-window", type=int, default=10)
     parser.add_argument("--loss-drilldown", help="Profile name for recent loss drilldown in summary mode.")
@@ -17626,6 +17656,22 @@ def parse_args() -> argparse.Namespace:
 
 def main() -> None:
     args = parse_args()
+    if args.website_shadow_replay:
+        result = live_shadow.replay_historical_logs(
+            args.website_shadow_replay,
+            args.shadow_replay_out,
+            args.shadow_replay_max_games,
+        )
+        print(json.dumps(result, ensure_ascii=False, indent=2))
+        return
+    if args.website_shadow_summary:
+        result = live_shadow.summarize_shadow_log_dir(
+            args.website_shadow_summary,
+            args.shadow_summary_out,
+            args.shadow_minimum_games,
+        )
+        print(json.dumps(result, ensure_ascii=False, indent=2))
+        return
     if args.offline_env_sanity_check:
         run_offline_env_sanity_check(args)
         return
@@ -17764,6 +17810,15 @@ def main() -> None:
         run_leaderboard_probe(args, results)
         return
     require_env()
+    if args.website_shadow:
+        if args.profile not in {None, "tempo_baseline"} or args.alternate_profiles:
+            raise RuntimeError("--website-shadow only permits the frozen tempo_baseline submission policy")
+        args.strategy = "tempo"
+        args.profile = "tempo_baseline"
+        print(
+            "website_shadow=true submission_policy=tempo_baseline "
+            "suggestion_source=tempo_baseline_mirror model_controlled_actions=0"
+        )
     if args.metric == "elo":
         args.require_elo = True
     engine.HTTP_TIMEOUT_SECONDS = args.timeout
