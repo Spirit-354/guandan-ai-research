@@ -26,8 +26,26 @@ that implementation and is separately validated.
 Compile the core scripts before committing:
 
 ```powershell
-python -B -m py_compile play_research_adaptive.py play_step_0902.py play_step_09.py
+python -B -m py_compile play_research_adaptive.py play_step_0902.py play_step_09.py danzero_features.py
+python -B tools/test_danzero_features.py
+python -u -B tools/danzero_feature_sanity.py --games 100 --out danzero_feature_sanity_100.json
 ```
 
 Detailed research usage is documented in [README_RESEARCH.md](README_RESEARCH.md).
 Project milestones are summarized under `docs/progress/`.
+
+## DanZero Feature Contract
+
+`danzero_features.py` provides the frozen paper-style representation used by
+the new DanZero route:
+
+- 54 physical-card count slots in rank-major `H,C,S,D` order, followed by the
+  black and red jokers;
+- the original 513-dimensional paper state;
+- a 487-dimensional website small-round state that omits cross-round team
+  levels;
+- a separate 155-dimensional diagnostic action representation. The learning
+  baseline remains the paper's 54-dimensional physical action.
+
+The 375 structural action IDs remain an oracle/materialization compatibility
+layer and are not the primary DanZero action semantics.
