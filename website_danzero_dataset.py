@@ -1,10 +1,14 @@
 from __future__ import annotations
 
 from collections import Counter
+from collections import deque
 import json
 import math
 from pathlib import Path
+import random
 from typing import Any, Iterable
+
+import numpy as np
 
 
 DATASET_FORMAT = "website_danzero_action_value_v1"
@@ -242,3 +246,225 @@ def build_dataset(raw_dirs: str, output_path: str) -> dict:
     }
     write_dataset(Path(output_path), samples, summary)
     return summary
+
+
+def load_dataset(path: Path) -> tuple[list[dict], dict]:
+    suffix = path.suffix.lower()
+    if suffix == ".jsonl":
+        samples = [
+            json.loads(line)
+            for line in path.read_text(encoding="utf-8").splitlines()
+            if line.strip()
+        ]
+        summary_path = path.with_suffix(path.suffix + ".summary.json")
+        summary = json.loads(summary_path.read_text(encoding="utf-8")) if summary_path.exists() else {}
+        return samples, summary
+    if suffix not in {".pt", ".pth"}:
+        raise RuntimeError("website DanZero dataset path must end with .jsonl, .pt, or .pth")
+    try:
+        import torch
+    except ImportError as exc:
+        raise RuntimeError("PyTorch is required to read .pt/.pth datasets") from exc
+    try:
+        payload = torch.load(path, map_location="cpu", weights_only=False)
+    except TypeError:
+        payload = torch.load(path, map_location="cpu")
+    if payload.get("format") != DATASET_FORMAT:
+        raise RuntimeError(f"unexpected website dataset format: {payload.get('format')!r}")
+    return list(payload.get("samples") or []), dict(payload.get("summary") or {})
+
+
+def _resolve_device(requested: str) -> tuple[Any, dict]:
+    try:
+        import torch
+    except ImportError as exc:
+        raise RuntimeError("website DanZero training requires PyTorch") from exc
+    cuda_available = bool(torch.cuda.is_available())
+    fallback = requested == "cuda" and not cuda_available
+    actual = "cuda" if requested == "cuda" and cuda_available else "cpu"
+    return torch.device(actual), {
+        "backend": "torch",
+        "requested_device": requested,
+        "actual_device": actual,
+        "device_fallback": fallback,
+        "torch_available": True,
+        "cuda_available": cuda_available,
+    }
+
+
+def _split_game_ids(samples: list[dict], validation_split: float, seed: int) -> tuple[set[str], set[str]]:
+    game_ids = sorted({str(sample.get("game_id")) for sample in samples})
+    if len(game_ids) < 2:
+        raise RuntimeError("at least two games are required for a game-level train/validation split")
+    rng = random.Random(seed)
+    rng.shuffle(game_ids)
+    validation_count = max(1, min(len(game_ids) - 1, round(len(game_ids) * validation_split)))
+    validation_ids = set(game_ids[:validation_count])
+    return set(game_ids[validation_count:]), validation_ids
+
+
+def _evaluate(model: Any, samples: list[dict], device: Any, batch_size: int) -> dict:
+    import torch
+    import torch.nn.functional as functional
+
+    if not samples:
+        return {"loss": None, "sign_accuracy": None}
+    losses: list[float] = []
+    correct = 0
+    model.eval()
+    with torch.no_grad():
+        for start in range(0, len(samples), batch_size):
+            batch = samples[start : start + batch_size]
+            states = torch.tensor(np.asarray([item["state"] for item in batch], dtype=np.float32), device=device)
+            actions = torch.tensor(
+                np.asarray([item["chosen_action"] for item in batch], dtype=np.float32), device=device
+            )
+            targets = torch.tensor(
+                [float(item["team_reward"]) for item in batch], dtype=torch.float32, device=device
+            )
+            predictions = model(states, actions)
+            losses.extend(functional.mse_loss(predictions, targets, reduction="none").cpu().tolist())
+            correct += int(((predictions >= 0) == (targets >= 0)).sum().item())
+    return {"loss": sum(losses) / len(losses), "sign_accuracy": correct / len(samples)}
+
+
+def train_action_value(args: Any) -> dict:
+    import torch
+    import torch.nn.functional as functional
+
+    import danzero_dmc
+
+    dataset_path = Path(args.train_website_danzero_action_value)
+    samples, dataset_summary = load_dataset(dataset_path)
+    invalid_count = sum(
+        not _is_finite_vector(sample.get("state"), STATE_DIM)
+        or not _is_finite_vector(sample.get("chosen_action"), ACTION_DIM)
+        or float(sample.get("team_reward", 0.0)) not in {-1.0, 1.0}
+        or sample.get("metric_source") != "leaderboard_elo"
+        or not sample.get("bot_table_verified")
+        for sample in samples
+    )
+    if invalid_count:
+        raise RuntimeError(f"website DanZero dataset contains {invalid_count} invalid samples")
+    train_ids, validation_ids = _split_game_ids(
+        samples, float(args.website_danzero_validation_split), 20260713
+    )
+    train_samples = [sample for sample in samples if str(sample.get("game_id")) in train_ids]
+    validation_samples = [sample for sample in samples if str(sample.get("game_id")) in validation_ids]
+    device, device_info = _resolve_device(args.device)
+    if args.website_danzero_init:
+        model, init_payload = danzero_dmc.load_q_checkpoint(Path(args.website_danzero_init), device)
+        initialized_from = str(args.website_danzero_init)
+        init_learner_version = int(init_payload.get("learner_version") or 0)
+    else:
+        model = danzero_dmc.build_q_model(device)
+        initialized_from = None
+        init_learner_version = 0
+    optimizer = torch.optim.Adam(model.parameters(), lr=float(args.website_danzero_learning_rate))
+    rng = random.Random(20260713)
+    out_dir = Path(args.website_danzero_out_dir)
+    out_dir.mkdir(parents=True, exist_ok=True)
+    best_path = out_dir / "website_danzero_q_best.pth"
+    latest_path = out_dir / "website_danzero_q_latest.pth"
+    best_loss = float("inf")
+    best_epoch = 0
+    history: list[dict] = []
+    batch_size = int(args.website_danzero_batch_size)
+
+    for epoch in range(1, int(args.website_danzero_epochs) + 1):
+        rng.shuffle(train_samples)
+        model.train()
+        train_losses: list[float] = []
+        for start in range(0, len(train_samples), batch_size):
+            batch = train_samples[start : start + batch_size]
+            states = torch.tensor(
+                np.asarray([item["state"] for item in batch], dtype=np.float32), device=device
+            )
+            actions = torch.tensor(
+                np.asarray([item["chosen_action"] for item in batch], dtype=np.float32), device=device
+            )
+            targets = torch.tensor(
+                [float(item["team_reward"]) for item in batch], dtype=torch.float32, device=device
+            )
+            predictions = model(states, actions)
+            loss = functional.mse_loss(predictions, targets)
+            optimizer.zero_grad()
+            loss.backward()
+            torch.nn.utils.clip_grad_norm_(model.parameters(), 10.0)
+            optimizer.step()
+            train_losses.append(float(loss.item()))
+        train_metrics = _evaluate(model, train_samples, device, batch_size)
+        validation_metrics = _evaluate(model, validation_samples, device, batch_size)
+        epoch_result = {
+            "epoch": epoch,
+            "batch_loss": sum(train_losses) / len(train_losses),
+            "train_loss": train_metrics["loss"],
+            "train_sign_accuracy": train_metrics["sign_accuracy"],
+            "validation_loss": validation_metrics["loss"],
+            "validation_sign_accuracy": validation_metrics["sign_accuracy"],
+        }
+        history.append(epoch_result)
+        if float(validation_metrics["loss"]) < best_loss:
+            best_loss = float(validation_metrics["loss"])
+            best_epoch = epoch
+            stats = {
+                "training_mode": "website_terminal_action_value_pretrain",
+                "source_dataset": str(dataset_path),
+                "epoch": epoch,
+                "validation_loss": best_loss,
+            }
+            danzero_dmc.save_training_checkpoint(
+                best_path,
+                model,
+                optimizer,
+                deque(),
+                deque(),
+                stats,
+                init_learner_version + epoch,
+                rng,
+            )
+
+    final_stats = {
+        "training_mode": "website_terminal_action_value_pretrain",
+        "source_dataset": str(dataset_path),
+        "epoch": int(args.website_danzero_epochs),
+        "validation_loss": history[-1]["validation_loss"],
+    }
+    danzero_dmc.save_training_checkpoint(
+        latest_path,
+        model,
+        optimizer,
+        deque(),
+        deque(),
+        final_stats,
+        init_learner_version + int(args.website_danzero_epochs),
+        rng,
+    )
+    result = {
+        **device_info,
+        "dataset_format": DATASET_FORMAT,
+        "dataset_path": str(dataset_path),
+        "dataset_summary_passed": bool(dataset_summary.get("threshold_passed")),
+        "sample_count": len(samples),
+        "game_count": len(train_ids) + len(validation_ids),
+        "train_game_count": len(train_ids),
+        "validation_game_count": len(validation_ids),
+        "train_sample_count": len(train_samples),
+        "validation_sample_count": len(validation_samples),
+        "invalid_sample_count": invalid_count,
+        "initialized_from": initialized_from,
+        "epochs": int(args.website_danzero_epochs),
+        "batch_size": batch_size,
+        "learning_rate": float(args.website_danzero_learning_rate),
+        "history": history,
+        "best_epoch": best_epoch,
+        "best_validation_loss": best_loss,
+        "best_checkpoint": str(best_path),
+        "latest_checkpoint": str(latest_path),
+        "threshold_passed": bool(best_path.exists() and latest_path.exists() and invalid_count == 0),
+    }
+    log_path = Path(args.website_danzero_log_out)
+    log_path.parent.mkdir(parents=True, exist_ok=True)
+    log_path.write_text(json.dumps(result, ensure_ascii=False, indent=2), encoding="utf-8")
+    print(json.dumps(result, ensure_ascii=False, indent=2))
+    return result

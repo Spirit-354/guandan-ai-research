@@ -79,3 +79,21 @@ the candidate smoke produced the first website-domain dataset snapshot:
 - 2,472 legal physical candidate actions;
 - mean 14.63 and maximum 373 candidates per decision;
 - zero rejected games or decisions.
+
+A second ten-game collection batch completed with 3 wins and 7 losses. Its 261
+decisions all passed exhaustive Shadow validation. The cumulative website data
+snapshot now contains:
+
+- 16 verified-bot games, 7 wins and 9 losses;
+- 430 submitted decision samples;
+- 10,082 legal candidate actions;
+- zero rejected games, decisions, or integrity errors.
+
+The first website-domain Q-training smoke initialized the existing compatible
+DanZero 513+54 network and split validation by whole game rather than by
+decision. With only 16 games it overfit quickly: epoch 1 was the best validation
+checkpoint, while later training accuracy rose without validation improvement.
+A two-game paired Arena compatibility smoke completed with all integrity
+counters zero but 0 model wins. This is a pipeline validation only; the model
+is not eligible for Shadow recommendations or website control. More independent
+website games are required before the next training comparison.

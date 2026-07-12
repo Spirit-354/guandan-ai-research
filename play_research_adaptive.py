@@ -17580,6 +17580,14 @@ def parse_args() -> argparse.Namespace:
         help="Comma-separated website Shadow log directories or files to convert offline.",
     )
     parser.add_argument("--website-dataset-out", default="website_danzero_dataset.pth")
+    parser.add_argument("--train-website-danzero-action-value", help="Train the 513+54 Q model from website data.")
+    parser.add_argument("--website-danzero-init", help="Optional compatible DanZero Q checkpoint.")
+    parser.add_argument("--website-danzero-out-dir", default="models_website_danzero_smoke")
+    parser.add_argument("--website-danzero-log-out", default="website_danzero_train.json")
+    parser.add_argument("--website-danzero-epochs", type=int, default=5)
+    parser.add_argument("--website-danzero-batch-size", type=int, default=128)
+    parser.add_argument("--website-danzero-learning-rate", type=float, default=0.00003)
+    parser.add_argument("--website-danzero-validation-split", type=float, default=0.2)
     parser.add_argument("--summary", help="Print an Elo research summary from research_results.json.")
     parser.add_argument("--recent-window", type=int, default=10)
     parser.add_argument("--website-goal-min-games", type=int, default=500)
@@ -17882,6 +17890,11 @@ def main() -> None:
             args.website_dataset_out,
         )
         print(json.dumps(result, ensure_ascii=False, indent=2))
+        return
+    if args.train_website_danzero_action_value:
+        import website_danzero_dataset
+
+        website_danzero_dataset.train_action_value(args)
         return
     if args.offline_env_sanity_check:
         run_offline_env_sanity_check(args)

@@ -17,6 +17,13 @@ from test_website_shadow import sample_state
 
 
 class WebsiteDanZeroDatasetTests(unittest.TestCase):
+    def test_game_level_split_has_no_overlap(self) -> None:
+        samples = [{"game_id": str(index)} for index in range(10)]
+        train_ids, validation_ids = website_danzero_dataset._split_game_ids(samples, 0.2, 7)
+        self.assertFalse(train_ids & validation_ids)
+        self.assertEqual(len(train_ids), 8)
+        self.assertEqual(len(validation_ids), 2)
+
     def test_completed_verified_shadow_log_is_exported(self) -> None:
         state = sample_state()
         audit = website_shadow.build_shadow_audit(state, ["ST"], ["ST"])
