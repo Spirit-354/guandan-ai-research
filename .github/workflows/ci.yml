@@ -28,6 +28,10 @@ jobs:
           step_01.py
           danzero_features.py
           website_shadow.py
+          danzero_dmc.py
+          danzero_oracle.py
+          tools/danzero_oracle_audit.py
+          tools/test_danzero_dmc.py
           tools/test_danzero_features.py
           tools/test_website_shadow.py
           tools/danzero_feature_sanity.py
@@ -36,7 +40,8 @@ jobs:
       - name: Test DanZero feature encoding
         run: >-
           python -B tools/test_danzero_features.py &&
-          python -B tools/test_website_shadow.py
+          python -B tools/test_website_shadow.py &&
+          python -B tools/test_danzero_dmc.py
 
       - name: Verify frozen tempo baseline
         run: python -B tools/verify_baseline_freeze.py

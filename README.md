@@ -80,3 +80,17 @@ After an online Shadow batch, evaluate the hard gate with:
 ```powershell
 python -u -B .\play_research_adaptive.py --website-shadow-summary logs_website_shadow_stage2 --shadow-summary-out website_shadow_summary_stage2.json --shadow-minimum-games 20
 ```
+
+## Distributed DanZero DMC
+
+The Stage 3 runtime uses four shared-policy actors, one GPU learner, a bounded
+trajectory queue, Monte Carlo team returns, replay, versioned weight sync,
+stale-sample filtering, and resumable atomic checkpoints. Its network consumes
+the paper-style `513 + 54 = 567` state-action input.
+
+```powershell
+python -u -B .\play_research_adaptive.py --danzero-dmc-train --danzero-games 1000 --danzero-actors 4 --danzero-out-dir models_danzero_dmc_stage3_1000 --danzero-log-out danzero_dmc_stage3_1000.json --danzero-save-every 200 --danzero-batch-size 512 --danzero-replay-capacity 20000 --device cuda --report-every 100
+```
+
+The structured physical oracle is exhaustively checked against the slower
+website-rule enumerator. Checkpoints and generated logs remain ignored by Git.
