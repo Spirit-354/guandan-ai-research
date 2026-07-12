@@ -121,3 +121,38 @@ therefore improve negative-action coverage (complete candidates or current-model
 hard negatives), not continue v4 or merely increase its game count. Teacher
 samples must also bypass policy-version staleness because they do not depend on
 the actor policy that generated self-play actions.
+
+## Complete-Candidate Hard-Negative Follow-up
+
+v5 stored every legal non-teacher action for each teacher state and applied the
+margin to the current highest-Q wrong action. A one-game probe found 3,514
+negative candidates across 108 states (mean 32.5, median 2.5, maximum 1,503),
+and the hard-negative GPU smoke completed without integrity or memory errors.
+
+The full run used a strong-to-light teacher schedule: 25% teacher samples for
+the first 200 games, then 6.25% through game 1,000. It completed with:
+
+- 940 persistent teacher states and 32,462 negative candidates;
+- 7,960 learner updates;
+- 32 hard-negative teacher states in each of the last 100 batches;
+- nonzero hard-negative margin loss through the end of training;
+- 58.31% training pass rate;
+- all integrity counters zero.
+
+The paired Arena result regressed to 2/20 (10%). Arena pass rate was 62.61%,
+average game length was 104.05 decisions, all integrity counters were zero, and
+the run took about 39 minutes. v5 fails the unchanged continuation gate and is
+archived. Full candidate coverage alone is therefore not sufficient; the next
+candidate should use substantially broader frozen-baseline state coverage and
+explicit policy pretraining/distillation before shared-Q self-play.
+
+The experiment also fixed two infrastructure defects discovered under resume:
+
+- teacher samples now bypass policy-version staleness and live only in the
+  dedicated teacher replay, preventing duplicate batch sampling;
+- teacher completion uses a phase barrier, while resumed actors continue from
+  unused episode IDs until the requested number of successful games completes.
+
+Arena now atomically writes a progress snapshot after every game and records an
+error snapshot before re-raising. This changes observability only, not baseline
+or model action semantics.

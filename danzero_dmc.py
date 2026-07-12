@@ -144,8 +144,15 @@ def actor_worker(
         with episode_lock:
             episode_index = int(episode_counter.value)
             episode_counter.value += 1
-        if episode_index >= int(config["requested_games"]):
-            break
+        if episode_index >= int(config.get("teacher_games", 0)):
+            while (
+                not bool(shared.get("stop", False))
+                and int(shared.get("teacher_games_completed", 0))
+                < int(config.get("teacher_games", 0))
+            ):
+                time.sleep(0.05)
+            if bool(shared.get("stop", False)):
+                break
         seed = int(config["seed"]) + episode_index * 1009
         random.seed(seed)
         game = GuandanGame(verbose=False, print_history=False)
@@ -553,6 +560,7 @@ def run_distributed_dmc(args: Any) -> dict:
         "stage3_gate_passed": False,
         "resume_compatibility_checked": False,
         "resume_compatibility_mismatches": [],
+        "resume_recipe_changes": [],
         "next_episode_index": 0,
     }
     if args.danzero_resume:
@@ -568,8 +576,13 @@ def run_distributed_dmc(args: Any) -> dict:
             )
         model.load_state_dict(payload["model_state_dict"])
         optimizer.load_state_dict(payload["optimizer_state_dict"])
-        replay.extend(payload.get("replay_buffer") or [])
-        teacher_replay.extend(payload.get("teacher_replay_buffer") or [])
+        payload_replay = payload.get("replay_buffer") or []
+        payload_teacher_replay = payload.get("teacher_replay_buffer") or []
+        replay.extend(sample for sample in payload_replay if not sample.get("teacher_action"))
+        teacher_replay.extend(
+            payload_teacher_replay
+            or [sample for sample in payload_replay if sample.get("teacher_action")]
+        )
         learner_version = int(payload.get("learner_version") or 0)
         if payload.get("learner_rng_state") is not None:
             rng.setstate(payload["learner_rng_state"])
@@ -605,6 +618,21 @@ def run_distributed_dmc(args: Any) -> dict:
         for key in stats:
             if key in prior and key not in immutable_runtime_fields:
                 stats[key] = prior[key]
+        current_recipe = {
+            "teacher_games_requested": int(args.danzero_teacher_games),
+            "teacher_negative_count": int(args.danzero_teacher_negatives),
+            "teacher_hard_negatives": bool(args.danzero_teacher_hard_negatives),
+            "teacher_margin": float(args.danzero_teacher_margin),
+            "teacher_weight": float(args.danzero_teacher_weight),
+            "teacher_batch_ratio": float(args.danzero_teacher_batch_ratio),
+            "teacher_replay_capacity": int(args.danzero_teacher_replay_capacity),
+        }
+        stats["resume_recipe_changes"] = [
+            {"field": key, "from": prior.get(key), "to": value}
+            for key, value in current_recipe.items()
+            if prior.get(key) != value
+        ]
+        stats.update(current_recipe)
         stats["resumed_from"] = str(resume_path)
         stats["resume_compatibility_checked"] = True
         stats["resume_compatibility_mismatches"] = []
@@ -616,12 +644,12 @@ def run_distributed_dmc(args: Any) -> dict:
     shared["model_version"] = learner_version
     shared["model_bytes"] = serialize_model(model)
     shared["completed_games"] = int(stats["completed_games"])
+    shared["teacher_games_completed"] = int(stats["teacher_games_completed"])
     output_queue = ctx.Queue(maxsize=max(4, int(args.danzero_actors) * 2))
     episode_counter = ctx.Value("q", int(stats.get("next_episode_index") or stats["completed_games"]))
     episode_lock = ctx.Lock()
     config = {
         "seed": int(args.danzero_seed),
-        "requested_games": int(args.danzero_games),
         "max_steps": int(args.danzero_max_steps),
         "epsilon_start": float(args.danzero_epsilon_start),
         "epsilon_end": float(args.danzero_epsilon_end),
@@ -685,6 +713,7 @@ def run_distributed_dmc(args: Any) -> dict:
             stats["completed_games"] += 1
             stats["teacher_games_completed"] += int(bool(message.get("teacher_episode")))
             shared["completed_games"] = int(stats["completed_games"])
+            shared["teacher_games_completed"] = int(stats["teacher_games_completed"])
             winner = int(message["winner_team"])
             stats[f"team{winner}_wins"] += 1
             stats["first_player_distribution"][str(message["first_player"])] += 1
@@ -699,9 +728,10 @@ def run_distributed_dmc(args: Any) -> dict:
                 ):
                     stats["stale_sample_count"] += 1
                     continue
-                replay.append(sample)
                 if sample.get("teacher_action"):
                     teacher_replay.append(sample)
+                else:
+                    replay.append(sample)
                 stats["accepted_sample_count"] += 1
             stats["total_decisions"] += len(message.get("samples") or [])
             if len(replay) >= int(args.danzero_batch_size):
@@ -977,8 +1007,26 @@ def run_offline_arena(args: Any) -> dict:
     levels = Counter()
     total_steps = 0
     started = time.monotonic()
+    arena_out = Path(args.danzero_arena_out)
+
+    def write_arena_snapshot(status: str, game_index: int | None = None, error: str | None = None) -> None:
+        snapshot = dict(result)
+        snapshot["status"] = status
+        snapshot["last_game_index"] = game_index
+        if error is not None:
+            snapshot["error"] = error
+        snapshot["elapsed_seconds"] = time.monotonic() - started
+        temporary = arena_out.with_suffix(arena_out.suffix + ".tmp")
+        temporary.write_text(
+            json.dumps(snapshot, ensure_ascii=False, indent=2) + "\n", encoding="utf-8"
+        )
+        temporary.replace(arena_out)
+
+    write_arena_snapshot("running")
+    current_game_index: int | None = None
     try:
         for game_index in range(int(args.danzero_arena_games)):
+            current_game_index = game_index
             pair_index = game_index // 2 if bool(args.danzero_arena_swap_seats) else game_index
             game_seed = int(args.danzero_arena_seed) + pair_index
             random.seed(game_seed)
@@ -1050,18 +1098,23 @@ def run_offline_arena(args: Any) -> dict:
                 steps += 1
             if not game.is_game_over or not game.ranking:
                 result["fatal_no_candidate_count"] += 1
+                write_arena_snapshot("running", game_index)
                 continue
             winner_team = int(game.ranking[0]) % 2
             result["model_wins"] += int(winner_team == model_team)
             result["baseline_wins"] += int(winner_team != model_team)
             result["completed_games"] += 1
             total_steps += steps
+            write_arena_snapshot("running", game_index)
             if int(args.report_every) > 0 and result["completed_games"] % int(args.report_every) == 0:
                 print(
                     f"danzero_arena_progress games={result['completed_games']}/{args.danzero_arena_games} "
                     f"model_wins={result['model_wins']}",
                     flush=True,
                 )
+    except Exception as exc:
+        write_arena_snapshot("error", current_game_index, f"{type(exc).__name__}: {exc}")
+        raise
     finally:
         restore_baseline()
     result["model_team_win_rate"] = result["model_wins"] / max(1, result["completed_games"])
@@ -1072,6 +1125,8 @@ def run_offline_arena(args: Any) -> dict:
     result["model_pass_rate"] = result["model_pass_count"] / max(1, result["model_decision_count"])
     result["model_bomb_usage_rate"] = result["model_bomb_count"] / max(1, result["model_decision_count"])
     result["elapsed_seconds"] = time.monotonic() - started
+    result["status"] = "completed"
+    result["last_game_index"] = int(args.danzero_arena_games) - 1
     integrity_fields = (
         "illegal_action_count",
         "fallback_count",
@@ -1088,7 +1143,7 @@ def run_offline_arena(args: Any) -> dict:
         and result["completed_games"] >= 20
         and result["model_team_win_rate"] >= 0.30
     )
-    Path(args.danzero_arena_out).write_text(
+    arena_out.write_text(
         json.dumps(result, ensure_ascii=False, indent=2) + "\n", encoding="utf-8"
     )
     print(json.dumps(result, ensure_ascii=False, indent=2))

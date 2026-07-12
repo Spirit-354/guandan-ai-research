@@ -13,6 +13,21 @@
   "offline_only": [],
   "failed": [
     {
+      "name": "danzero_dmc_stage4_v5_hard_teacher1000",
+      "kind": "danzero_dmc_q_hard_teacher_margin",
+      "local_path": "models_danzero_dmc_stage4_v5_hard_teacher1000_final/danzero_dmc_latest.pth",
+      "training_games": 1000,
+      "training_decisions": 121981,
+      "teacher_games": 10,
+      "teacher_states": 940,
+      "teacher_negative_candidates": 32462,
+      "learner_updates": 7960,
+      "arena_games": 20,
+      "arena_win_rate": 0.10,
+      "website_use": "forbidden",
+      "reason": "complete-candidate hard-negative curriculum regressed below persistent random-negative v4 and failed the 30% continuation gate"
+    },
+    {
       "name": "danzero_dmc_stage4_v4_persistent_teacher1000",
       "kind": "danzero_dmc_q_teacher_margin",
       "local_path": "models_danzero_dmc_stage4_v4_persistent_teacher1000/danzero_dmc_latest.pth",
