@@ -241,6 +241,18 @@ def build_shadow_audit(
     your_seat = int(state.get("your_seat"))
     paper_state = features.encode_compact_state_513(game, your_seat, legal_candidates=candidates)
     website_state = features.encode_website_compact_state_487(game, your_seat, legal_candidates=candidates)
+    encoded_candidates = [
+        {
+            "cards": list(candidate.get("cards") or []),
+            "action_type": candidate.get("action_type"),
+            "rank": candidate.get("rank"),
+            "size": int(candidate.get("size") or 0),
+            "physical_action_54": features.encode_physical_action_54(
+                candidate.get("cards") or []
+            ).tolist(),
+        }
+        for candidate in candidates
+    ]
     submitted = action_audit(state, list(submitted_action), candidates)
     suggestion = action_audit(state, suggested, candidates)
     same_action = _cards_key(submitted_action) == _cards_key(suggested)
@@ -259,6 +271,9 @@ def build_shadow_audit(
         "team_mapping": team_mapping,
         "team_mapping_error": not team_mapping["valid"],
         "legal_candidate_count": len(candidates),
+        "legal_candidates": encoded_candidates,
+        "legal_candidate_action_dim": features.DANZERO_PHYSICAL_ACTION_DIM,
+        "legal_candidate_action_encoding_version": features.DANZERO_PHYSICAL_ACTION_ENCODING_VERSION,
         "oracle_validation_mode": oracle_validation_mode,
         "oracle_exhaustive": enumerate_all_candidates,
         "paper_state_513": paper_state.tolist(),

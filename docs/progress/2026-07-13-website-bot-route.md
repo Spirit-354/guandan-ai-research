@@ -35,3 +35,36 @@ client at seat 0. Website runs under this route must use `--require-bot-table`;
 any other signature stops before the first submitted action. The generic names
 do not expose individual bot strength, so strength is inferred from Elo bands
 and observed outcomes rather than nickname.
+
+## Initial Calibration
+
+The frozen baseline completed 20 verified bot games across the 2000-2099 and
+2100-2199 Elo bands:
+
+- 10 wins and 10 losses, team win rate 50%;
+- 95% Wilson interval approximately 29.9% to 70.1%;
+- total leaderboard Elo delta -36, average -1.8 per game;
+- average win gain 13.3 and average loss cost 16.9;
+- estimated break-even win rate 56.0%;
+- zero illegal, fallback, materialization, hand-subset, or submit-desync errors.
+
+This makes `tempo_baseline` a data-collection control, not a candidate for the
+70% final target.
+
+## Website-Domain Dataset
+
+Online Shadow now records every website-oracle legal candidate as a 54-value
+physical action vector alongside the 513-value DanZero paper state. The offline
+builder accepts only completed, counted, leaderboard-Elo, verified-bot games
+whose Shadow integrity gate passed:
+
+```powershell
+python -u -B .\play_research_adaptive.py `
+  --build-website-danzero-dataset logs_website_shadow_candidates_smoke `
+  --website-dataset-out website_danzero_candidates_smoke.pth
+```
+
+The first real smoke dataset contains 45 decisions and 607 legal candidate
+actions from one completed game, with zero rejected decisions. Its terminal
+team reward applies only to the action actually submitted; unchosen candidates
+remain unlabeled rather than being treated as wins or losses.

@@ -1,0 +1,85 @@
+from __future__ import annotations
+
+import json
+import sys
+import tempfile
+import unittest
+from pathlib import Path
+
+
+ROOT = Path(__file__).resolve().parents[1]
+if str(ROOT) not in sys.path:
+    sys.path.insert(0, str(ROOT))
+
+import website_danzero_dataset
+import website_shadow
+from test_website_shadow import sample_state
+
+
+class WebsiteDanZeroDatasetTests(unittest.TestCase):
+    def test_completed_verified_shadow_log_is_exported(self) -> None:
+        state = sample_state()
+        audit = website_shadow.build_shadow_audit(state, ["ST"], ["ST"])
+        website_shadow.mark_submit_result(audit, {"is_success": True})
+        decision = {
+            "turn": 1,
+            "scenario": "all_unknown",
+            "level": "7",
+            "website_shadow": audit,
+        }
+        final_state = dict(state)
+        final_state.update(
+            {
+                "completed": True,
+                "winner_team": 0,
+                "_bot_table_evidence": {"bot_table_verified": True},
+            }
+        )
+        record = {
+            "game_id": "test-1",
+            "profile": "tempo_baseline",
+            "game_counted": True,
+            "metric_source": "leaderboard_elo",
+            "elo_before": 2201,
+            "elo_after": 2214,
+            "elo_delta": 13,
+            "website_shadow_summary": website_shadow.summarize_decisions([decision]),
+            "decisions": [decision],
+            "final_state": final_state,
+        }
+        with tempfile.TemporaryDirectory() as temp_dir:
+            log_path = Path(temp_dir, "research_game_test.json")
+            out_path = Path(temp_dir, "dataset.jsonl")
+            log_path.write_text(json.dumps(record), encoding="utf-8")
+            summary = website_danzero_dataset.build_dataset(temp_dir, str(out_path))
+            sample = json.loads(out_path.read_text(encoding="utf-8").strip())
+        self.assertTrue(summary["threshold_passed"])
+        self.assertEqual(summary["accepted_games"], 1)
+        self.assertEqual(summary["accepted_decisions"], 1)
+        self.assertEqual(sample["state_dim"], 513)
+        self.assertEqual(sample["action_dim"], 54)
+        self.assertEqual(len(sample["legal_actions"]), sample["legal_action_count"])
+        self.assertEqual(sample["team_reward"], 1.0)
+        self.assertEqual(sample["elo_band_100"], "2200-2299")
+
+    def test_unverified_bot_table_is_rejected(self) -> None:
+        with tempfile.TemporaryDirectory() as temp_dir:
+            record = {
+                "game_id": "test-2",
+                "game_counted": True,
+                "metric_source": "leaderboard_elo",
+                "website_shadow_summary": {"threshold_passed": True},
+                "final_state": {"completed": True, "_bot_table_evidence": {}},
+            }
+            Path(temp_dir, "research_game_test.json").write_text(
+                json.dumps(record), encoding="utf-8"
+            )
+            out_path = Path(temp_dir, "dataset.jsonl")
+            summary = website_danzero_dataset.build_dataset(temp_dir, str(out_path))
+        self.assertFalse(summary["threshold_passed"])
+        self.assertEqual(summary["accepted_games"], 0)
+        self.assertEqual(summary["reject_reason_counts"]["bot_table_not_verified"], 1)
+
+
+if __name__ == "__main__":
+    unittest.main()

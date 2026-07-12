@@ -17575,6 +17575,11 @@ def parse_args() -> argparse.Namespace:
     parser.add_argument("--website-shadow-summary", help="Summarize completed online Shadow logs in a directory.")
     parser.add_argument("--shadow-summary-out", default="website_shadow_summary.json")
     parser.add_argument("--shadow-minimum-games", type=int, default=20)
+    parser.add_argument(
+        "--build-website-danzero-dataset",
+        help="Comma-separated website Shadow log directories or files to convert offline.",
+    )
+    parser.add_argument("--website-dataset-out", default="website_danzero_dataset.pth")
     parser.add_argument("--summary", help="Print an Elo research summary from research_results.json.")
     parser.add_argument("--recent-window", type=int, default=10)
     parser.add_argument("--website-goal-min-games", type=int, default=500)
@@ -17866,6 +17871,15 @@ def main() -> None:
             args.website_shadow_summary,
             args.shadow_summary_out,
             args.shadow_minimum_games,
+        )
+        print(json.dumps(result, ensure_ascii=False, indent=2))
+        return
+    if args.build_website_danzero_dataset:
+        import website_danzero_dataset
+
+        result = website_danzero_dataset.build_dataset(
+            args.build_website_danzero_dataset,
+            args.website_dataset_out,
         )
         print(json.dumps(result, ensure_ascii=False, indent=2))
         return

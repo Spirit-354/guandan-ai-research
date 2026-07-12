@@ -46,6 +46,11 @@ class WebsiteShadowTests(unittest.TestCase):
         self.assertTrue(audit["submitted_action"]["local_legal"])
         self.assertTrue(audit["submitted_action"]["oracle_match"])
         self.assertFalse(audit["model_controlled_action"])
+        self.assertEqual(len(audit["legal_candidates"]), audit["legal_candidate_count"])
+        self.assertTrue(audit["legal_candidates"])
+        self.assertTrue(
+            all(len(candidate["physical_action_54"]) == 54 for candidate in audit["legal_candidates"])
+        )
 
     def test_server_result_and_summary(self) -> None:
         audit = website_shadow.build_shadow_audit(sample_state(), ["ST"], ["ST"])
