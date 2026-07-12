@@ -57,6 +57,7 @@ ELO_BUCKETS = (
     (2200, 2399, "2200-2399"),
     (2400, None, "2400+"),
 )
+WEBSITE_BOT_SEAT_SIGNATURE = ("\u73a9\u5bb61", "\u73a9\u5bb62", "\u73a9\u5bb63", "\u73a9\u5bb64")
 OBSERVATION_COUNTER_KEYS = (
     "lead_probe_count",
     "possible_overblock_count",
@@ -227,6 +228,23 @@ class GameDisappearedError(RecoverableGameError):
 class TransientGameUnavailableError(RecoverableGameError):
     def __init__(self, game_id: str, message: str, payload: dict | None = None) -> None:
         super().__init__(game_id, "transient_game_unavailable", message, payload)
+
+
+def website_bot_table_evidence(state: dict) -> dict:
+    seats = tuple(str(value) for value in (state.get("seats") or []))
+    try:
+        your_seat = int(state.get("your_seat"))
+    except (TypeError, ValueError):
+        your_seat = None
+    return {
+        "expected_seats": list(WEBSITE_BOT_SEAT_SIGNATURE),
+        "observed_seats": list(seats),
+        "your_seat": your_seat,
+        "historical_reference_games": 497,
+        "bot_table_verified": bool(seats == WEBSITE_BOT_SEAT_SIGNATURE and your_seat == 0),
+        "strength_identity_available": False,
+        "strength_inference_source": "elo_band_and_observed_results",
+    }
 
 
 def get_json_once(path: str, params: dict | None = None, timeout: float | None = None) -> dict:
@@ -2391,6 +2409,14 @@ def build_game_record(
     shape_summary = shape_guard_counts_from_decisions(decisions)
     shape_v2_summary = shape_guard_v2_counts_from_decisions(decisions)
     plate_delay_summary = plate_delay_guard_counts_from_decisions(decisions)
+    seats = list(final_state.get("seats") or [])
+    opponent_names = [
+        str(seats[seat])
+        for seat in opponent_seats(final_state)
+        if 0 <= int(seat) < len(seats)
+    ]
+    teammate = teammate_seat(final_state)
+    teammate_name = str(seats[teammate]) if 0 <= teammate < len(seats) else None
     return {
         "game_id": str(game_id),
         "completed_at": completed_at or time.strftime("%Y-%m-%d %H:%M:%S"),
@@ -2401,7 +2427,18 @@ def build_game_record(
         "elo_after": elo_result.get("elo_after"),
         "elo_delta": elo_result.get("elo_delta"),
         "elo_bucket": elo_bucket_for_value(elo_result.get("elo_before")),
+        "elo_band_100": elo_band_for_value(elo_result.get("elo_before"), 100),
         "metric_source": "leaderboard_elo",
+        "your_seat": final_state.get("your_seat"),
+        "your_team": final_state.get("your_team"),
+        "teammate_name": teammate_name,
+        "opponent_names": opponent_names,
+        "opponent_signature": "|".join(sorted(opponent_names)) if opponent_names else "unknown",
+        "bot_table_verified": bool(
+            (final_state.get("_bot_table_evidence") or website_bot_table_evidence(final_state)).get(
+                "bot_table_verified"
+            )
+        ),
         "failure_tags": sorted(failure_counts),
         "failure_reason_counts": dict(failure_counts),
         **bait_summary,
@@ -2799,6 +2836,95 @@ def elo_bucket_for_value(value: Any) -> str:
         if (low is None or elo >= low) and (high is None or elo <= high):
             return label
     return "unknown"
+
+
+def elo_band_for_value(value: Any, width: int = 100) -> str:
+    elo = numeric_value(value)
+    if elo is None or int(width) <= 0:
+        return "unknown"
+    low = int(elo // int(width)) * int(width)
+    return f"{low}-{low + int(width) - 1}"
+
+
+def wilson_interval(wins: int, games: int, z: float = 1.959963984540054) -> tuple[float | None, float | None]:
+    if int(games) <= 0:
+        return None, None
+    n = float(games)
+    p = max(0.0, min(1.0, float(wins) / n))
+    denominator = 1.0 + z * z / n
+    center = (p + z * z / (2.0 * n)) / denominator
+    half_width = z * ((p * (1.0 - p) / n + z * z / (4.0 * n * n)) ** 0.5) / denominator
+    return max(0.0, center - half_width), min(1.0, center + half_width)
+
+
+def website_bot_slice_stats(records: list[dict]) -> dict:
+    games = len(records)
+    wins = sum(record.get("outcome") == "win" for record in records)
+    lower, upper = wilson_interval(wins, games)
+    result = {
+        "games": games,
+        "wins": wins,
+        "losses": games - wins,
+        "win_rate": wins / games if games else None,
+        "wilson_95_lower": lower,
+        "wilson_95_upper": upper,
+    }
+    result.update(elo_economy_stats(records))
+    return result
+
+
+def website_bot_goal_summary(
+    results: dict,
+    target_min_games: int = 500,
+    target_win_rate: float = 0.70,
+    target_min_elo: float = 2200.0,
+) -> dict:
+    records = official_game_records(results)
+    verified_records = [record for record in records if record.get("bot_table_verified") is True]
+    target_records = [
+        record
+        for record in verified_records
+        if (numeric_value(record.get("elo_before")) or float("-inf")) >= float(target_min_elo)
+    ]
+    by_elo_band = {}
+    for record in records:
+        band = str(record.get("elo_band_100") or elo_band_for_value(record.get("elo_before"), 100))
+        by_elo_band.setdefault(band, []).append(record)
+    by_opponent_signature = {}
+    for record in records:
+        signature = str(record.get("opponent_signature") or "unknown")
+        by_opponent_signature.setdefault(signature, []).append(record)
+    target_stats = website_bot_slice_stats(target_records)
+    statistical_target_passed = bool(
+        target_stats["games"] >= int(target_min_games)
+        and target_stats["wilson_95_lower"] is not None
+        and target_stats["wilson_95_lower"] >= float(target_win_rate)
+    )
+    return {
+        "goal": "website_bot_win_rate",
+        "metric_source": "leaderboard_elo",
+        "final_state_scores_are_elo": False,
+        "target_min_games": int(target_min_games),
+        "target_win_rate_wilson_lower": float(target_win_rate),
+        "target_min_elo": float(target_min_elo),
+        "overall": website_bot_slice_stats(records),
+        "verified_bot_tables": website_bot_slice_stats(verified_records),
+        "legacy_or_unverified_records": len(records) - len(verified_records),
+        "target_high_elo_segment": target_stats,
+        "by_elo_band_100": {
+            band: website_bot_slice_stats(items) for band, items in sorted(by_elo_band.items())
+        },
+        "by_opponent_signature": {
+            signature: website_bot_slice_stats(items)
+            for signature, items in sorted(by_opponent_signature.items())
+        },
+        "statistical_target_passed": statistical_target_passed,
+        "final_goal_passed": False,
+        "final_goal_note": (
+            "Statistical target is necessary but not sufficient; zero legality/runtime errors and "
+            "confirmed bot-only matchmaking are also required."
+        ),
+    }
 
 
 def elo_bucket_for_record(record: dict) -> str:
@@ -6161,6 +6287,9 @@ def run_summary(
     max_cases: int = 10,
     simulate_casebook_guard: str | None = None,
     simulate_narrow_plate_guard: str | None = None,
+    website_goal_min_games: int = 500,
+    website_goal_win_rate: float = 0.70,
+    website_goal_min_elo: float = 2200.0,
 ) -> None:
     results = load_json(Path(path), {})
     results.setdefault("game_records", [])
@@ -6169,6 +6298,12 @@ def run_summary(
         save_json(Path(path), results)
     profiles = load_json(PROFILE_PATH, {})
     summary = build_research_summary(results, profiles, recent_window)
+    summary["website_bot_goal"] = website_bot_goal_summary(
+        results,
+        website_goal_min_games,
+        website_goal_win_rate,
+        website_goal_min_elo,
+    )
     if loss_drilldown:
         summary["loss_drilldown"] = loss_drilldown_summary(results, loss_drilldown, recent_loss_window)
     if endgame_audit:
@@ -6347,6 +6482,7 @@ def run_game(
     rating_after = {}
     turn_count = 0
     submit_desync_count = 0
+    bot_table_evidence = None
 
     while True:
         try:
@@ -6399,6 +6535,31 @@ def run_game(
             raise RuntimeError(f"check_game failed: {state}")
         state["_research_context"] = current_research_context
         before_fields = merge_rating_fields(before_fields, extract_rating_fields(state))
+        if bot_table_evidence is None:
+            bot_table_evidence = website_bot_table_evidence(state)
+            if args.require_bot_table and not bot_table_evidence["bot_table_verified"]:
+                save_error_log(
+                    args.log_dir,
+                    game_id,
+                    selected_profile,
+                    scenario,
+                    "non_bot_table",
+                    {
+                        "bot_table_evidence": bot_table_evidence,
+                        "leaderboard_before": leaderboard_before,
+                        "error_log_saved": True,
+                    },
+                )
+                raise RuntimeError(
+                    "website bot-only gate failed before first action: "
+                    f"observed_seats={bot_table_evidence['observed_seats']} "
+                    f"your_seat={bot_table_evidence['your_seat']}"
+                )
+            if args.require_bot_table:
+                print(
+                    "bot_table_verified=true "
+                    f"signature={json.dumps(bot_table_evidence['observed_seats'], ensure_ascii=False)}"
+                )
 
         if state.get("completed"):
             observe_lead_probe_responses(state, decisions)
@@ -6685,6 +6846,7 @@ def run_game(
             time.sleep(args.poll)
 
     observe_lead_probe_responses(final_state, decisions)
+    final_state["_bot_table_evidence"] = bot_table_evidence or website_bot_table_evidence(final_state)
     models = models_for_state(final_state, memory, session_models)
     mark_game_seen(models)
     persist_stable_models(final_state, memory, models)
@@ -17391,6 +17553,7 @@ def parse_args() -> argparse.Namespace:
     parser.add_argument("--metric", choices=("elo", "proxy"), default="elo")
     parser.add_argument("--require-elo", action="store_true")
     parser.add_argument("--loop", action="store_true")
+    parser.add_argument("--require-bot-table", action="store_true")
     parser.add_argument("--games", type=int, default=1)
     parser.add_argument("--poll", type=float, default=6)
     parser.add_argument("--delay", type=float, default=8)
@@ -17414,6 +17577,9 @@ def parse_args() -> argparse.Namespace:
     parser.add_argument("--shadow-minimum-games", type=int, default=20)
     parser.add_argument("--summary", help="Print an Elo research summary from research_results.json.")
     parser.add_argument("--recent-window", type=int, default=10)
+    parser.add_argument("--website-goal-min-games", type=int, default=500)
+    parser.add_argument("--website-goal-win-rate", type=float, default=0.70)
+    parser.add_argument("--website-goal-min-elo", type=float, default=2200.0)
     parser.add_argument("--loss-drilldown", help="Profile name for recent loss drilldown in summary mode.")
     parser.add_argument("--endgame-audit", help="Profile name for recent loss endgame block audit in summary mode.")
     parser.add_argument("--preloss-trace", help="Profile name for recent loss preloss trace in summary mode.")
@@ -17845,6 +18011,9 @@ def main() -> None:
             args.max_cases,
             args.simulate_casebook_guard,
             args.simulate_narrow_plate_guard,
+            args.website_goal_min_games,
+            args.website_goal_win_rate,
+            args.website_goal_min_elo,
         )
         return
     if args.probe_leaderboard:
