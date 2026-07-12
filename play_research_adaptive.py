@@ -17593,6 +17593,12 @@ def parse_args() -> argparse.Namespace:
     parser.add_argument("--danzero-max-steps", type=int, default=OFFLINE_MAX_GAME_STEPS)
     parser.add_argument("--danzero-seed", type=int, default=20260712)
     parser.add_argument("--danzero-resume")
+    parser.add_argument("--offline-danzero-arena-eval", action="store_true")
+    parser.add_argument("--danzero-checkpoint")
+    parser.add_argument("--danzero-arena-games", type=int, default=20)
+    parser.add_argument("--danzero-arena-out", default="danzero_arena_eval.json")
+    parser.add_argument("--danzero-arena-swap-seats", action=argparse.BooleanOptionalAction, default=True)
+    parser.add_argument("--danzero-arena-seed", type=int, default=20260713)
     parser.add_argument("--dmc-calibration-source")
     parser.add_argument("--dmc-pairwise-dataset-out", default="dmc_pairwise_dataset.pth")
     parser.add_argument("--dmc-pairwise-min-win-delta", type=float, default=0.0)
@@ -17744,6 +17750,13 @@ def main() -> None:
         import danzero_dmc
 
         danzero_dmc.run_distributed_dmc(args)
+        return
+    if args.offline_danzero_arena_eval:
+        if not args.danzero_checkpoint:
+            raise RuntimeError("--danzero-checkpoint is required with --offline-danzero-arena-eval")
+        import danzero_dmc
+
+        danzero_dmc.run_offline_arena(args)
         return
     if args.train_dmc_action_value:
         if not args.dmc_dataset:

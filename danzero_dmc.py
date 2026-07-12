@@ -648,3 +648,273 @@ def run_distributed_dmc(args: Any) -> dict:
     if not stats["engineering_smoke_passed"]:
         raise RuntimeError("DanZero distributed DMC engineering gate failed")
     return stats
+
+
+def load_q_checkpoint(path: Path, device: Any) -> tuple[Any, dict]:
+    import torch
+
+    try:
+        payload = torch.load(path, map_location=device, weights_only=False)
+    except TypeError:
+        payload = torch.load(path, map_location=device)
+    mismatches = validate_resume_payload(payload)
+    if mismatches:
+        raise RuntimeError("incompatible DanZero checkpoint: " + "; ".join(mismatches))
+    model = build_q_model(device)
+    model.load_state_dict(payload["model_state_dict"])
+    model.eval()
+    return model, payload
+
+
+def arena_model_action_info(
+    adaptive: Any,
+    game: Any,
+    components: dict,
+    model: Any,
+    device: Any,
+    rng: random.Random,
+) -> dict:
+    import torch
+
+    player_id = int(game.current_player)
+    hand = list(game.players[player_id].hand)
+    last_play = list(game.last_play or [])
+    was_lead = bool(game.is_free_turn or not last_play)
+    physical_candidates = danzero_oracle.candidates(
+        adaptive, game, components, hand, last_play, was_lead
+    )
+    if not physical_candidates:
+        raise RuntimeError("complete DanZero oracle returned no candidate")
+    state = features.encode_compact_state_513(
+        game,
+        player_id,
+        legal_candidates=candidate_metadata(adaptive, components, physical_candidates),
+    )
+    actions = np.asarray(
+        [features.encode_physical_action_54(cards) for _action_id, cards in physical_candidates],
+        dtype=np.float32,
+    )
+    states = np.repeat(state.reshape(1, -1), len(physical_candidates), axis=0)
+    with torch.no_grad():
+        values = model(
+            torch.tensor(states, dtype=torch.float32, device=device),
+            torch.tensor(actions, dtype=torch.float32, device=device),
+        ).detach().cpu().numpy()
+    best_value = float(np.max(values))
+    best_indices = np.flatnonzero(np.isclose(values, best_value)).tolist()
+    selected = int(rng.choice(best_indices))
+    action_id, cards = physical_candidates[selected]
+    info = adaptive.offline_make_action_info_from_cards(
+        game,
+        components,
+        list(cards),
+        rng,
+        policy="danzero_dmc_arena",
+        sampled_action_id=int(action_id),
+        audit_masks=False,
+    )
+    info["danzero_q_value"] = best_value
+    info["danzero_candidate_count"] = len(physical_candidates)
+    return info
+
+
+def frozen_baseline_evidence() -> dict:
+    from tools.verify_baseline_freeze import MANIFEST_PATH, verify_manifest
+
+    manifest = json.loads(MANIFEST_PATH.read_text(encoding="utf-8"))
+    validation = manifest.get("validation") or {}
+    freeze = verify_manifest()
+    return {
+        **freeze,
+        "baseline_equivalence_checked": True,
+        "baseline_equivalence_samples": int(validation.get("baseline_equivalence_samples") or 0),
+        "baseline_equivalence_mismatch_count": int(
+            validation.get("baseline_equivalence_mismatch_count") or 0
+        ),
+        "baseline_equivalence_evidence": validation.get("evidence"),
+    }
+
+
+def run_offline_arena(args: Any) -> dict:
+    import play_research_adaptive as adaptive
+
+    if args.baseline_profile != "tempo_baseline":
+        raise RuntimeError("DanZero arena requires --baseline-profile tempo_baseline")
+    checkpoint = Path(args.danzero_checkpoint)
+    if not checkpoint.exists():
+        raise RuntimeError(f"DanZero checkpoint not found: {checkpoint}")
+    device_info = adaptive.offline_resolve_device(args.device)
+    if device_info["torch"] is None:
+        raise RuntimeError("DanZero arena requires PyTorch")
+    device = device_info["device"]
+    model, checkpoint_payload_data = load_q_checkpoint(checkpoint, device)
+    components = adaptive.offline_load_guandan_components()
+    GuandanGame = components["GuandanGame"]
+    profiles = adaptive.load_json(adaptive.PROFILE_PATH, {})
+    profile_config = profiles["tempo_baseline"]
+    baseline_evidence = frozen_baseline_evidence()
+    if (
+        not baseline_evidence["threshold_passed"]
+        or baseline_evidence["baseline_equivalence_samples"] < 500
+        or baseline_evidence["baseline_equivalence_mismatch_count"] != 0
+    ):
+        raise RuntimeError("frozen baseline evidence gate failed")
+    restore_baseline = adaptive.offline_install_arena_baseline_optimizations()
+    rng = random.Random(int(args.danzero_arena_seed))
+    result = {
+        "schema_version": "danzero_offline_arena_v1",
+        "checkpoint": str(checkpoint),
+        "checkpoint_learner_version": int(checkpoint_payload_data.get("learner_version") or 0),
+        "baseline_profile": "tempo_baseline",
+        "requested_games": int(args.danzero_arena_games),
+        "completed_games": 0,
+        "model_wins": 0,
+        "baseline_wins": 0,
+        "model_team_win_rate": 0.0,
+        "baseline_team_win_rate": 0.0,
+        "seat_swap_enabled": bool(args.danzero_arena_swap_seats),
+        "paired_seed_enabled": bool(args.danzero_arena_swap_seats),
+        "model_team_distribution": {"0": 0, "1": 0},
+        "first_player_policy": "random_each_game",
+        "first_player_distribution": {"0": 0, "1": 0, "2": 0, "3": 0},
+        "level_distribution": {},
+        "average_game_length": 0.0,
+        "model_decision_count": 0,
+        "baseline_decision_count": 0,
+        "illegal_action_count": 0,
+        "fallback_count": 0,
+        "materialization_fail_count": 0,
+        "hand_card_mismatch_count": 0,
+        "fatal_no_candidate_count": 0,
+        "model_pass_count": 0,
+        "model_bomb_count": 0,
+        "model_action_type_distribution": {},
+        "legal_action_source": danzero_oracle.ORACLE_VERSION,
+        "oracle_exhaustive": danzero_oracle.ORACLE_EXHAUSTIVE,
+        "baseline_evidence": baseline_evidence,
+        "allowed_for_stage4_continuation": False,
+        "threshold_passed": False,
+        "failure_samples": [],
+    }
+    action_types = Counter()
+    levels = Counter()
+    total_steps = 0
+    started = time.monotonic()
+    try:
+        for game_index in range(int(args.danzero_arena_games)):
+            pair_index = game_index // 2 if bool(args.danzero_arena_swap_seats) else game_index
+            game_seed = int(args.danzero_arena_seed) + pair_index
+            random.seed(game_seed)
+            game = GuandanGame(verbose=False, print_history=False)
+            first_player_rng = random.Random(game_seed + 50_000_003)
+            first_player = adaptive.offline_set_random_first_player(game, first_player_rng)
+            result["first_player_distribution"][str(first_player)] += 1
+            levels[str(game.active_level)] += 1
+            model_team = (
+                game_index % 2
+                if bool(args.danzero_arena_swap_seats)
+                else 0
+            )
+            result["model_team_distribution"][str(model_team)] += 1
+            steps = 0
+            while not game.is_game_over and steps < adaptive.OFFLINE_MAX_GAME_STEPS:
+                adaptive.offline_prepare_turn(game)
+                if game.current_player in game.ranking:
+                    steps += 1
+                    continue
+                is_model_turn = int(game.current_player) % 2 == model_team
+                if is_model_turn:
+                    action_info = arena_model_action_info(
+                        adaptive, game, components, model, device, rng
+                    )
+                    result["model_decision_count"] += 1
+                else:
+                    action_info = adaptive.offline_baseline_action_info(
+                        game, components, "tempo_baseline", profile_config, rng
+                    )
+                    result["baseline_decision_count"] += 1
+                record = adaptive.offline_apply_action(game, action_info)
+                record_fields = {
+                    "illegal_action_count": "illegal",
+                    "fallback_count": "fallback",
+                    "materialization_fail_count": "materialization_fail",
+                    "hand_card_mismatch_count": "hand_card_mismatch",
+                }
+                for field, record_field in record_fields.items():
+                    result[field] += int(bool(record.get(record_field)))
+                if is_model_turn:
+                    cards = list(action_info.get("chosen_cards") or [])
+                    action_type = adaptive.dmc_sample_action_type(
+                        components, int(action_info.get("action_id") or 0)
+                    )
+                    action_types[action_type] += 1
+                    result["model_pass_count"] += int(not cards)
+                    result["model_bomb_count"] += int(
+                        adaptive.offline_action_is_bomb(
+                            components["action_by_id"].get(int(action_info.get("action_id") or 0))
+                        )
+                    )
+                if any(result[field] for field in (
+                    "illegal_action_count",
+                    "fallback_count",
+                    "materialization_fail_count",
+                    "hand_card_mismatch_count",
+                )):
+                    if len(result["failure_samples"]) < 20:
+                        result["failure_samples"].append(
+                            {
+                                "game_index": game_index,
+                                "step": steps,
+                                "player": int(game.current_player),
+                                "record": record,
+                            }
+                        )
+                    break
+                steps += 1
+            if not game.is_game_over or not game.ranking:
+                result["fatal_no_candidate_count"] += 1
+                continue
+            winner_team = int(game.ranking[0]) % 2
+            result["model_wins"] += int(winner_team == model_team)
+            result["baseline_wins"] += int(winner_team != model_team)
+            result["completed_games"] += 1
+            total_steps += steps
+            if int(args.report_every) > 0 and result["completed_games"] % int(args.report_every) == 0:
+                print(
+                    f"danzero_arena_progress games={result['completed_games']}/{args.danzero_arena_games} "
+                    f"model_wins={result['model_wins']}",
+                    flush=True,
+                )
+    finally:
+        restore_baseline()
+    result["model_team_win_rate"] = result["model_wins"] / max(1, result["completed_games"])
+    result["baseline_team_win_rate"] = result["baseline_wins"] / max(1, result["completed_games"])
+    result["average_game_length"] = total_steps / max(1, result["completed_games"])
+    result["model_action_type_distribution"] = dict(action_types)
+    result["level_distribution"] = dict(levels)
+    result["model_pass_rate"] = result["model_pass_count"] / max(1, result["model_decision_count"])
+    result["model_bomb_usage_rate"] = result["model_bomb_count"] / max(1, result["model_decision_count"])
+    result["elapsed_seconds"] = time.monotonic() - started
+    integrity_fields = (
+        "illegal_action_count",
+        "fallback_count",
+        "materialization_fail_count",
+        "hand_card_mismatch_count",
+        "fatal_no_candidate_count",
+    )
+    result["threshold_passed"] = bool(
+        result["completed_games"] == int(args.danzero_arena_games)
+        and all(int(result[field]) == 0 for field in integrity_fields)
+    )
+    result["allowed_for_stage4_continuation"] = bool(
+        result["threshold_passed"]
+        and result["completed_games"] >= 20
+        and result["model_team_win_rate"] >= 0.30
+    )
+    Path(args.danzero_arena_out).write_text(
+        json.dumps(result, ensure_ascii=False, indent=2) + "\n", encoding="utf-8"
+    )
+    print(json.dumps(result, ensure_ascii=False, indent=2))
+    if not result["threshold_passed"]:
+        raise RuntimeError("DanZero offline arena integrity gate failed")
+    return result

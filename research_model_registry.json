@@ -10,22 +10,23 @@
     "freeze_manifest": "research_baseline_manifest.json"
   },
   "candidates": [],
-  "offline_only": [
+  "offline_only": [],
+  "failed": [
     {
       "name": "danzero_distributed_dmc_stage3_1000",
       "kind": "danzero_dmc_q",
       "local_path": "models_danzero_dmc_stage3_1000/danzero_dmc_latest.pth",
       "training_games": 1000,
+      "training_decisions": 132429,
       "state_dim": 513,
       "action_dim": 54,
       "oracle": "structured_exhaustive_website_oracle_v1",
       "engineering_gate_passed": true,
-      "arena_status": "not_evaluated",
+      "arena_games": 20,
+      "arena_win_rate": 0.0,
       "website_use": "forbidden",
-      "reason": "Stage 3 engineering gate passed; strength training and arena gates remain"
-    }
-  ],
-  "failed": [
+      "reason": "failed the Stage 4 20-game strength gate; do not expand this checkpoint"
+    },
     {
       "name": "selfplay_oraclemask_randomfirst_5000_actor_ep3000",
       "kind": "shared_selfplay_actor",

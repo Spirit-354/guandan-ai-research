@@ -8,6 +8,11 @@
     "website rules and legal action semantics are immutable",
     "server communication and leaderboard Elo semantics are immutable"
   ],
+  "validation": {
+    "baseline_equivalence_samples": 500,
+    "baseline_equivalence_mismatch_count": 0,
+    "evidence": "docs/progress/2026-07-12-stage0-baseline-freeze.md"
+  },
   "snapshot": {
     "engine_file_sha256": "31ddc81fbc0c6dcf43b361ca7f7c418f6afbe53fa3294d82f440a72916ae8435",
     "engine_functions": {

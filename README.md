@@ -94,3 +94,13 @@ python -u -B .\play_research_adaptive.py --danzero-dmc-train --danzero-games 100
 
 The structured physical oracle is exhaustively checked against the slower
 website-rule enumerator. Checkpoints and generated logs remain ignored by Git.
+
+Evaluate a compatible checkpoint with paired deal/first-player seat swaps:
+
+```powershell
+python -u -B .\play_research_adaptive.py --offline-danzero-arena-eval --danzero-checkpoint models_danzero_dmc_stage3_1000\danzero_dmc_latest.pth --baseline-profile tempo_baseline --danzero-arena-games 20 --danzero-arena-out danzero_arena_stage4_smoke20.json --danzero-arena-swap-seats --device cuda --report-every 2
+```
+
+The first 1000-game engineering checkpoint scored 0/20 and is archived as a
+failed strength candidate. Its zero legality-error result remains useful as
+runtime evidence, but it must not be expanded or used on the website.
