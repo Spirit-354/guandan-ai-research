@@ -68,3 +68,14 @@ The first real smoke dataset contains 45 decisions and 607 legal candidate
 actions from one completed game, with zero rejected decisions. Its terminal
 team reward applies only to the action actually submitted; unchosen candidates
 remain unlabeled rather than being treated as wins or losses.
+
+The first five-game collection batch then completed with 3 wins, 2 losses, and
+a total leaderboard Elo delta of +13. All 124 decisions used exhaustive oracle
+candidates and all integrity counters remained zero. Combining this batch with
+the candidate smoke produced the first website-domain dataset snapshot:
+
+- 6 completed verified-bot games;
+- 169 submitted decision samples;
+- 2,472 legal physical candidate actions;
+- mean 14.63 and maximum 373 candidates per decision;
+- zero rejected games or decisions.
