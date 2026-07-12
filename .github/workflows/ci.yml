@@ -23,3 +23,7 @@ jobs:
           play_step_0902.py
           play_step_09.py
           step_01.py
+          tools/verify_baseline_freeze.py
+
+      - name: Verify frozen tempo baseline
+        run: python -B tools/verify_baseline_freeze.py
