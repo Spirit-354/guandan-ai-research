@@ -49,3 +49,19 @@ the new DanZero route:
 
 The 375 structural action IDs remain an oracle/materialization compatibility
 layer and are not the primary DanZero action semantics.
+
+## Website Shadow Audit
+
+Stage 2 can audit real test-account states while the frozen `tempo_baseline`
+remains the only policy allowed to submit actions:
+
+```powershell
+$env:GUANDAN_USER="your_test_user"
+$env:GUANDAN_PASSWORD="your_test_password"
+python -u -B .\play_research_adaptive.py --website-shadow --profile tempo_baseline --loop --games 20 --metric elo --require-elo --log-dir logs_website_shadow_stage2 --poll 8 --delay 10 --timeout 45 --retries 5
+```
+
+The current Shadow suggestion source is explicitly logged as
+`tempo_baseline_mirror`; no learned model controls website actions. Shadow logs
+include 513/487 state encodings, physical action features, team/seat checks,
+local oracle legality, server acceptance, and a per-game error summary.

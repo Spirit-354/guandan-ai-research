@@ -27,12 +27,16 @@ jobs:
           play_step_09.py
           step_01.py
           danzero_features.py
+          website_shadow.py
           tools/test_danzero_features.py
+          tools/test_website_shadow.py
           tools/danzero_feature_sanity.py
           tools/verify_baseline_freeze.py
 
       - name: Test DanZero feature encoding
-        run: python -B tools/test_danzero_features.py
+        run: >-
+          python -B tools/test_danzero_features.py &&
+          python -B tools/test_website_shadow.py
 
       - name: Verify frozen tempo baseline
         run: python -B tools/verify_baseline_freeze.py
