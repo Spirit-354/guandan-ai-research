@@ -66,6 +66,42 @@ class WebsiteShadowTests(unittest.TestCase):
         game = website_shadow.website_state_to_feature_game(state)
         self.assertIn(2, game.ranking)
 
+    def test_historical_state_reconstruction(self) -> None:
+        final_state = sample_state()
+        final_state.update({"completed": True, "trick_history": [[3, ["S9"]], [0, []]]})
+        record = {"final_state": final_state}
+        decision = {
+            "level": "7",
+            "hand": final_state["your_hand"],
+            "hand_counts": final_state["hand_counts"],
+            "last_play": ["S9"],
+            "last_player": 3,
+            "current_turn": 0,
+            "trick_index": 1,
+        }
+        restored = website_shadow.reconstruct_historical_state(record, decision)
+        self.assertEqual(restored["trick_history"], [[3, ["S9"]]])
+        self.assertEqual(restored["your_hand"], final_state["your_hand"])
+
+    def test_historical_action_audit_skips_unreconstructable_state(self) -> None:
+        final_state = sample_state()
+        final_state.update({"completed": True, "trick_history": [[3, ["S9"]]] * 40})
+        record = {"final_state": final_state}
+        decision = {
+            "level": "7",
+            "hand": final_state["your_hand"],
+            "hand_counts": final_state["hand_counts"],
+            "last_play": ["S9"],
+            "last_player": 3,
+            "current_turn": 0,
+            "trick_index": 40,
+            "play": ["ST"],
+        }
+        audit = website_shadow.build_historical_action_audit(record, decision)
+        self.assertFalse(audit["state_encoding_evaluated"])
+        self.assertTrue(audit["suggested_action"]["local_legal"])
+        self.assertTrue(audit["suggested_action"]["oracle_match"])
+
 
 if __name__ == "__main__":
     unittest.main()

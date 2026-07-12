@@ -2,6 +2,8 @@ from __future__ import annotations
 
 from collections import Counter
 from dataclasses import asdict
+import json
+from pathlib import Path
 from types import SimpleNamespace
 from typing import Any, Sequence
 
@@ -216,10 +218,25 @@ def build_shadow_audit(
     suggested_action: Sequence[str] | None = None,
     *,
     suggestion_source: str = SHADOW_SUGGESTION_SOURCE,
+    enumerate_all_candidates: bool = True,
 ) -> dict:
     suggested = list(submitted_action if suggested_action is None else suggested_action)
     team_mapping = validate_team_mapping(state)
-    candidates = legal_candidate_metadata(state)
+    if enumerate_all_candidates:
+        candidates = legal_candidate_metadata(state)
+        oracle_validation_mode = "exhaustive_engine_options"
+    else:
+        candidates = []
+        if state.get("last_play") and (not submitted_action or not suggested):
+            candidates.append({"cards": [], "action_type": "pass", "rank": None, "size": 0})
+        for cards in (list(submitted_action), suggested):
+            for info in _play_infos(cards, str(state.get("level")), list(state.get("last_play") or [])):
+                candidates.append(
+                    {"cards": cards, "action_type": info.type, "rank": info.rank, "size": info.size}
+                )
+        if not state.get("last_play") and not candidates:
+            candidates = []
+        oracle_validation_mode = "chosen_action_only"
     game = website_state_to_feature_game(state)
     your_seat = int(state.get("your_seat"))
     paper_state = features.encode_compact_state_513(game, your_seat, legal_candidates=candidates)
@@ -242,6 +259,8 @@ def build_shadow_audit(
         "team_mapping": team_mapping,
         "team_mapping_error": not team_mapping["valid"],
         "legal_candidate_count": len(candidates),
+        "oracle_validation_mode": oracle_validation_mode,
+        "oracle_exhaustive": enumerate_all_candidates,
         "paper_state_513": paper_state.tolist(),
         "website_state_487": website_state.tolist(),
         "paper_state_dim": int(paper_state.shape[0]),
@@ -249,6 +268,7 @@ def build_shadow_audit(
         "paper_state_encoding_version": features.DANZERO_COMPACT_STATE_ENCODING_VERSION,
         "website_state_encoding_version": features.DANZERO_WEBSITE_STATE_ENCODING_VERSION,
         "state_non_finite": bool(not np.isfinite(paper_state).all() or not np.isfinite(website_state).all()),
+        "state_encoding_evaluated": True,
         "submitted_action": submitted,
         "suggested_action": suggestion,
         "suggestion_matches_submission": same_action,
@@ -283,10 +303,12 @@ def summarize_decisions(decisions: Sequence[dict]) -> dict:
         "shadow_decision_count": len(audits),
         "model_controlled_action_count": 0,
         "state_encoding_error_count": 0,
+        "state_encoding_not_evaluated_count": 0,
         "team_mapping_error_count": 0,
         "action_not_in_hand_count": 0,
         "local_legality_error_count": 0,
         "oracle_disagree_count": 0,
+        "oracle_exhaustive_decision_count": 0,
         "materialization_fail_count": 0,
         "website_rule_disagree_count": 0,
         "website_acceptance_inferred_count": 0,
@@ -297,15 +319,21 @@ def summarize_decisions(decisions: Sequence[dict]) -> dict:
     for audit in audits:
         submitted = audit["submitted_action"]
         suggested = audit["suggested_action"]
+        state_evaluated = bool(audit.get("state_encoding_evaluated", True))
+        result["state_encoding_not_evaluated_count"] += int(not state_evaluated)
         result["state_encoding_error_count"] += int(
-            audit.get("paper_state_dim") != features.DANZERO_COMPACT_STATE_DIM
-            or audit.get("website_state_dim") != features.DANZERO_WEBSITE_COMPACT_STATE_DIM
-            or bool(audit.get("state_non_finite"))
+            state_evaluated
+            and (
+                audit.get("paper_state_dim") != features.DANZERO_COMPACT_STATE_DIM
+                or audit.get("website_state_dim") != features.DANZERO_WEBSITE_COMPACT_STATE_DIM
+                or bool(audit.get("state_non_finite"))
+            )
         )
         result["team_mapping_error_count"] += int(bool(audit.get("team_mapping_error")))
         result["action_not_in_hand_count"] += int(bool(suggested.get("action_not_in_hand")))
         result["local_legality_error_count"] += int(not bool(suggested.get("local_legal")))
         result["oracle_disagree_count"] += int(not bool(suggested.get("oracle_match")))
+        result["oracle_exhaustive_decision_count"] += int(bool(audit.get("oracle_exhaustive")))
         result["materialization_fail_count"] += int(bool(suggested.get("materialization_fail")))
         result["website_rule_disagree_count"] += int(
             submitted.get("local_legal") and audit.get("submitted_action_server_success") is False
@@ -327,4 +355,190 @@ def summarize_decisions(decisions: Sequence[dict]) -> dict:
         "level_wildcard_error_count",
     )
     result["threshold_passed"] = bool(audits and all(result[name] == 0 for name in error_fields))
+    return result
+
+
+def reconstruct_historical_state(record: dict, decision: dict) -> dict:
+    final_state = record.get("final_state") or {}
+    seats = list(final_state.get("seats") or [])
+    hand_counts = list(decision.get("hand_counts") or [])
+    if len(seats) != 4 or len(hand_counts) != 4:
+        raise ValueError("historical record lacks four seats or hand counts")
+    trick_index = int(decision.get("trick_index") or 0)
+    full_history = list(final_state.get("trick_history") or [])
+    ranking = [seats[index] for index, count in enumerate(hand_counts) if int(count) <= 0]
+    return {
+        "seats": seats,
+        "teams": final_state.get("teams"),
+        "level": decision.get("level") or final_state.get("level"),
+        "your_seat": final_state.get("your_seat"),
+        "your_team": final_state.get("your_team"),
+        "your_hand": list(decision.get("hand") or []),
+        "hand_counts": hand_counts,
+        "last_play": list(decision.get("last_play") or []),
+        "last_player": decision.get("last_player"),
+        "current_turn": decision.get("current_turn"),
+        "ranking": ranking,
+        "trick_history": full_history[:trick_index],
+        "is_your_turn": True,
+        "completed": False,
+    }
+
+
+def build_historical_action_audit(record: dict, decision: dict) -> dict:
+    state = reconstruct_historical_state(record, decision)
+    action = list(decision.get("play") or [])
+    candidates = []
+    if state.get("last_play") and not action:
+        candidates.append({"cards": [], "action_type": "pass", "rank": None, "size": 0})
+    for info in _play_infos(action, str(state.get("level")), list(state.get("last_play") or [])):
+        candidates.append({"cards": action, "action_type": info.type, "rank": info.rank, "size": info.size})
+    action_result = action_audit(state, action, candidates)
+    team_mapping = validate_team_mapping(state)
+    return {
+        "schema_version": SHADOW_SCHEMA_VERSION,
+        "shadow_enabled": True,
+        "submission_policy": "tempo_baseline",
+        "suggestion_source": SHADOW_SUGGESTION_SOURCE,
+        "model_controlled_action": False,
+        "model_controlled_action_count": 0,
+        "was_lead": not bool(state.get("last_play") or []),
+        "was_follow": bool(state.get("last_play") or []),
+        "level": state.get("level"),
+        "your_seat": state.get("your_seat"),
+        "your_team": state.get("your_team"),
+        "team_mapping": team_mapping,
+        "team_mapping_error": not team_mapping["valid"],
+        "legal_candidate_count": len(candidates),
+        "oracle_validation_mode": "chosen_action_only",
+        "oracle_exhaustive": False,
+        "paper_state_dim": None,
+        "website_state_dim": None,
+        "state_non_finite": False,
+        "state_encoding_evaluated": False,
+        "state_encoding_skip_reason": "historical_trick_history_is_capped_at_40",
+        "submitted_action": action_result,
+        "suggested_action": dict(action_result),
+        "suggestion_matches_submission": True,
+        "suggestion_website_legality_observed": False,
+        "submitted_action_server_success": None,
+        "submitted_action_acceptance_inferred": False,
+    }
+
+
+def replay_historical_logs(profile: str, out_path: str, max_games: int = 0) -> dict:
+    log_paths = sorted(
+        Path(".").glob("logs*/research_game_*.json"),
+        key=lambda path: path.stat().st_mtime,
+        reverse=True,
+    )
+    records: list[tuple[Path, dict]] = []
+    seen_games: set[str] = set()
+    for path in log_paths:
+        try:
+            record = json.loads(path.read_text(encoding="utf-8"))
+        except (OSError, json.JSONDecodeError):
+            continue
+        if str(record.get("profile")) != str(profile):
+            continue
+        if not bool((record.get("final_state") or {}).get("completed")):
+            continue
+        game_id = str(record.get("game_id"))
+        if game_id in seen_games:
+            continue
+        seen_games.add(game_id)
+        records.append((path, record))
+        if int(max_games) > 0 and len(records) >= int(max_games):
+            break
+
+    aggregate_fields = (
+        "state_encoding_error_count",
+        "team_mapping_error_count",
+        "action_not_in_hand_count",
+        "local_legality_error_count",
+        "oracle_disagree_count",
+        "materialization_fail_count",
+        "website_rule_disagree_count",
+        "website_acceptance_inferred_count",
+        "suggestion_diff_count",
+        "level_wildcard_error_count",
+    )
+    result = {
+        "schema_version": SHADOW_SCHEMA_VERSION,
+        "mode": "historical_replay",
+        "profile": profile,
+        "evaluated_games": 0,
+        "evaluated_decisions": 0,
+        "reconstruction_error_count": 0,
+        "oracle_validation_mode": "chosen_action_only",
+        "oracle_exhaustive_decision_count": 0,
+        "state_encoding_not_evaluated_count": 0,
+        "history_capped_game_count": 0,
+        "model_controlled_action_count": 0,
+        **{name: 0 for name in aggregate_fields},
+        "concrete_errors": [],
+        "threshold_passed": False,
+        "online_shadow_gate_satisfied": False,
+    }
+    for path, record in records:
+        game_had_decision = False
+        if len((record.get("final_state") or {}).get("trick_history") or []) >= 40:
+            result["history_capped_game_count"] += 1
+        for decision in record.get("decisions") or []:
+            try:
+                audit = build_historical_action_audit(record, decision)
+                mark_submit_result(audit, decision.get("result") or {})
+                one = summarize_decisions([{"website_shadow": audit}])
+            except Exception as exc:
+                result["reconstruction_error_count"] += 1
+                if len(result["concrete_errors"]) < 50:
+                    result["concrete_errors"].append(
+                        {
+                            "game_id": record.get("game_id"),
+                            "turn": decision.get("turn"),
+                            "source_log": str(path),
+                            "reason": type(exc).__name__,
+                            "message": str(exc),
+                        }
+                    )
+                continue
+            game_had_decision = True
+            result["evaluated_decisions"] += 1
+            result["state_encoding_not_evaluated_count"] += int(
+                one.get("state_encoding_not_evaluated_count") or 0
+            )
+            for name in aggregate_fields:
+                result[name] += int(one.get(name) or 0)
+            if not one["threshold_passed"] and len(result["concrete_errors"]) < 50:
+                result["concrete_errors"].append(
+                    {
+                        "game_id": record.get("game_id"),
+                        "turn": decision.get("turn"),
+                        "source_log": str(path),
+                        "summary": one,
+                        "submitted_action": {
+                            key: value
+                            for key, value in (audit.get("submitted_action") or {}).items()
+                            if key not in {"physical_action_54", "wildcard_interpretations"}
+                        },
+                    }
+                )
+        result["evaluated_games"] += int(game_had_decision)
+
+    replay_errors = (
+        "reconstruction_error_count",
+        "state_encoding_error_count",
+        "team_mapping_error_count",
+        "action_not_in_hand_count",
+        "local_legality_error_count",
+        "materialization_fail_count",
+        "website_rule_disagree_count",
+        "level_wildcard_error_count",
+    )
+    result["threshold_passed"] = bool(
+        result["evaluated_games"] > 0
+        and result["evaluated_decisions"] > 0
+        and all(int(result[name]) == 0 for name in replay_errors)
+    )
+    Path(out_path).write_text(json.dumps(result, ensure_ascii=False, indent=2) + "\n", encoding="utf-8")
     return result

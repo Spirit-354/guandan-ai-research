@@ -65,3 +65,12 @@ The current Shadow suggestion source is explicitly logged as
 `tempo_baseline_mirror`; no learned model controls website actions. Shadow logs
 include 513/487 state encodings, physical action features, team/seat checks,
 local oracle legality, server acceptance, and a per-game error summary.
+
+Historical action-only replay is available without credentials:
+
+```powershell
+python -u -B .\play_research_adaptive.py --website-shadow-replay tempo_baseline --shadow-replay-out website_shadow_replay_tempo_baseline.json
+```
+
+Because old website logs cap `trick_history` at 40 actions, replay explicitly
+does not claim to validate historical 513-dimensional states.

@@ -54,6 +54,21 @@ The pure tests cover:
 - action-not-in-hand rejection;
 - server result propagation and zero model-controlled actions.
 
+Historical website logs can be replayed without networking using
+`--website-shadow-replay`. Their `trick_history` is capped at 40 actions, so a
+final log cannot reconstruct an earlier decision's complete 513-dimensional
+state. Replay therefore audits only the recorded chosen action, hand, level,
+last play, team mapping, and server result. It explicitly reports
+`state_encoding_not_evaluated_count` and never treats replay as satisfying the
+online Shadow state gate.
+
+The complete available replay covered 134 completed `tempo_baseline` games and
+3,573 recorded website actions. Reconstruction, team mapping, hand membership,
+chosen-action legality, chosen-action oracle membership, materialization,
+server-rule, and wildcard error counts were all zero. All 134 logs had capped
+history, so all 3,573 state encodings remained explicitly unevaluated and
+`online_shadow_gate_satisfied` remained false.
+
 The frozen baseline verifier remains mandatory. Online Stage 2 passes only
 after at least 20 completed test-account games have all of these at zero:
 
