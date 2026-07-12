@@ -13,6 +13,45 @@
   "offline_only": [],
   "failed": [
     {
+      "name": "danzero_dmc_stage4_v4_persistent_teacher1000",
+      "kind": "danzero_dmc_q_teacher_margin",
+      "local_path": "models_danzero_dmc_stage4_v4_persistent_teacher1000/danzero_dmc_latest.pth",
+      "training_games": 1000,
+      "training_decisions": 121262,
+      "teacher_games": 10,
+      "teacher_replay_size": 771,
+      "learner_updates": 7960,
+      "arena_games": 20,
+      "arena_win_rate": 0.20,
+      "website_use": "forbidden",
+      "reason": "persistent teacher replay improved the paired Arena result but remained below the 30% continuation gate"
+    },
+    {
+      "name": "danzero_dmc_stage4_v3_teacher1000",
+      "kind": "danzero_dmc_q_teacher_margin",
+      "local_path": "models_danzero_dmc_stage4_v3_teacher1000/danzero_dmc_latest.pth",
+      "training_games": 1000,
+      "training_decisions": 128614,
+      "teacher_games": 10,
+      "learner_updates": 7960,
+      "arena_games": 20,
+      "arena_win_rate": 0.0,
+      "website_use": "forbidden",
+      "reason": "teacher samples were evicted from ordinary replay and the checkpoint failed the paired Arena gate"
+    },
+    {
+      "name": "danzero_dmc_stage4_v2_1000",
+      "kind": "danzero_dmc_q",
+      "local_path": "models_danzero_dmc_stage4_v2_1000/danzero_dmc_latest.pth",
+      "training_games": 1000,
+      "training_decisions": 132569,
+      "learner_updates": 7976,
+      "arena_games": 20,
+      "arena_win_rate": 0.05,
+      "website_use": "forbidden",
+      "reason": "higher update ratio reduced MSE but failed the Stage 4 strength gate"
+    },
+    {
       "name": "danzero_distributed_dmc_stage3_1000",
       "kind": "danzero_dmc_q",
       "local_path": "models_danzero_dmc_stage3_1000/danzero_dmc_latest.pth",

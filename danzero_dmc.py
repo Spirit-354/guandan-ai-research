@@ -121,6 +121,10 @@ def actor_worker(
     torch.set_num_threads(1)
     components = adaptive.offline_load_guandan_components()
     GuandanGame = components["GuandanGame"]
+    profiles = adaptive.load_json(adaptive.PROFILE_PATH, {})
+    profile_config = profiles.get("tempo_baseline", {"engine_mode": "tempo"})
+    if int(config.get("teacher_games", 0)) > 0:
+        adaptive.offline_install_arena_baseline_optimizations()
     rng = random.Random(int(config["seed"]) + int(worker_id) * 1_000_003)
     model = build_q_model("cpu")
     local_version = -1
@@ -133,6 +137,8 @@ def actor_worker(
         with episode_lock:
             episode_index = int(episode_counter.value)
             episode_counter.value += 1
+        if episode_index >= int(config["requested_games"]):
+            break
         seed = int(config["seed"]) + episode_index * 1009
         random.seed(seed)
         game = GuandanGame(verbose=False, print_history=False)
@@ -169,7 +175,41 @@ def actor_worker(
                 float(config["epsilon_end"]),
                 int(config["epsilon_decay_games"]),
             )
-            action_id, cards, q_value = actor_select_action(model, state, candidates, epsilon, rng)
+            teacher_mode = episode_index < int(config.get("teacher_games", 0))
+            negative_actions: list[list[float]] = []
+            if teacher_mode:
+                teacher_info = adaptive.offline_baseline_action_info(
+                    game, components, "tempo_baseline", profile_config, rng
+                )
+                teacher_cards = list(teacher_info.get("chosen_cards") or [])
+                teacher_key = danzero_oracle.physical_key(teacher_cards)
+                matching = [
+                    (candidate_action_id, candidate_cards)
+                    for candidate_action_id, candidate_cards in candidates
+                    if danzero_oracle.physical_key(candidate_cards) == teacher_key
+                ]
+                if not matching:
+                    fatal = "teacher_action_not_in_complete_oracle"
+                    counters["teacher_mapping_fail_count"] += 1
+                    break
+                action_id, cards = matching[0]
+                q_value = None
+                negative_candidates = [
+                    candidate_cards
+                    for _candidate_action_id, candidate_cards in candidates
+                    if danzero_oracle.physical_key(candidate_cards) != teacher_key
+                ]
+                negative_count = min(
+                    int(config.get("teacher_negative_count", 0)), len(negative_candidates)
+                )
+                if negative_count:
+                    negative_actions = [
+                        features.encode_physical_action_54(candidate_cards).tolist()
+                        for candidate_cards in rng.sample(negative_candidates, negative_count)
+                    ]
+                counters["teacher_decision_count"] += 1
+            else:
+                action_id, cards, q_value = actor_select_action(model, state, candidates, epsilon, rng)
             physical = features.encode_physical_action_54(cards)
             action_info = adaptive.offline_make_action_info_from_cards(
                 game,
@@ -217,6 +257,8 @@ def actor_worker(
                     "epsilon": epsilon,
                     "q_value": q_value,
                     "target": 0.0,
+                    "teacher_action": teacher_mode,
+                    "negative_actions": negative_actions,
                     "reward_version": "terminal_team_win_loss_v1",
                     "state_encoding_version": features.DANZERO_COMPACT_STATE_ENCODING_VERSION,
                     "action_encoding_version": features.DANZERO_PHYSICAL_ACTION_ENCODING_VERSION,
@@ -241,6 +283,7 @@ def actor_worker(
                 "counters": dict(counters),
                 "action_types": dict(action_types),
                 "fatal": None,
+                "teacher_episode": episode_index < int(config.get("teacher_games", 0)),
             }
         else:
             message = {
@@ -254,6 +297,7 @@ def actor_worker(
                 "counters": dict(counters),
                 "action_types": dict(action_types),
                 "fatal": fatal or "max_steps_exceeded",
+                "teacher_episode": episode_index < int(config.get("teacher_games", 0)),
             }
         while not bool(shared.get("stop", False)):
             try:
@@ -286,6 +330,7 @@ def checkpoint_payload(
     model: Any,
     optimizer: Any,
     replay: deque,
+    teacher_replay: deque,
     stats: dict,
     learner_version: int,
     rng: random.Random,
@@ -297,6 +342,7 @@ def checkpoint_payload(
         "model_state_dict": model.state_dict(),
         "optimizer_state_dict": optimizer.state_dict(),
         "replay_buffer": list(replay),
+        "teacher_replay_buffer": list(teacher_replay),
         "stats": stats,
         "learner_version": int(learner_version),
         "state_dim": features.DANZERO_COMPACT_STATE_DIM,
@@ -318,6 +364,7 @@ def save_training_checkpoint(
     model: Any,
     optimizer: Any,
     replay: deque,
+    teacher_replay: deque,
     stats: dict,
     learner_version: int,
     rng: random.Random,
@@ -326,25 +373,73 @@ def save_training_checkpoint(
 
     path.parent.mkdir(parents=True, exist_ok=True)
     temporary = path.with_suffix(path.suffix + ".tmp")
-    torch.save(checkpoint_payload(model, optimizer, replay, stats, learner_version, rng), temporary)
+    torch.save(
+        checkpoint_payload(model, optimizer, replay, teacher_replay, stats, learner_version, rng),
+        temporary,
+    )
     temporary.replace(path)
 
 
-def train_batch(model: Any, optimizer: Any, replay: deque, batch_size: int, device: Any, rng: random.Random) -> float:
+def train_batch(
+    model: Any,
+    optimizer: Any,
+    replay: deque,
+    teacher_replay: deque,
+    batch_size: int,
+    device: Any,
+    rng: random.Random,
+    teacher_margin: float,
+    teacher_weight: float,
+    teacher_batch_ratio: float,
+) -> dict[str, float]:
     import torch
     import torch.nn.functional as F
 
-    batch = rng.sample(list(replay), min(int(batch_size), len(replay)))
+    requested_teacher = min(
+        len(teacher_replay),
+        int(round(int(batch_size) * max(0.0, min(1.0, float(teacher_batch_ratio))))),
+    )
+    requested_regular = min(len(replay), int(batch_size) - requested_teacher)
+    batch = rng.sample(list(replay), requested_regular)
+    if requested_teacher:
+        batch.extend(rng.sample(list(teacher_replay), requested_teacher))
+        rng.shuffle(batch)
     states = torch.tensor(np.asarray([sample["state"] for sample in batch], dtype=np.float32), device=device)
     actions = torch.tensor(np.asarray([sample["action"] for sample in batch], dtype=np.float32), device=device)
     targets = torch.tensor([float(sample["target"]) for sample in batch], dtype=torch.float32, device=device)
     predictions = model(states, actions)
-    loss = F.mse_loss(predictions, targets)
+    value_loss = F.mse_loss(predictions, targets)
+    negative_states: list[list[float]] = []
+    negative_actions: list[list[float]] = []
+    positive_indices: list[int] = []
+    for batch_index, sample in enumerate(batch):
+        for negative_action in sample.get("negative_actions") or []:
+            negative_states.append(sample["state"])
+            negative_actions.append(negative_action)
+            positive_indices.append(batch_index)
+    if negative_actions:
+        negative_q = model(
+            torch.tensor(np.asarray(negative_states, dtype=np.float32), device=device),
+            torch.tensor(np.asarray(negative_actions, dtype=np.float32), device=device),
+        )
+        positive_q = predictions[
+            torch.tensor(positive_indices, dtype=torch.long, device=device)
+        ]
+        margin_loss = F.relu(float(teacher_margin) - positive_q + negative_q).mean()
+    else:
+        margin_loss = torch.zeros((), dtype=torch.float32, device=device)
+    loss = value_loss + float(teacher_weight) * margin_loss
     optimizer.zero_grad()
     loss.backward()
     torch.nn.utils.clip_grad_norm_(model.parameters(), 10.0)
     optimizer.step()
-    return float(loss.item())
+    return {
+        "total_loss": float(loss.item()),
+        "value_loss": float(value_loss.item()),
+        "teacher_margin_loss": float(margin_loss.item()),
+        "teacher_negative_count": len(negative_actions),
+        "teacher_sample_count": sum(bool(sample.get("teacher_action")) for sample in batch),
+    }
 
 
 def run_distributed_dmc(args: Any) -> dict:
@@ -360,6 +455,7 @@ def run_distributed_dmc(args: Any) -> dict:
     model = build_q_model(device)
     optimizer = torch.optim.Adam(model.parameters(), lr=float(args.danzero_learning_rate))
     replay: deque = deque(maxlen=int(args.danzero_replay_capacity))
+    teacher_replay: deque = deque(maxlen=int(args.danzero_teacher_replay_capacity))
     learner_version = 0
     stats = {
         "schema_version": DANZERO_DMC_SCHEMA_VERSION,
@@ -381,6 +477,18 @@ def run_distributed_dmc(args: Any) -> dict:
         "requested_games": int(args.danzero_games),
         "completed_games": 0,
         "failed_games": 0,
+        "teacher_games_requested": int(args.danzero_teacher_games),
+        "teacher_games_completed": 0,
+        "teacher_decision_count": 0,
+        "teacher_mapping_fail_count": 0,
+        "teacher_negative_count": int(args.danzero_teacher_negatives),
+        "teacher_margin": float(args.danzero_teacher_margin),
+        "teacher_weight": float(args.danzero_teacher_weight),
+        "teacher_batch_ratio": float(args.danzero_teacher_batch_ratio),
+        "teacher_replay_capacity": int(args.danzero_teacher_replay_capacity),
+        "teacher_replay_size": 0,
+        "teacher_samples_trained": 0,
+        "teacher_sample_count_recent": [],
         "team0_wins": 0,
         "team1_wins": 0,
         "team0_win_rate": 0.0,
@@ -407,6 +515,8 @@ def run_distributed_dmc(args: Any) -> dict:
         "accepted_sample_count": 0,
         "replay_buffer_size": 0,
         "loss_recent": [],
+        "value_loss_recent": [],
+        "teacher_margin_loss_recent": [],
         "saved_checkpoints": [],
         "resumed_from": None,
         "threshold_passed": False,
@@ -430,6 +540,7 @@ def run_distributed_dmc(args: Any) -> dict:
         model.load_state_dict(payload["model_state_dict"])
         optimizer.load_state_dict(payload["optimizer_state_dict"])
         replay.extend(payload.get("replay_buffer") or [])
+        teacher_replay.extend(payload.get("teacher_replay_buffer") or [])
         learner_version = int(payload.get("learner_version") or 0)
         if payload.get("learner_rng_state") is not None:
             rng.setstate(payload["learner_rng_state"])
@@ -481,10 +592,13 @@ def run_distributed_dmc(args: Any) -> dict:
     episode_lock = ctx.Lock()
     config = {
         "seed": int(args.danzero_seed),
+        "requested_games": int(args.danzero_games),
         "max_steps": int(args.danzero_max_steps),
         "epsilon_start": float(args.danzero_epsilon_start),
         "epsilon_end": float(args.danzero_epsilon_end),
         "epsilon_decay_games": int(args.danzero_epsilon_decay_games),
+        "teacher_games": int(args.danzero_teacher_games),
+        "teacher_negative_count": int(args.danzero_teacher_negatives),
     }
     actors = [
         ctx.Process(
@@ -514,7 +628,7 @@ def run_distributed_dmc(args: Any) -> dict:
                 message = output_queue.get(timeout=30.0)
             except queue.Empty:
                 dead = [process.exitcode for process in actors if not process.is_alive()]
-                if dead:
+                if len(dead) == len(actors):
                     raise RuntimeError(f"DanZero actor exited unexpectedly: {dead}")
                 continue
             counters = Counter(message.get("counters") or {})
@@ -530,12 +644,15 @@ def run_distributed_dmc(args: Any) -> dict:
                 "fatal_no_candidate_count",
                 "pass_count",
                 "bomb_count",
+                "teacher_decision_count",
+                "teacher_mapping_fail_count",
             ):
                 stats[name] += int(counters.get(name, 0))
             if message.get("kind") != "game":
                 stats["failed_games"] += 1
                 continue
             stats["completed_games"] += 1
+            stats["teacher_games_completed"] += int(bool(message.get("teacher_episode")))
             shared["completed_games"] = int(stats["completed_games"])
             winner = int(message["winner_team"])
             stats[f"team{winner}_wins"] += 1
@@ -546,18 +663,42 @@ def run_distributed_dmc(args: Any) -> dict:
             actor_version = int(message.get("actor_version") or 0)
             actor_versions.append(actor_version)
             for sample in message.get("samples") or []:
-                if learner_version - int(sample.get("actor_version") or 0) > int(args.danzero_max_version_lag):
+                if (
+                    not sample.get("teacher_action")
+                    and learner_version - int(sample.get("actor_version") or 0)
+                    > int(args.danzero_max_version_lag)
+                ):
                     stats["stale_sample_count"] += 1
                     continue
                 replay.append(sample)
+                if sample.get("teacher_action"):
+                    teacher_replay.append(sample)
                 stats["accepted_sample_count"] += 1
             stats["total_decisions"] += len(message.get("samples") or [])
             if len(replay) >= int(args.danzero_batch_size):
                 model.train()
                 for _ in range(int(args.danzero_updates_per_game)):
-                    loss = train_batch(model, optimizer, replay, int(args.danzero_batch_size), device, rng)
-                    stats["loss_recent"].append(loss)
+                    losses = train_batch(
+                        model,
+                        optimizer,
+                        replay,
+                        teacher_replay,
+                        int(args.danzero_batch_size),
+                        device,
+                        rng,
+                        float(args.danzero_teacher_margin),
+                        float(args.danzero_teacher_weight),
+                        float(args.danzero_teacher_batch_ratio),
+                    )
+                    stats["loss_recent"].append(losses["total_loss"])
+                    stats["value_loss_recent"].append(losses["value_loss"])
+                    stats["teacher_margin_loss_recent"].append(losses["teacher_margin_loss"])
+                    stats["teacher_sample_count_recent"].append(losses["teacher_sample_count"])
+                    stats["teacher_samples_trained"] += int(losses["teacher_sample_count"])
                     stats["loss_recent"] = stats["loss_recent"][-100:]
+                    stats["value_loss_recent"] = stats["value_loss_recent"][-100:]
+                    stats["teacher_margin_loss_recent"] = stats["teacher_margin_loss_recent"][-100:]
+                    stats["teacher_sample_count_recent"] = stats["teacher_sample_count_recent"][-100:]
                     stats["learner_updates"] += 1
                     learner_version += 1
                 model.eval()
@@ -568,6 +709,7 @@ def run_distributed_dmc(args: Any) -> dict:
                     shared["model_version"] = learner_version
             stats["learner_version"] = learner_version
             stats["replay_buffer_size"] = len(replay)
+            stats["teacher_replay_size"] = len(teacher_replay)
             stats["team0_win_rate"] = stats["team0_wins"] / max(1, stats["completed_games"])
             stats["team1_win_rate"] = stats["team1_wins"] / max(1, stats["completed_games"])
             stats["average_game_length"] = total_steps / max(1, stats["completed_games"])
@@ -580,7 +722,9 @@ def run_distributed_dmc(args: Any) -> dict:
             stats["elapsed_seconds"] = time.monotonic() - started
             if next_save and int(stats["completed_games"]) >= next_save:
                 checkpoint = out_dir / f"danzero_dmc_games{next_save}.pth"
-                save_training_checkpoint(checkpoint, model, optimizer, replay, stats, learner_version, rng)
+                save_training_checkpoint(
+                    checkpoint, model, optimizer, replay, teacher_replay, stats, learner_version, rng
+                )
                 stats["saved_checkpoints"].append(str(checkpoint))
                 next_save += int(args.danzero_save_every)
             if int(args.report_every) > 0 and stats["completed_games"] % int(args.report_every) == 0:
@@ -609,6 +753,7 @@ def run_distributed_dmc(args: Any) -> dict:
         "materialization_fail_count",
         "hand_card_mismatch_count",
         "fatal_no_candidate_count",
+        "teacher_mapping_fail_count",
     )
     stats["engineering_smoke_passed"] = bool(
         stats["completed_games"] >= int(args.danzero_games)
@@ -636,7 +781,9 @@ def run_distributed_dmc(args: Any) -> dict:
         and stats["first_player_max_deviation"] <= 0.08
     )
     stats["threshold_passed"] = stats["engineering_smoke_passed"]
-    save_training_checkpoint(final_checkpoint, model, optimizer, replay, stats, learner_version, rng)
+    save_training_checkpoint(
+        final_checkpoint, model, optimizer, replay, teacher_replay, stats, learner_version, rng
+    )
     if not final_checkpoint.exists():
         stats["engineering_smoke_passed"] = False
         stats["stage3_gate_passed"] = False

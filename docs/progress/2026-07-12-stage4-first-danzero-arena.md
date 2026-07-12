@@ -72,3 +72,52 @@ the same Arena states and measure:
 - replay age and policy-version distribution.
 
 The evaluation threshold remains unchanged. No website test is authorized.
+
+## Higher-Update Follow-up
+
+A fresh v2 candidate kept the same architecture, oracle, reward, and 1000-game
+budget, but increased learner updates from 1 to 8 per game and used epsilon
+`0.50 -> 0.10` over the smoke run.
+
+- decisions: 132,569;
+- learner updates: 7,976;
+- final recent MSE: approximately 0.077;
+- training pass rate: 58.73%;
+- integrity errors: all zero;
+- paired Arena wins: 1/20;
+- Arena win rate: 5%;
+- Arena pass rate: 61.95%.
+
+The much lower regression loss did not produce useful policy strength. v2 also
+fails the below-30% gate and is archived. This rules out “only add more gradient
+updates” as the next experiment. The next candidate must add action-ranking
+information, such as a small frozen-baseline teacher curriculum with negative
+candidate margin loss, before returning to shared-Q self-play.
+
+## Teacher-Margin Follow-ups
+
+v3 added ten frozen-baseline teacher games and eight random negative actions per
+teacher decision. The teacher samples shared the ordinary 20,000-transition
+replay, so the last 100 updates contained no teacher margin signal. Its paired
+Arena result was 0/20 with all integrity counters zero. This run is archived.
+
+v4 introduced a separate persistent teacher replay and a fixed 25% teacher
+share in every learner batch. The 1,000-game run completed with:
+
+- 10/10 teacher games and 1,017 teacher decisions;
+- 7,960 learner updates;
+- 128 teacher samples in each of the last 100 batches;
+- nonzero teacher margin loss through the end of training;
+- 58.10% training pass rate;
+- all integrity counters zero.
+
+The paired Arena improved to 4/20 (20%), with a 60.58% model pass rate and all
+integrity counters zero. This is evidence that persistent teacher ranking helps,
+but v4 remains below the unchanged 30% continuation gate and is archived.
+
+Checkpoint diagnosis showed 100% top-1 accuracy against the stored random
+negative actions, with mean teacher Q margin 0.648. The next experiment should
+therefore improve negative-action coverage (complete candidates or current-model
+hard negatives), not continue v4 or merely increase its game count. Teacher
+samples must also bypass policy-version staleness because they do not depend on
+the actor policy that generated self-play actions.
