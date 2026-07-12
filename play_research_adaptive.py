@@ -17575,6 +17575,24 @@ def parse_args() -> argparse.Namespace:
     parser.add_argument("--dmc-endgame-weight", type=float, default=2.0)
     parser.add_argument("--dmc-bomb-weight", type=float, default=2.0)
     parser.add_argument("--dmc-pass-weight", type=float, default=0.5)
+    parser.add_argument("--danzero-dmc-train", action="store_true")
+    parser.add_argument("--danzero-games", type=int, default=1000)
+    parser.add_argument("--danzero-actors", type=int, default=4)
+    parser.add_argument("--danzero-out-dir", default="models_danzero_dmc")
+    parser.add_argument("--danzero-log-out", default="danzero_dmc_training.json")
+    parser.add_argument("--danzero-save-every", type=int, default=200)
+    parser.add_argument("--danzero-learning-rate", type=float, default=0.0001)
+    parser.add_argument("--danzero-batch-size", type=int, default=512)
+    parser.add_argument("--danzero-updates-per-game", type=int, default=1)
+    parser.add_argument("--danzero-replay-capacity", type=int, default=100000)
+    parser.add_argument("--danzero-sync-every-updates", type=int, default=20)
+    parser.add_argument("--danzero-max-version-lag", type=int, default=200)
+    parser.add_argument("--danzero-epsilon-start", type=float, default=0.20)
+    parser.add_argument("--danzero-epsilon-end", type=float, default=0.05)
+    parser.add_argument("--danzero-epsilon-decay-games", type=int, default=100000)
+    parser.add_argument("--danzero-max-steps", type=int, default=OFFLINE_MAX_GAME_STEPS)
+    parser.add_argument("--danzero-seed", type=int, default=20260712)
+    parser.add_argument("--danzero-resume")
     parser.add_argument("--dmc-calibration-source")
     parser.add_argument("--dmc-pairwise-dataset-out", default="dmc_pairwise_dataset.pth")
     parser.add_argument("--dmc-pairwise-min-win-delta", type=float, default=0.0)
@@ -17721,6 +17739,11 @@ def main() -> None:
         return
     if args.generate_dmc_selfplay_dataset:
         run_generate_dmc_selfplay_dataset(args)
+        return
+    if args.danzero_dmc_train:
+        import danzero_dmc
+
+        danzero_dmc.run_distributed_dmc(args)
         return
     if args.train_dmc_action_value:
         if not args.dmc_dataset:
