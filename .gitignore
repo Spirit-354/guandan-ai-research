@@ -40,6 +40,8 @@ models*/
 # Generated experiment output. Curate durable findings under docs/progress/.
 *.json
 !strategy_profiles.json
+!research_baseline_manifest.json
+!research_model_registry.json
 
 # Local research references and rendered extracts
 *.pdf

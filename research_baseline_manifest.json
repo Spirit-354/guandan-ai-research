@@ -1,0 +1,48 @@
+{
+  "schema_version": 1,
+  "baseline_name": "tempo_baseline",
+  "frozen_at": "2026-07-12",
+  "frozen_git_commit": "0f89dd973fe2622920fd425413b3dd144f84f140",
+  "invariants": [
+    "tempo_baseline core decisions are immutable",
+    "website rules and legal action semantics are immutable",
+    "server communication and leaderboard Elo semantics are immutable"
+  ],
+  "snapshot": {
+    "engine_file_sha256": "31ddc81fbc0c6dcf43b361ca7f7c418f6afbe53fa3294d82f440a72916ae8435",
+    "engine_functions": {
+      "recognize": "e5f951310883a80b1a45b6845293624cb4a9e7d925a61ed0274a4a1a78aca189",
+      "info_beats": "ad985d7ef079ccb5b43537a90d1163b1dbee99a2d9ac28d12fa309a7e2902e95",
+      "legal_play_options": "8090fa917e340a848ddc5c015c4e30fb10aee0db27c57e5d6f60b18cf31e7a99",
+      "choose_lead_play": "5165514526d63b157f3cd7a5f076152ef6077ce2c310725fc18e053684f3ea25",
+      "choose_play": "6f697b2337a22abcff2b680b36287428bd60e81210ce95a9cedef67b03e6e600"
+    },
+    "adaptive_functions": {
+      "choose_profiled_play": "6c5944a40821c77fc37996ea74d8bcac791933dab51e952fff2ffd1fbac9c8e2",
+      "offline_baseline_action_info": "22cc281184fd423546f15a9683af25fcb35a70d36fe7149838d1a28aaa9817f5"
+    },
+    "tempo_baseline_profile_sha256": "f465853b86a45ecac64264c14fe33f42ffb23206bfc80c66a3f0b9170df1b3e1",
+    "tempo_baseline_profile": {
+      "engine_mode": "tempo",
+      "remaining_group_weight": 28,
+      "follow_gain_threshold": 0.4,
+      "ally_reliability_base": 0.65,
+      "teammate_help_weight": 1.0,
+      "self_sprint_weight": 1.0,
+      "opponent_block_weight": 1.0,
+      "opponent_risk_weight": 1.0,
+      "endgame_defense_weight": 1.0,
+      "bomb_aggression": 0.45,
+      "bomb_save_weight": 0.7,
+      "strong_opponent_penalty": 8.0,
+      "bad_lead_size_penalty": 18.0,
+      "teammate_override_penalty": 28.0,
+      "useless_bomb_penalty": 35.0,
+      "giving_control_to_strong_opponent_penalty": 24.0,
+      "defense_trigger_count": 6,
+      "force_block_count": 2,
+      "self_sprint_group_limit": 2.5,
+      "ally_support_count_limit": 3
+    }
+  }
+}

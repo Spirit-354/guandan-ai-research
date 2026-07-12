@@ -4,6 +4,26 @@ This client is a research wrapper around `play_step_0902.py`.
 It reuses the existing card recognition, legality checks, comparison rules,
 and server protocol. It does not treat `final_state["scores"]` as Elo.
 
+## Frozen Baseline
+
+`tempo_baseline` is frozen by `research_baseline_manifest.json`. Verify the
+engine rules, baseline decisions, wrappers, and profile configuration with:
+
+```powershell
+python -B .\tools\verify_baseline_freeze.py
+```
+
+Formal baseline validation can additionally run the equivalence suite:
+
+```powershell
+python -B .\tools\verify_baseline_freeze.py `
+  --equivalence-samples 500 `
+  --equivalence-out baseline_equivalence_500.json
+```
+
+Learned-model status and promotion gates are tracked in
+`research_model_registry.json`.
+
 ## Environment
 
 Set credentials before running:

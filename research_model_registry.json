@@ -1,0 +1,102 @@
+{
+  "schema_version": 1,
+  "updated_at": "2026-07-12",
+  "active_default": {
+    "name": "tempo_baseline",
+    "kind": "rule_policy",
+    "status": "active",
+    "website_use": "allowed",
+    "evidence": "historical leaderboard Elo research baseline",
+    "freeze_manifest": "research_baseline_manifest.json"
+  },
+  "candidates": [],
+  "offline_only": [],
+  "failed": [
+    {
+      "name": "selfplay_oraclemask_randomfirst_5000_actor_ep3000",
+      "kind": "shared_selfplay_actor",
+      "local_path": "models_selfplay_oraclemask_randomfirst_5000/actor_ep3000.pth",
+      "arena_games": 20,
+      "arena_win_rate": 0.35,
+      "reason": "below shadow gate"
+    },
+    {
+      "name": "imitation_baseline_50k_epoch9",
+      "kind": "behavior_cloning_actor",
+      "local_path": "models_imitation_baseline_50k/imitation_actor_epoch9.pth",
+      "arena_games": 20,
+      "arena_win_rate": 0.30,
+      "reason": "below shadow gate"
+    },
+    {
+      "name": "imitation_baseline_50k_balanced_best",
+      "kind": "balanced_behavior_cloning_actor",
+      "local_path": "models_imitation_baseline_50k_balanced/imitation_actor_balanced_best.pth",
+      "arena_games": 20,
+      "arena_win_rate": 0.30,
+      "reason": "below shadow gate"
+    },
+    {
+      "name": "ppo_safe_from_bc_epoch9_ep300",
+      "kind": "safe_ppo_actor",
+      "local_path": "models_ppo_safe_from_bc_epoch9_smoke/ppo_actor_ep300.pth",
+      "arena_games": 20,
+      "arena_win_rate": 0.25,
+      "reason": "PPO degraded the BC initializer"
+    },
+    {
+      "name": "dmc_action_value_selfplay10k",
+      "kind": "dmc_action_value",
+      "local_path": "models_dmc_action_value_selfplay10k/dmc_action_value_best.pth",
+      "arena_games": 20,
+      "arena_win_rate": 0.10,
+      "reason": "below DMC continuation gate"
+    },
+    {
+      "name": "dmc_action_value_balanced50k",
+      "kind": "dmc_action_value",
+      "local_path": "models_dmc_action_value_balanced50k/dmc_action_value_best.pth",
+      "arena_games": 20,
+      "arena_win_rate": 0.15,
+      "reason": "below DMC continuation gate"
+    },
+    {
+      "name": "dmc_hybrid_controlpass_m038",
+      "kind": "dmc_tempo_hybrid",
+      "local_path": "models_dmc_action_value_balanced50k/dmc_action_value_best.pth",
+      "arena_games": 300,
+      "arena_win_rate": 0.4433333333,
+      "reason": "below baseline and paired audit found zero net causal gain"
+    },
+    {
+      "name": "dmc_pairwise_balanced50k_smoke",
+      "kind": "pairwise_dmc_action_value",
+      "local_path": "models_dmc_pairwise_balanced50k_smoke/dmc_pairwise_best.pth",
+      "arena_games": 20,
+      "arena_win_rate": 0.0,
+      "reason": "narrow pairwise data caused severe global regression"
+    }
+  ],
+  "archived_profiles": [
+    "tempo_plate_delay_guard",
+    "tempo_shape_guard",
+    "tempo_shape_guard_v2",
+    "tempo_endgame_guard",
+    "bait_high_card",
+    "bait_high_card_v2",
+    "weak_ally_safe",
+    "tempo_high_elo_safe",
+    "bomb_conservative",
+    "balanced",
+    "defense_heavy",
+    "endgame_defense",
+    "anti_strong_opponent"
+  ],
+  "promotion_policy": {
+    "twenty_game_minimum_win_rate": 0.45,
+    "hundred_game_minimum_win_rate": 0.48,
+    "three_hundred_game_success_rate": 0.50,
+    "three_hundred_game_candidate_rate": 0.52,
+    "website_control_requires_user_confirmation": true
+  }
+}
