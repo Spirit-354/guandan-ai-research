@@ -30,6 +30,18 @@ class DanZeroDMCTests(unittest.TestCase):
         self.assertAlmostEqual(danzero_dmc.epsilon_for_game(100, 0.2, 0.05, 100), 0.05)
         self.assertAlmostEqual(danzero_dmc.epsilon_for_game(200, 0.2, 0.05, 100), 0.05)
 
+    def test_teacher_samples_bypass_policy_staleness(self) -> None:
+        self.assertTrue(
+            danzero_dmc.should_drop_stale_sample(
+                {"actor_version": 1, "teacher_action": False}, 500, 100
+            )
+        )
+        self.assertFalse(
+            danzero_dmc.should_drop_stale_sample(
+                {"actor_version": 1, "teacher_action": True}, 500, 100
+            )
+        )
+
     def test_resume_metadata_gate(self) -> None:
         payload = {
             "schema_version": danzero_dmc.DANZERO_DMC_SCHEMA_VERSION,
@@ -56,6 +68,8 @@ class DanZeroDMCTests(unittest.TestCase):
         action = [0.0] * danzero_features.DANZERO_PHYSICAL_ACTION_DIM
         negative = list(action)
         negative[0] = 1.0
+        second_negative = list(action)
+        second_negative[1] = 1.0
         regular = deque(
             [
                 {"state": state, "action": action, "target": -1.0, "teacher_action": False},
@@ -70,7 +84,7 @@ class DanZeroDMCTests(unittest.TestCase):
                     "action": action,
                     "target": 1.0,
                     "teacher_action": True,
-                    "negative_actions": [negative],
+                    "negative_actions": [negative, second_negative],
                 }
             ],
             maxlen=2,
@@ -88,9 +102,11 @@ class DanZeroDMCTests(unittest.TestCase):
             0.2,
             1.0,
             0.5,
+            True,
         )
         self.assertEqual(result["teacher_sample_count"], 1)
-        self.assertEqual(result["teacher_negative_count"], 1)
+        self.assertEqual(result["teacher_negative_count"], 2)
+        self.assertEqual(result["teacher_ranked_negative_count"], 1)
 
 
 if __name__ == "__main__":

@@ -68,6 +68,13 @@ def epsilon_for_game(game_count: int, start: float, end: float, decay_games: int
     return float(start) + (float(end) - float(start)) * progress
 
 
+def should_drop_stale_sample(sample: dict, learner_version: int, max_version_lag: int) -> bool:
+    return bool(
+        not sample.get("teacher_action")
+        and int(learner_version) - int(sample.get("actor_version") or 0) > int(max_version_lag)
+    )
+
+
 def candidate_metadata(adaptive: Any, components: dict, candidates: list[tuple[int, list[str]]]) -> list[dict]:
     return [
         {
@@ -199,15 +206,22 @@ def actor_worker(
                     for _candidate_action_id, candidate_cards in candidates
                     if danzero_oracle.physical_key(candidate_cards) != teacher_key
                 ]
-                negative_count = min(
-                    int(config.get("teacher_negative_count", 0)), len(negative_candidates)
-                )
-                if negative_count:
+                if config.get("teacher_hard_negatives"):
+                    selected_negatives = negative_candidates
+                else:
+                    negative_count = min(
+                        int(config.get("teacher_negative_count", 0)), len(negative_candidates)
+                    )
+                    selected_negatives = (
+                        rng.sample(negative_candidates, negative_count) if negative_count else []
+                    )
+                if selected_negatives:
                     negative_actions = [
                         features.encode_physical_action_54(candidate_cards).tolist()
-                        for candidate_cards in rng.sample(negative_candidates, negative_count)
+                        for candidate_cards in selected_negatives
                     ]
                 counters["teacher_decision_count"] += 1
+                counters["teacher_negative_candidate_count"] += len(negative_actions)
             else:
                 action_id, cards, q_value = actor_select_action(model, state, candidates, epsilon, rng)
             physical = features.encode_physical_action_54(cards)
@@ -391,6 +405,7 @@ def train_batch(
     teacher_margin: float,
     teacher_weight: float,
     teacher_batch_ratio: float,
+    teacher_hard_negatives: bool,
 ) -> dict[str, float]:
     import torch
     import torch.nn.functional as F
@@ -422,9 +437,18 @@ def train_batch(
             torch.tensor(np.asarray(negative_states, dtype=np.float32), device=device),
             torch.tensor(np.asarray(negative_actions, dtype=np.float32), device=device),
         )
-        positive_q = predictions[
-            torch.tensor(positive_indices, dtype=torch.long, device=device)
-        ]
+        if teacher_hard_negatives:
+            owners = sorted(set(positive_indices))
+            owner_tensor = torch.tensor(positive_indices, dtype=torch.long, device=device)
+            hard_negative_q = torch.stack(
+                [negative_q[owner_tensor == owner].max() for owner in owners]
+            )
+            positive_q = predictions[torch.tensor(owners, dtype=torch.long, device=device)]
+            negative_q = hard_negative_q
+        else:
+            positive_q = predictions[
+                torch.tensor(positive_indices, dtype=torch.long, device=device)
+            ]
         margin_loss = F.relu(float(teacher_margin) - positive_q + negative_q).mean()
     else:
         margin_loss = torch.zeros((), dtype=torch.float32, device=device)
@@ -438,6 +462,9 @@ def train_batch(
         "value_loss": float(value_loss.item()),
         "teacher_margin_loss": float(margin_loss.item()),
         "teacher_negative_count": len(negative_actions),
+        "teacher_ranked_negative_count": len(set(positive_indices))
+        if teacher_hard_negatives
+        else len(negative_actions),
         "teacher_sample_count": sum(bool(sample.get("teacher_action")) for sample in batch),
     }
 
@@ -482,6 +509,8 @@ def run_distributed_dmc(args: Any) -> dict:
         "teacher_decision_count": 0,
         "teacher_mapping_fail_count": 0,
         "teacher_negative_count": int(args.danzero_teacher_negatives),
+        "teacher_hard_negatives": bool(args.danzero_teacher_hard_negatives),
+        "teacher_negative_candidate_count": 0,
         "teacher_margin": float(args.danzero_teacher_margin),
         "teacher_weight": float(args.danzero_teacher_weight),
         "teacher_batch_ratio": float(args.danzero_teacher_batch_ratio),
@@ -599,6 +628,7 @@ def run_distributed_dmc(args: Any) -> dict:
         "epsilon_decay_games": int(args.danzero_epsilon_decay_games),
         "teacher_games": int(args.danzero_teacher_games),
         "teacher_negative_count": int(args.danzero_teacher_negatives),
+        "teacher_hard_negatives": bool(args.danzero_teacher_hard_negatives),
     }
     actors = [
         ctx.Process(
@@ -646,6 +676,7 @@ def run_distributed_dmc(args: Any) -> dict:
                 "bomb_count",
                 "teacher_decision_count",
                 "teacher_mapping_fail_count",
+                "teacher_negative_candidate_count",
             ):
                 stats[name] += int(counters.get(name, 0))
             if message.get("kind") != "game":
@@ -663,10 +694,8 @@ def run_distributed_dmc(args: Any) -> dict:
             actor_version = int(message.get("actor_version") or 0)
             actor_versions.append(actor_version)
             for sample in message.get("samples") or []:
-                if (
-                    not sample.get("teacher_action")
-                    and learner_version - int(sample.get("actor_version") or 0)
-                    > int(args.danzero_max_version_lag)
+                if should_drop_stale_sample(
+                    sample, learner_version, int(args.danzero_max_version_lag)
                 ):
                     stats["stale_sample_count"] += 1
                     continue
@@ -689,6 +718,7 @@ def run_distributed_dmc(args: Any) -> dict:
                         float(args.danzero_teacher_margin),
                         float(args.danzero_teacher_weight),
                         float(args.danzero_teacher_batch_ratio),
+                        bool(args.danzero_teacher_hard_negatives),
                     )
                     stats["loss_recent"].append(losses["total_loss"])
                     stats["value_loss_recent"].append(losses["value_loss"])

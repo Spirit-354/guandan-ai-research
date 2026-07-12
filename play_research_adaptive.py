@@ -17599,6 +17599,7 @@ def parse_args() -> argparse.Namespace:
     parser.add_argument("--danzero-teacher-weight", type=float, default=1.0)
     parser.add_argument("--danzero-teacher-replay-capacity", type=int, default=5000)
     parser.add_argument("--danzero-teacher-batch-ratio", type=float, default=0.25)
+    parser.add_argument("--danzero-teacher-hard-negatives", action="store_true")
     parser.add_argument("--offline-danzero-arena-eval", action="store_true")
     parser.add_argument("--danzero-checkpoint")
     parser.add_argument("--danzero-arena-games", type=int, default=20)
