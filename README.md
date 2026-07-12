@@ -74,3 +74,9 @@ python -u -B .\play_research_adaptive.py --website-shadow-replay tempo_baseline 
 
 Because old website logs cap `trick_history` at 40 actions, replay explicitly
 does not claim to validate historical 513-dimensional states.
+
+After an online Shadow batch, evaluate the hard gate with:
+
+```powershell
+python -u -B .\play_research_adaptive.py --website-shadow-summary logs_website_shadow_stage2 --shadow-summary-out website_shadow_summary_stage2.json --shadow-minimum-games 20
+```

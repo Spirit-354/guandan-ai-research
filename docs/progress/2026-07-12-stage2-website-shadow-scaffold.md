@@ -90,3 +90,8 @@ python -u -B .\play_research_adaptive.py --website-shadow --profile tempo_baseli
 
 The run is a baseline website session with Shadow auditing. It is not model
 control and does not authorize any later learned checkpoint to submit actions.
+
+After the batch, `--website-shadow-summary` enforces the gate across unique
+completed games. It requires at least 20 games, complete oracle enumeration for
+every decision, zero unevaluated states, zero listed errors, and zero
+model-controlled actions. Historical replay can never satisfy this online gate.

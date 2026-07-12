@@ -542,3 +542,87 @@ def replay_historical_logs(profile: str, out_path: str, max_games: int = 0) -> d
     )
     Path(out_path).write_text(json.dumps(result, ensure_ascii=False, indent=2) + "\n", encoding="utf-8")
     return result
+
+
+def summarize_shadow_log_dir(log_dir: str, out_path: str, minimum_games: int = 20) -> dict:
+    paths = sorted(Path(log_dir).glob("research_game_*.json"))
+    summaries: list[tuple[dict, dict]] = []
+    seen_games: set[str] = set()
+    for path in paths:
+        try:
+            payload = json.loads(path.read_text(encoding="utf-8"))
+        except (OSError, json.JSONDecodeError):
+            continue
+        summary = payload.get("website_shadow_summary")
+        if not isinstance(summary, dict):
+            continue
+        game_id = str(payload.get("game_id"))
+        if game_id in seen_games:
+            continue
+        seen_games.add(game_id)
+        summaries.append((payload, summary))
+
+    count_fields = (
+        "shadow_decision_count",
+        "model_controlled_action_count",
+        "state_encoding_error_count",
+        "state_encoding_not_evaluated_count",
+        "team_mapping_error_count",
+        "action_not_in_hand_count",
+        "local_legality_error_count",
+        "oracle_disagree_count",
+        "oracle_exhaustive_decision_count",
+        "materialization_fail_count",
+        "website_rule_disagree_count",
+        "website_acceptance_inferred_count",
+        "suggestion_diff_count",
+        "level_wildcard_error_count",
+    )
+    result = {
+        "schema_version": SHADOW_SCHEMA_VERSION,
+        "mode": "online_shadow_summary",
+        "log_dir": log_dir,
+        "minimum_games": int(minimum_games),
+        "completed_shadow_games": len(summaries),
+        **{name: 0 for name in count_fields},
+        "game_ids": [],
+        "failed_game_ids": [],
+        "metric_sources": {},
+        "online_shadow_gate_satisfied": False,
+    }
+    metric_sources: Counter[str] = Counter()
+    for payload, summary in summaries:
+        game_id = str(payload.get("game_id"))
+        result["game_ids"].append(game_id)
+        metric_sources[str(payload.get("metric_source") or "unknown")] += 1
+        for name in count_fields:
+            result[name] += int(summary.get(name) or 0)
+        if not bool(summary.get("threshold_passed")):
+            result["failed_game_ids"].append(game_id)
+    result["metric_sources"] = dict(metric_sources)
+    error_fields = (
+        "model_controlled_action_count",
+        "state_encoding_error_count",
+        "state_encoding_not_evaluated_count",
+        "team_mapping_error_count",
+        "action_not_in_hand_count",
+        "local_legality_error_count",
+        "oracle_disagree_count",
+        "materialization_fail_count",
+        "website_rule_disagree_count",
+        "suggestion_diff_count",
+        "level_wildcard_error_count",
+    )
+    result["all_decisions_oracle_exhaustive"] = bool(
+        result["shadow_decision_count"] > 0
+        and result["oracle_exhaustive_decision_count"] == result["shadow_decision_count"]
+    )
+    result["online_shadow_gate_satisfied"] = bool(
+        result["completed_shadow_games"] >= int(minimum_games)
+        and result["shadow_decision_count"] > 0
+        and not result["failed_game_ids"]
+        and result["all_decisions_oracle_exhaustive"]
+        and all(int(result[name]) == 0 for name in error_fields)
+    )
+    Path(out_path).write_text(json.dumps(result, ensure_ascii=False, indent=2) + "\n", encoding="utf-8")
+    return result

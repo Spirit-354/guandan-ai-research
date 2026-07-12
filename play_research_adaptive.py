@@ -17409,6 +17409,9 @@ def parse_args() -> argparse.Namespace:
     parser.add_argument("--website-shadow-replay", help="Replay historical website logs for a profile without networking.")
     parser.add_argument("--shadow-replay-out", default="website_shadow_replay.json")
     parser.add_argument("--shadow-replay-max-games", type=int, default=0)
+    parser.add_argument("--website-shadow-summary", help="Summarize completed online Shadow logs in a directory.")
+    parser.add_argument("--shadow-summary-out", default="website_shadow_summary.json")
+    parser.add_argument("--shadow-minimum-games", type=int, default=20)
     parser.add_argument("--summary", help="Print an Elo research summary from research_results.json.")
     parser.add_argument("--recent-window", type=int, default=10)
     parser.add_argument("--loss-drilldown", help="Profile name for recent loss drilldown in summary mode.")
@@ -17658,6 +17661,14 @@ def main() -> None:
             args.website_shadow_replay,
             args.shadow_replay_out,
             args.shadow_replay_max_games,
+        )
+        print(json.dumps(result, ensure_ascii=False, indent=2))
+        return
+    if args.website_shadow_summary:
+        result = live_shadow.summarize_shadow_log_dir(
+            args.website_shadow_summary,
+            args.shadow_summary_out,
+            args.shadow_minimum_games,
         )
         print(json.dumps(result, ensure_ascii=False, indent=2))
         return

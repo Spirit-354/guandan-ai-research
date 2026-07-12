@@ -1,6 +1,8 @@
 from __future__ import annotations
 
 import sys
+import json
+import tempfile
 import unittest
 from pathlib import Path
 
@@ -101,6 +103,28 @@ class WebsiteShadowTests(unittest.TestCase):
         self.assertFalse(audit["state_encoding_evaluated"])
         self.assertTrue(audit["suggested_action"]["local_legal"])
         self.assertTrue(audit["suggested_action"]["oracle_match"])
+
+    def test_online_summary_requires_enough_exhaustive_games(self) -> None:
+        with tempfile.TemporaryDirectory() as temp_dir:
+            for game_id in ("1", "2"):
+                payload = {
+                    "game_id": game_id,
+                    "metric_source": "leaderboard_elo",
+                    "website_shadow_summary": {
+                        "shadow_decision_count": 3,
+                        "oracle_exhaustive_decision_count": 3,
+                        "threshold_passed": True,
+                    },
+                }
+                Path(temp_dir, f"research_game_{game_id}.json").write_text(
+                    json.dumps(payload), encoding="utf-8"
+                )
+            out_path = str(Path(temp_dir, "summary.json"))
+            result = website_shadow.summarize_shadow_log_dir(temp_dir, out_path, minimum_games=2)
+            self.assertTrue(result["online_shadow_gate_satisfied"])
+            self.assertEqual(result["shadow_decision_count"], 6)
+            result = website_shadow.summarize_shadow_log_dir(temp_dir, out_path, minimum_games=3)
+            self.assertFalse(result["online_shadow_gate_satisfied"])
 
 
 if __name__ == "__main__":
