@@ -9,7 +9,7 @@
     "server communication and leaderboard Elo semantics are immutable"
   ],
   "snapshot": {
-    "engine_file_sha256": "72dba267a3357386bb5731a2d963f364e36246907083935e913a26a94ae8bbea",
+    "engine_file_sha256": "31ddc81fbc0c6dcf43b361ca7f7c418f6afbe53fa3294d82f440a72916ae8435",
     "engine_functions": {
       "recognize": "e5f951310883a80b1a45b6845293624cb4a9e7d925a61ed0274a4a1a78aca189",
       "info_beats": "ad985d7ef079ccb5b43537a90d1163b1dbee99a2d9ac28d12fa309a7e2902e95",

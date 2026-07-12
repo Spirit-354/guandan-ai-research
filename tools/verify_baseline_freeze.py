@@ -20,6 +20,10 @@ def sha256_bytes(value: bytes) -> str:
     return hashlib.sha256(value).hexdigest()
 
 
+def normalized_text_file_hash(path: Path) -> str:
+    return sha256_bytes(path.read_bytes().replace(b"\r\n", b"\n"))
+
+
 def canonical_json_hash(value: Any) -> str:
     encoded = json.dumps(value, ensure_ascii=False, sort_keys=True, separators=(",", ":")).encode("utf-8")
     return sha256_bytes(encoded)
@@ -44,7 +48,7 @@ def current_snapshot() -> dict[str, Any]:
     profiles = json.loads(PROFILE_PATH.read_text(encoding="utf-8"))
     tempo_profile = profiles["tempo_baseline"]
     return {
-        "engine_file_sha256": sha256_bytes(ENGINE_PATH.read_bytes()),
+        "engine_file_sha256": normalized_text_file_hash(ENGINE_PATH),
         "engine_functions": {
             "recognize": source_hash(engine.recognize),
             "info_beats": source_hash(engine.info_beats),
