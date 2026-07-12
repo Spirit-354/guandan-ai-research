@@ -16,6 +16,9 @@ jobs:
         with:
           python-version: "3.12"
 
+      - name: Install feature-test dependency
+        run: python -m pip install numpy
+
       - name: Compile core scripts
         run: >-
           python -B -m py_compile
@@ -23,7 +26,13 @@ jobs:
           play_step_0902.py
           play_step_09.py
           step_01.py
+          danzero_features.py
+          tools/test_danzero_features.py
+          tools/danzero_feature_sanity.py
           tools/verify_baseline_freeze.py
+
+      - name: Test DanZero feature encoding
+        run: python -B tools/test_danzero_features.py
 
       - name: Verify frozen tempo baseline
         run: python -B tools/verify_baseline_freeze.py
