@@ -418,6 +418,7 @@ def _write_frozen_partitions(path: Path, samples: list[dict], summary: dict) -> 
             "contains_locked_test_samples": False,
             "sample_count": len(train_dev),
             "excluded_locked_test_sample_count": len(locked_all),
+            "consistent_locked_test_sample_count": len(locked),
             "excluded_locked_test_game_count": len(
                 {str(sample.get("game_id")) for sample in locked_all}
             ),
@@ -825,6 +826,9 @@ def train_action_value(args: Any) -> dict:
         "train_sample_count": len(train_samples),
         "validation_sample_count": len(validation_samples),
         "locked_test_sample_count": int(
+            dataset_summary.get("consistent_locked_test_sample_count") or len(locked_samples)
+        ),
+        "locked_test_total_source_sample_count": int(
             dataset_summary.get("excluded_locked_test_sample_count") or len(locked_samples)
         ),
         "locked_test_loaded_sample_count": len(locked_samples),

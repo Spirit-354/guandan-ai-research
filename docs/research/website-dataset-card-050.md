@@ -78,3 +78,23 @@ four distinct train games. Its 72 rollouts all completed legally, but no action
 showed a low-variance positive advantage across both continuation policies.
 No strong label was created. This reinforces that the current behavior data is
 an initialization resource, not a source of candidate-ranking truth.
+
+The corrected consistent-only behavior-Q diagnostic favored scratch
+initialization on development MSE (about 0.982 versus 1.800 for old-v5
+initialization). This remains behavior-value calibration only and does not
+authorize candidate ranking, Arena promotion, Shadow recommendation, or website
+control.
+
+## Teacher Screening Status
+
+All 319 consistent train states have now received a stable-seed greedy rollout
+screen. Stable seeds are keyed by game and turn, and continuation profiles share
+the same hidden-card determinizations. Candidate-return variance, paired
+advantage confidence bounds, and per-continuation advantages are reported
+separately.
+
+Only game 13868 turn 10 currently passes the full greedy-plus-frozen-tempo
+confirmation gate at 64 paired evaluations. Its five-card bomb has mean return
+0.90625, return variance 0.1815, paired advantage 0.5625, and a 95% advantage
+lower bound of 0.3239 over the recorded pass. This is one independent game and
+is insufficient for training, checkpoint selection, or any policy claim.

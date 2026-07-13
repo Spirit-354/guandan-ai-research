@@ -154,6 +154,13 @@ and 496 paired greedy-continuation rollouts. All reached legal terminal states,
 but no comparison met the frozen advantage, variance, and confidence criteria.
 No teacher label was produced and no model training followed.
 
+After impossible history-capped states were removed, the corrected behavior-Q
+diagnostic used 319 train and 104 development decisions while loading zero
+locked-test samples. Scratch initialization reached development MSE about 0.982
+and sign accuracy about 58.7%. Old-v5 initialization reached best-loss MSE about
+1.800 and sign accuracy about 45.2%. These metrics only compare initialization
+for `Q(s,a_behavior)`; neither checkpoint is a policy candidate.
+
 A continuation-policy robustness probe then combined deterministic greedy and
 frozen tempo policies on four distinct games. All 72 paired rollouts reached a
 legal terminal state with no hidden-hand or future-information access. No
@@ -161,3 +168,31 @@ candidate robustly beat the behavior action across both policies, so again no
 teacher label was emitted. The probe took about 8.9 minutes (roughly 7.4 seconds
 per rollout); broader search requires disagreement-state filtering and caching,
 not a blind multiplication of rollouts.
+
+## Stable Information-Set Teacher Screening
+
+The rollout seed originally depended on a case's position in the command. That
+made the same state draw different hidden-card assignments when evaluated alone
+or in a batch. Seeds now derive from `game_id`, `turn_index`, and the
+determinization index. Multiple continuation profiles also receive the same
+hidden assignment, separating continuation-policy effects from hidden-card
+sampling effects.
+
+Risk-priority screening now covers all 319 consistent train states. The first
+93 states completed 4,960 greedy rollouts and the remaining 226 completed 5,872;
+all rollouts reached legal terminal states with no integrity failure. Greedy-only
+signals were treated as screening results, not teacher labels. Multi-policy
+confirmation rejected apparent improvements from game 13880 because the frozen
+tempo continuation did not support them.
+
+One independent game currently supplies a stable strong teacher case. At game
+13868 turn 10, playing the available five-card bomb instead of passing produced
+mean team return 0.90625 versus 0.34375 over 64 paired evaluations. Candidate
+return variance was 0.1815, paired advantage was 0.5625 with 95% lower bound
+0.3239, and greedy/tempo continuation advantages were 0.625/0.5. Nearby turn 9
+was rejected because its greedy advantage was below the frozen threshold. This
+is not enough independent evidence to train or promote a model.
+
+A three-case tempo confirmation batch exceeded 30 minutes and was terminated;
+no partial result was accepted. Rollout evaluation now supports an optional
+per-case time budget so one expensive state cannot invalidate a whole batch.

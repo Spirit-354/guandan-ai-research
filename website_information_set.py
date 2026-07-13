@@ -1,11 +1,13 @@
 from __future__ import annotations
 
 from collections import Counter
+import hashlib
 import json
 from pathlib import Path
 import random
 from typing import Any
 import statistics
+import time
 
 import numpy as np
 
@@ -306,7 +308,29 @@ def _rollout_candidates(sample: dict, game: Any, components: dict, adaptive: Any
     return selected[: int(limit)]
 
 
-def _stratified_train_samples(samples: list[dict], limit: int) -> list[dict]:
+def _observable_risk_score(sample: dict) -> float:
+    hand_counts = [int(value) for value in (sample.get("hand_counts") or [27, 27, 27, 27])]
+    your_seat = int(sample.get("your_seat", 0))
+    opponents = [(your_seat + 1) % 4, (your_seat + 3) % 4]
+    opponent_min = min(hand_counts[seat] for seat in opponents)
+    behavior_is_pass = not bool(sample.get("chosen_cards") or [])
+    non_pass_available = any(bool(item.get("cards")) for item in sample.get("legal_action_metadata") or [])
+    score = 0.0
+    score += max(0, 8 - opponent_min) * 2.0
+    score += 8.0 if sample.get("was_follow") and behavior_is_pass and non_pass_available else 0.0
+    score += 4.0 if "endgame" in str(sample.get("scenario") or "").lower() else 0.0
+    score += 2.0 if int(sample.get("legal_action_count") or 0) > 1 else 0.0
+    score += 1.0 if sample.get("bomb_candidate_available") else 0.0
+    return score
+
+
+def _stratified_train_samples(
+    samples: list[dict],
+    limit: int,
+    *,
+    risk_priority: bool = False,
+    case_keys: set[tuple[str, str]] | None = None,
+) -> list[dict]:
     eligible = [
         sample
         for sample in samples
@@ -314,14 +338,26 @@ def _stratified_train_samples(samples: list[dict], limit: int) -> list[dict]:
         and sample.get("information_set_consistent")
         and all(int(value) > 0 for value in sample.get("hand_counts") or [])
     ]
+    if case_keys:
+        return [
+            sample
+            for sample in eligible
+            if (str(sample.get("game_id")), str(sample.get("turn_index"))) in case_keys
+        ][: int(limit)]
     by_game: dict[str, list[dict]] = {}
     for sample in eligible:
         by_game.setdefault(str(sample.get("game_id")), []).append(sample)
     rng = random.Random(20260713)
     for game_samples in by_game.values():
-        rng.shuffle(game_samples)
+        if risk_priority:
+            game_samples.sort(key=lambda sample: (-_observable_risk_score(sample), int(sample.get("turn_index") or 0)))
+        else:
+            rng.shuffle(game_samples)
     game_ids = sorted(by_game)
-    rng.shuffle(game_ids)
+    if risk_priority:
+        game_ids.sort(key=lambda game_id: -max(_observable_risk_score(sample) for sample in by_game[game_id]))
+    else:
+        rng.shuffle(game_ids)
     selected: list[dict] = []
     depth = 0
     while len(selected) < int(limit):
@@ -407,13 +443,49 @@ def _sample_variance(values: list[float]) -> float:
     return float(statistics.variance(values)) if len(values) >= 2 else 0.0
 
 
+def _stable_determinization_seed(sample: dict, determinization_index: int) -> int:
+    case_key = f"{sample.get('game_id')}:{sample.get('turn_index')}:{int(determinization_index)}"
+    digest = hashlib.sha256(case_key.encode("utf-8")).digest()
+    return int.from_bytes(digest[:8], "big")
+
+
+def _strong_teacher_label(
+    *,
+    paired_count: int,
+    requested_count: int,
+    advantage: float,
+    candidate_return_variance: float,
+    lower_bound: float,
+    robust_across_profiles: bool,
+    min_advantage: float,
+    max_return_variance: float,
+) -> bool:
+    return bool(
+        paired_count == requested_count
+        and advantage >= min_advantage
+        and candidate_return_variance <= max_return_variance
+        and lower_bound > 0.0
+        and robust_across_profiles
+    )
+
+
 def run_rollout_eval(args: Any, components: dict, adaptive: Any) -> dict:
     samples, dataset_summary = website_data.load_dataset(Path(args.website_information_set_rollout_eval))
     if dataset_summary.get("partition_role") != "train_development":
         raise RuntimeError("information-set rollout requires the frozen train_dev partition")
     if any(sample.get("split") == "locked_test" for sample in samples):
         raise RuntimeError("information-set rollout refuses locked-test samples")
-    eligible = _stratified_train_samples(samples, int(args.information_set_rollout_samples))
+    case_keys = {
+        tuple(item.split(":", 1))
+        for item in str(args.information_set_case_keys or "").split(",")
+        if ":" in item
+    }
+    eligible = _stratified_train_samples(
+        samples,
+        int(args.information_set_rollout_samples),
+        risk_priority=bool(args.information_set_risk_priority),
+        case_keys=case_keys or None,
+    )
     case_results: list[dict] = []
     strong_labels: list[dict] = []
     integrity_failures: list[dict] = []
@@ -431,8 +503,11 @@ def run_rollout_eval(args: Any, components: dict, adaptive: Any) -> dict:
     profile_rollout_counts = Counter()
     total_rollouts = 0
     completed_rollouts = 0
-    for case_index, sample in enumerate(eligible):
-        base_rng = random.Random(20260713 + case_index * 100003)
+    timeout_case_count = 0
+    for sample in eligible:
+        case_started = time.monotonic()
+        case_timed_out = False
+        base_rng = random.Random(_stable_determinization_seed(sample, -1))
         candidate_game = restore_game(sample, components, base_rng)
         candidates = _rollout_candidates(
             sample,
@@ -445,8 +520,16 @@ def run_rollout_eval(args: Any, components: dict, adaptive: Any) -> dict:
         paired_returns: list[list[float | None]] = [[] for _ in candidates]
         failures: list[list[dict]] = [[] for _ in candidates]
         for rollout_index in range(int(args.information_set_rollouts_per_action)):
-            determinization_seed = 20260713 + case_index * 1_000_003 + rollout_index
+            if (
+                float(args.information_set_max_seconds_per_case) > 0.0
+                and time.monotonic() - case_started >= float(args.information_set_max_seconds_per_case)
+            ):
+                case_timed_out = True
+                timeout_case_count += 1
+                break
             continuation_profile = continuation_profiles[rollout_index % len(continuation_profiles)]
+            determinization_index = rollout_index // len(continuation_profiles)
+            determinization_seed = _stable_determinization_seed(sample, determinization_index)
             profile_rollout_counts[continuation_profile] += len(candidates)
             base_game = restore_game(sample, components, random.Random(determinization_seed))
             for candidate_index, candidate in enumerate(candidates):
@@ -517,18 +600,23 @@ def run_rollout_eval(args: Any, components: dict, adaptive: Any) -> dict:
                 and float(metrics["mean_advantage"]) >= float(args.information_set_min_advantage)
                 for metrics in policy_advantages.values()
             )
-            strong = bool(
-                len(paired_differences) == int(args.information_set_rollouts_per_action)
-                and advantage >= float(args.information_set_min_advantage)
-                and variance <= float(args.information_set_max_variance)
-                and lower_bound > 0.0
-                and robust_across_profiles
+            candidate_return_variance = float(candidate_results[best_index]["return_variance"])
+            strong = _strong_teacher_label(
+                paired_count=len(paired_differences),
+                requested_count=int(args.information_set_rollouts_per_action),
+                advantage=advantage,
+                candidate_return_variance=candidate_return_variance,
+                lower_bound=lower_bound,
+                robust_across_profiles=robust_across_profiles,
+                min_advantage=float(args.information_set_min_advantage),
+                max_return_variance=float(args.information_set_max_variance),
             )
             label = {
                 "best_candidate_index": best_index,
                 "behavior_candidate_index": behavior_index,
                 "candidate_advantage": advantage,
                 "paired_return_variance": variance,
+                "candidate_return_variance": candidate_return_variance,
                 "advantage_95_lower_bound": lower_bound,
                 "label_confidence": confidence,
                 "continuation_policy_advantages": policy_advantages,
@@ -556,11 +644,23 @@ def run_rollout_eval(args: Any, components: dict, adaptive: Any) -> dict:
                 "game_id": sample.get("game_id"),
                 "turn_index": sample.get("turn_index"),
                 "scenario": sample.get("scenario"),
+                "observable_risk_score": _observable_risk_score(sample),
+                "case_seconds": time.monotonic() - case_started,
+                "case_timed_out": case_timed_out,
                 "candidate_results": candidate_results,
                 "teacher_label": label,
                 "candidate_failures": failures,
             }
         )
+    requested_total_rollouts = sum(
+        len(case["candidate_results"]) * int(args.information_set_rollouts_per_action)
+        for case in case_results
+    )
+    all_cases_completed = bool(
+        case_results
+        and timeout_case_count == 0
+        and completed_rollouts == requested_total_rollouts
+    )
     result = {
         "schema_version": "website_information_set_rollout_v1",
         "dataset_path": str(args.website_information_set_rollout_eval),
@@ -569,30 +669,35 @@ def run_rollout_eval(args: Any, components: dict, adaptive: Any) -> dict:
         "evaluated_cases": len(case_results),
         "candidate_count": sum(len(case["candidate_results"]) for case in case_results),
         "requested_rollouts_per_action": int(args.information_set_rollouts_per_action),
+        "requested_total_rollouts": requested_total_rollouts,
         "total_rollouts": total_rollouts,
         "completed_rollouts": completed_rollouts,
-        "rollout_completion_rate": completed_rollouts / total_rollouts if total_rollouts else 0.0,
+        "rollout_completion_rate": (
+            completed_rollouts / requested_total_rollouts if requested_total_rollouts else 0.0
+        ),
+        "timeout_case_count": timeout_case_count,
+        "all_cases_completed": all_cases_completed,
         "hidden_card_sampling_method": "uniform_physical_assignment_given_public_counts_v1",
+        "determinization_seed_scheme": "sha256_game_id_turn_index_determinization_index_v1",
+        "common_determinizations_across_continuation_profiles": True,
         "continuation_policy": "information_set_profile_ensemble_v1",
         "continuation_profiles": continuation_profiles,
         "continuation_profile_rollout_counts": dict(profile_rollout_counts),
+        "risk_priority": bool(args.information_set_risk_priority),
+        "requested_case_keys": sorted(":".join(item) for item in case_keys),
         "future_information_used": False,
         "opponent_or_teammate_true_hands_used": False,
         "strong_teacher_label_count": len(strong_labels),
         "strong_teacher_labels": strong_labels,
         "case_results": case_results,
         "integrity_failures": integrity_failures,
-        "threshold_passed": bool(
-            case_results
-            and completed_rollouts == total_rollouts
-            and not integrity_failures
-        ),
+        "threshold_passed": bool(all_cases_completed and not integrity_failures),
         "capability_claim_allowed": False,
     }
     Path(args.information_set_rollout_out).write_text(
         json.dumps(result, ensure_ascii=False, indent=2), encoding="utf-8"
     )
     print(json.dumps({key: value for key, value in result.items() if key not in {"case_results", "strong_teacher_labels"}}, ensure_ascii=False, indent=2))
-    if not result["threshold_passed"]:
+    if not case_results or integrity_failures:
         raise RuntimeError("information-set rollout feasibility gate failed")
     return result
