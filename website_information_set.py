@@ -384,6 +384,7 @@ def _simulate_candidate(
     max_steps: int,
     continuation_profile: str,
     profile_config: dict,
+    deadline_monotonic: float | None = None,
 ) -> tuple[float | None, dict | None]:
     import copy
 
@@ -407,6 +408,8 @@ def _simulate_candidate(
         return None, {"reason": "candidate_apply_failed"}
     steps = 0
     while not game.is_game_over and steps < int(max_steps):
+        if deadline_monotonic is not None and time.monotonic() >= deadline_monotonic:
+            return None, {"reason": "case_time_budget_exhausted", "steps": steps}
         adaptive.offline_prepare_turn(game)
         if game.current_player in game.ranking:
             steps += 1
@@ -507,6 +510,11 @@ def run_rollout_eval(args: Any, components: dict, adaptive: Any) -> dict:
     for sample in eligible:
         case_started = time.monotonic()
         case_timed_out = False
+        case_deadline = (
+            case_started + float(args.information_set_max_seconds_per_case)
+            if float(args.information_set_max_seconds_per_case) > 0.0
+            else None
+        )
         base_rng = random.Random(_stable_determinization_seed(sample, -1))
         candidate_game = restore_game(sample, components, base_rng)
         candidates = _rollout_candidates(
@@ -525,7 +533,6 @@ def run_rollout_eval(args: Any, components: dict, adaptive: Any) -> dict:
                 and time.monotonic() - case_started >= float(args.information_set_max_seconds_per_case)
             ):
                 case_timed_out = True
-                timeout_case_count += 1
                 break
             continuation_profile = continuation_profiles[rollout_index % len(continuation_profiles)]
             determinization_index = rollout_index // len(continuation_profiles)
@@ -534,22 +541,30 @@ def run_rollout_eval(args: Any, components: dict, adaptive: Any) -> dict:
             base_game = restore_game(sample, components, random.Random(determinization_seed))
             for candidate_index, candidate in enumerate(candidates):
                 total_rollouts += 1
-                value, failure = _simulate_candidate(
-                    base_game,
-                    candidate,
-                    components,
-                    adaptive,
-                    determinization_seed,
-                    int(args.information_set_rollout_max_steps),
-                    continuation_profile,
-                    profile_config,
-                )
+                if case_deadline is not None and time.monotonic() >= case_deadline:
+                    value, failure = None, {"reason": "case_time_budget_exhausted", "steps": 0}
+                else:
+                    value, failure = _simulate_candidate(
+                        base_game,
+                        candidate,
+                        components,
+                        adaptive,
+                        determinization_seed,
+                        int(args.information_set_rollout_max_steps),
+                        continuation_profile,
+                        profile_config,
+                        case_deadline,
+                    )
                 paired_returns[candidate_index].append(value)
                 if value is not None:
                     returns[candidate_index].append(float(value))
                     completed_rollouts += 1
                 elif failure and len(failures[candidate_index]) < 5:
                     failures[candidate_index].append(failure)
+                if failure and failure.get("reason") == "case_time_budget_exhausted":
+                    case_timed_out = True
+        if case_timed_out:
+            timeout_case_count += 1
         candidate_results: list[dict] = []
         for candidate, values in zip(candidates, returns):
             candidate_results.append(
