@@ -582,10 +582,14 @@ def run_rollout_eval(args: Any, components: dict, adaptive: Any) -> dict:
             confidence = max(0.0, min(1.0, 0.5 + lower_bound / 2.0))
             policy_advantages: dict[str, dict] = {}
             for profile in continuation_profiles:
+                paired_length = min(
+                    len(paired_returns[best_index]),
+                    len(paired_returns[behavior_index]),
+                )
                 differences = [
                     float(paired_returns[best_index][rollout_index])
                     - float(paired_returns[behavior_index][rollout_index])
-                    for rollout_index in range(int(args.information_set_rollouts_per_action))
+                    for rollout_index in range(paired_length)
                     if continuation_profiles[rollout_index % len(continuation_profiles)] == profile
                     and paired_returns[best_index][rollout_index] is not None
                     and paired_returns[behavior_index][rollout_index] is not None
