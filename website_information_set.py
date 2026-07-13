@@ -5,9 +5,9 @@ import hashlib
 import json
 from pathlib import Path
 import random
-from typing import Any
 import statistics
 import time
+from typing import Any
 
 import numpy as np
 
@@ -16,6 +16,9 @@ import website_danzero_dataset as website_data
 
 
 INFORMATION_SET_SCHEMA_VERSION = "website_information_set_v1"
+TEACHER_DATASET_SCHEMA_VERSION = "website_information_set_teacher_v1"
+MIN_STRONG_TEACHER_ROLLOUTS = 16
+MIN_TEACHER_TRAINING_INDEPENDENT_GAMES = 20
 
 
 def _integer_counts(values: list[float], name: str) -> np.ndarray:
@@ -243,6 +246,96 @@ def run_sanity(args: Any, components: dict) -> dict:
 
 def _candidate_key(cards: list[str]) -> tuple[tuple[str, int], ...]:
     return tuple(sorted(Counter(cards).items()))
+
+
+def _cards_are_subset(cards: list[str], hand: list[str]) -> bool:
+    needed = Counter(cards)
+    available = Counter(hand)
+    return all(available[card] >= count for card, count in needed.items())
+
+
+def _website_action_vector_for_cards(sample: dict, cards: list[str]) -> list[float] | None:
+    target = _candidate_key(cards)
+    metadata = list(sample.get("legal_action_metadata") or [])
+    actions = list(sample.get("legal_actions") or [])
+    if len(metadata) != len(actions):
+        return None
+    matches = [
+        [float(value) for value in actions[index]]
+        for index, item in enumerate(metadata)
+        if _candidate_key(list(item.get("cards") or [])) == target
+    ]
+    if not matches or any(len(action) != website_data.ACTION_DIM for action in matches):
+        return None
+    first = matches[0]
+    if any(action != first for action in matches[1:]):
+        return None
+    return first
+
+
+def _teacher_sample_from_label(source: dict, label: dict, source_path: str) -> tuple[dict | None, str | None]:
+    if source.get("split") != "train":
+        return None, "source_not_train"
+    if not source.get("information_set_consistent"):
+        return None, "source_information_set_inconsistent"
+    if list(label.get("state") or []) != list(source.get("state") or []):
+        return None, "state_mismatch"
+    state = [float(value) for value in source.get("state") or []]
+    if len(state) != website_data.STATE_DIM:
+        return None, "state_dim_mismatch"
+    teacher = dict(label.get("teacher_action") or {})
+    behavior = dict(label.get("behavior_action") or {})
+    teacher_cards = list(teacher.get("physical_cards_website") or [])
+    behavior_cards = list(behavior.get("physical_cards_website") or [])
+    hand = list(source.get("hand_before") or [])
+    if not _cards_are_subset(teacher_cards, hand):
+        return None, "teacher_cards_not_in_hand"
+    if _candidate_key(behavior_cards) != _candidate_key(list(source.get("chosen_cards") or [])):
+        return None, "behavior_cards_mismatch"
+    teacher_vector = _website_action_vector_for_cards(source, teacher_cards)
+    if teacher_vector is None:
+        return None, "teacher_action_vector_unavailable"
+    behavior_vector = [float(value) for value in source.get("chosen_action") or []]
+    if len(behavior_vector) != website_data.ACTION_DIM:
+        return None, "behavior_action_dim_mismatch"
+    legal_actions = [
+        [float(value) for value in action] for action in source.get("legal_actions") or []
+    ]
+    if not legal_actions or any(len(action) != website_data.ACTION_DIM for action in legal_actions):
+        return None, "legal_action_dim_mismatch"
+    if teacher_vector not in legal_actions or behavior_vector not in legal_actions:
+        return None, "teacher_or_behavior_not_legal"
+    return {
+        "schema_version": TEACHER_DATASET_SCHEMA_VERSION,
+        "game_id": str(source.get("game_id")),
+        "turn_index": source.get("turn_index"),
+        "split": "train",
+        "state": state,
+        "state_dim": website_data.STATE_DIM,
+        "teacher_action": teacher_vector,
+        "behavior_action": behavior_vector,
+        "action_dim": website_data.ACTION_DIM,
+        "legal_actions": legal_actions,
+        "teacher_physical_cards": teacher_cards,
+        "behavior_physical_cards": behavior_cards,
+        "teacher_action_type": teacher.get("action_type"),
+        "behavior_action_type": behavior.get("action_type"),
+        "teacher_mean_return": label.get("mean_return"),
+        "behavior_mean_return": behavior.get("mean_return"),
+        "rollout_count": int(label.get("rollout_count") or 0),
+        "hidden_card_sampling_method": label.get("hidden_card_sampling_method"),
+        "candidate_return_variance": label.get("candidate_return_variance"),
+        "paired_return_variance": label.get("paired_return_variance"),
+        "candidate_advantage": label.get("candidate_advantage"),
+        "advantage_95_lower_bound": label.get("advantage_95_lower_bound"),
+        "label_confidence": label.get("label_confidence"),
+        "continuation_policy_advantages": label.get("continuation_policy_advantages"),
+        "preference_target": "teacher_action_beats_behavior_action",
+        "metric_source": "information_set_counterfactual_team_return",
+        "source_rollout_eval": source_path,
+        "source_dataset_partition": "train_development",
+        "locked_test_used": False,
+    }, None
 
 
 def _rollout_candidates(sample: dict, game: Any, components: dict, adaptive: Any, limit: int) -> list[dict]:
@@ -535,6 +628,7 @@ def _strong_teacher_label(
 ) -> bool:
     return bool(
         case_complete
+        and requested_count >= MIN_STRONG_TEACHER_ROLLOUTS
         and paired_count == requested_count
         and advantage >= min_advantage
         and candidate_return_variance <= max_return_variance
@@ -824,6 +918,7 @@ def run_rollout_eval(args: Any, components: dict, adaptive: Any) -> dict:
                         "turn_index": sample.get("turn_index"),
                         "state": sample.get("state"),
                         "legal_actions": sample.get("legal_actions"),
+                        "legal_action_metadata": sample.get("legal_action_metadata"),
                         "teacher_action": candidate_results[best_index],
                         "behavior_action": candidate_results[behavior_index],
                         "rollout_count": len(paired_differences),
@@ -863,6 +958,7 @@ def run_rollout_eval(args: Any, components: dict, adaptive: Any) -> dict:
         "evaluated_cases": len(case_results),
         "candidate_count": sum(len(case["candidate_results"]) for case in case_results),
         "requested_rollouts_per_action": int(args.information_set_rollouts_per_action),
+        "minimum_strong_teacher_rollouts": MIN_STRONG_TEACHER_ROLLOUTS,
         "requested_total_rollouts": requested_total_rollouts,
         "total_rollouts": total_rollouts,
         "completed_rollouts": completed_rollouts,
@@ -919,3 +1015,185 @@ def run_rollout_eval(args: Any, components: dict, adaptive: Any) -> dict:
     if not case_results or integrity_failures:
         raise RuntimeError("information-set rollout feasibility gate failed")
     return result
+
+
+def _write_teacher_dataset(path: Path, samples: list[dict], summary: dict) -> None:
+    path.parent.mkdir(parents=True, exist_ok=True)
+    if path.suffix.lower() == ".jsonl":
+        with path.open("w", encoding="utf-8") as handle:
+            for sample in samples:
+                handle.write(json.dumps(sample, ensure_ascii=False, separators=(",", ":")) + "\n")
+        path.with_suffix(path.suffix + ".summary.json").write_text(
+            json.dumps(summary, ensure_ascii=False, indent=2), encoding="utf-8"
+        )
+        return
+    if path.suffix.lower() not in {".pt", ".pth"}:
+        raise RuntimeError("website teacher dataset path must end with .jsonl, .pt, or .pth")
+    try:
+        import torch
+    except ImportError as exc:
+        raise RuntimeError("PyTorch is required to write a website teacher .pt/.pth dataset") from exc
+    torch.save({"format": TEACHER_DATASET_SCHEMA_VERSION, "summary": summary, "samples": samples}, path)
+
+
+def _rollout_payload_is_complete(payload: dict) -> bool:
+    if "all_cases_completed" in payload:
+        return bool(payload.get("all_cases_completed"))
+    expected = int(payload.get("candidate_count") or 0) * int(
+        payload.get("requested_rollouts_per_action") or 0
+    )
+    return bool(
+        expected > 0
+        and int(payload.get("completed_rollouts") or 0) == expected
+        and int(payload.get("total_rollouts") or 0) == expected
+        and not payload.get("integrity_failures")
+        and payload.get("threshold_passed")
+    )
+
+
+def build_teacher_dataset(args: Any) -> dict:
+    source_samples, source_summary = website_data.load_dataset(
+        Path(args.website_information_set_teacher_base_dataset)
+    )
+    if source_summary.get("partition_role") != "train_development":
+        raise RuntimeError("website teacher builder requires the frozen train_dev partition")
+    if source_summary.get("contains_locked_test_samples"):
+        raise RuntimeError("website teacher builder refuses a partition containing locked-test samples")
+    if any(sample.get("split") == "locked_test" for sample in source_samples):
+        raise RuntimeError("website teacher builder found locked-test samples")
+    source_index = {
+        (str(sample.get("game_id")), str(sample.get("turn_index"))): sample
+        for sample in source_samples
+    }
+    paths = [
+        Path(item.strip())
+        for item in str(args.build_website_information_set_teacher_dataset).split(",")
+        if item.strip()
+    ]
+    if not paths:
+        raise RuntimeError("at least one website information-set rollout JSON is required")
+    reject_reasons: Counter[str] = Counter()
+    raw_label_count = 0
+    legacy_completion_inferred_file_count = 0
+    accepted: list[dict] = []
+    seen: set[tuple[str, str, tuple[tuple[str, int], ...]]] = set()
+    for path in paths:
+        payload = json.loads(path.read_text(encoding="utf-8"))
+        if payload.get("dataset_partition_role") != "train_development":
+            reject_reasons["rollout_partition_not_train_development"] += 1
+            continue
+        if payload.get("locked_test_loaded"):
+            reject_reasons["rollout_loaded_locked_test"] += 1
+            continue
+        rollout_complete = _rollout_payload_is_complete(payload)
+        if rollout_complete and "all_cases_completed" not in payload:
+            legacy_completion_inferred_file_count += 1
+        if not rollout_complete or not payload.get("threshold_passed"):
+            reject_reasons["rollout_incomplete"] += 1
+            continue
+        if payload.get("determinization_seed_scheme") != (
+            "sha256_game_id_turn_index_determinization_index_v1"
+        ):
+            reject_reasons["unstable_determinization_seed"] += 1
+            continue
+        if not payload.get("common_determinizations_across_continuation_profiles"):
+            reject_reasons["continuation_determinizations_not_shared"] += 1
+            continue
+        if payload.get("future_information_used") or payload.get(
+            "opponent_or_teammate_true_hands_used"
+        ):
+            reject_reasons["hidden_or_future_information_used"] += 1
+            continue
+        profiles = set(payload.get("continuation_profiles") or [])
+        if not {"greedy_bot", "tempo_baseline"}.issubset(profiles):
+            reject_reasons["continuation_ensemble_incomplete"] += 1
+            continue
+        for label in payload.get("strong_teacher_labels") or []:
+            raw_label_count += 1
+            if not label.get("strong_teacher_label"):
+                reject_reasons["label_not_marked_strong"] += 1
+                continue
+            if int(label.get("rollout_count") or 0) < MIN_STRONG_TEACHER_ROLLOUTS:
+                reject_reasons["insufficient_rollout_count"] += 1
+                continue
+            if float(label.get("candidate_advantage") or 0.0) < 0.15:
+                reject_reasons["candidate_advantage_below_threshold"] += 1
+                continue
+            candidate_variance = label.get("candidate_return_variance")
+            if candidate_variance is None or float(candidate_variance) > 0.50:
+                reject_reasons["candidate_return_variance_above_threshold"] += 1
+                continue
+            if not label.get("robust_across_continuation_profiles"):
+                reject_reasons["not_robust_across_continuations"] += 1
+                continue
+            policy_advantages = label.get("continuation_policy_advantages") or {}
+            minimum_policy_pairs = max(
+                1, int(label.get("rollout_count") or 0) // max(1, len(profiles))
+            )
+            if any(
+                profile not in policy_advantages
+                or int(policy_advantages[profile].get("paired_count") or 0)
+                < minimum_policy_pairs
+                or float(policy_advantages[profile].get("mean_advantage") or 0.0) < 0.15
+                for profile in ("greedy_bot", "tempo_baseline")
+            ):
+                reject_reasons["continuation_policy_evidence_below_threshold"] += 1
+                continue
+            if float(label.get("advantage_95_lower_bound") or 0.0) <= 0.0:
+                reject_reasons["nonpositive_advantage_lower_bound"] += 1
+                continue
+            source_key = (str(label.get("game_id")), str(label.get("turn_index")))
+            source = source_index.get(source_key)
+            if source is None:
+                reject_reasons["source_state_missing"] += 1
+                continue
+            teacher_cards = list((label.get("teacher_action") or {}).get("physical_cards_website") or [])
+            dedupe_key = (*source_key, _candidate_key(teacher_cards))
+            if dedupe_key in seen:
+                reject_reasons["duplicate_teacher_label"] += 1
+                continue
+            sample, reason = _teacher_sample_from_label(source, label, str(path))
+            if reason:
+                reject_reasons[reason] += 1
+                continue
+            seen.add(dedupe_key)
+            accepted.append(sample)
+    independent_games = len({sample["game_id"] for sample in accepted})
+    summary = {
+        "schema_version": TEACHER_DATASET_SCHEMA_VERSION,
+        "source_base_dataset": str(args.website_information_set_teacher_base_dataset),
+        "source_base_partition_role": source_summary.get("partition_role"),
+        "rollout_eval_file_count": len(paths),
+        "raw_strong_label_count": raw_label_count,
+        "legacy_completion_inferred_file_count": legacy_completion_inferred_file_count,
+        "accepted_teacher_label_count": len(accepted),
+        "independent_teacher_games": independent_games,
+        "minimum_strong_teacher_rollouts": MIN_STRONG_TEACHER_ROLLOUTS,
+        "minimum_training_independent_games": MIN_TEACHER_TRAINING_INDEPENDENT_GAMES,
+        "reject_reason_counts": dict(sorted(reject_reasons.items())),
+        "state_dim": website_data.STATE_DIM,
+        "action_dim": website_data.ACTION_DIM,
+        "hidden_information_policy": "decision_time_information_set_only",
+        "locked_test_loaded": False,
+        "training_gate_passed": bool(
+            independent_games >= MIN_TEACHER_TRAINING_INDEPENDENT_GAMES
+        ),
+        "training_gate_reason": (
+            None
+            if independent_games >= MIN_TEACHER_TRAINING_INDEPENDENT_GAMES
+            else "insufficient_independent_high_confidence_teacher_games"
+        ),
+        "capability_claim_allowed": False,
+        "threshold_passed": bool(accepted and not any(
+            reason in reject_reasons
+            for reason in (
+                "rollout_loaded_locked_test",
+                "teacher_cards_not_in_hand",
+                "teacher_or_behavior_not_legal",
+                "state_mismatch",
+            )
+        )),
+    }
+    _write_teacher_dataset(Path(args.website_information_set_teacher_out), accepted, summary)
+    print(json.dumps(summary, ensure_ascii=False, indent=2))
+    return summary

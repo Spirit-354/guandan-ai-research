@@ -16,6 +16,85 @@ import play_research_adaptive
 
 
 class WebsiteInformationSetTests(unittest.TestCase):
+    def test_legacy_rollout_completion_requires_exact_counts(self) -> None:
+        payload = {
+            "candidate_count": 4,
+            "requested_rollouts_per_action": 16,
+            "completed_rollouts": 64,
+            "total_rollouts": 64,
+            "integrity_failures": [],
+            "threshold_passed": True,
+        }
+        self.assertTrue(website_information_set._rollout_payload_is_complete(payload))
+        self.assertFalse(
+            website_information_set._rollout_payload_is_complete(
+                {**payload, "completed_rollouts": 63}
+            )
+        )
+
+    def test_teacher_sample_maps_physical_cards_to_54_dim_action(self) -> None:
+        behavior_action = [0.0] * 54
+        teacher_action = [0.0] * 54
+        teacher_action[3] = 1.0
+        source = {
+            "game_id": "g1",
+            "turn_index": 2,
+            "split": "train",
+            "information_set_consistent": True,
+            "state": [0.0] * 513,
+            "hand_before": ["S3", "H3"],
+            "chosen_cards": [],
+            "chosen_action": behavior_action,
+            "legal_actions": [behavior_action, teacher_action],
+            "legal_action_metadata": [
+                {"cards": [], "action_type": "None"},
+                {"cards": ["S3"], "action_type": "single"},
+            ],
+        }
+        label = {
+            "game_id": "g1",
+            "turn_index": 2,
+            "state": [0.0] * 513,
+            "teacher_action": {
+                "physical_cards_website": ["S3"],
+                "action_type": "single",
+            },
+            "behavior_action": {
+                "physical_cards_website": [],
+                "action_type": "None",
+                "mean_return": -0.5,
+            },
+            "rollout_count": 16,
+            "mean_return": 0.5,
+            "candidate_advantage": 1.0,
+            "advantage_95_lower_bound": 0.2,
+        }
+        sample, reason = website_information_set._teacher_sample_from_label(
+            source, label, "rollout.json"
+        )
+        self.assertIsNone(reason)
+        self.assertEqual(sample["teacher_action"], teacher_action)
+        self.assertEqual(sample["behavior_action"], behavior_action)
+        self.assertFalse(sample["locked_test_used"])
+
+    def test_arena_finish_setup_shortcut_restores_engine_functions(self) -> None:
+        engine = play_research_adaptive.engine
+        original_follow = engine.choose_bomb_to_set_up_finish
+        original_lead = engine.choose_lead_bomb_to_set_up_finish
+        hand = [
+            f"{suit}{rank}"
+            for suit in "SHDC"
+            for rank in "23456789TJQKA"
+        ][:21]
+        restore = play_research_adaptive.offline_install_arena_baseline_optimizations()
+        try:
+            self.assertIsNone(engine.choose_bomb_to_set_up_finish(hand, ["S3"], "7"))
+            self.assertIsNone(engine.choose_lead_bomb_to_set_up_finish(hand, "7"))
+        finally:
+            restore()
+        self.assertIs(engine.choose_bomb_to_set_up_finish, original_follow)
+        self.assertIs(engine.choose_lead_bomb_to_set_up_finish, original_lead)
+
     def test_unique_card_combinations_match_position_combinations(self) -> None:
         hand = sorted(["S3", "S3", "H4", "H4", "D5", "C6"])
         for size in range(1, len(hand) + 1):
@@ -118,6 +197,19 @@ class WebsiteInformationSetTests(unittest.TestCase):
                 advantage=0.5,
                 candidate_return_variance=0.2,
                 lower_bound=0.2,
+                robust_across_profiles=True,
+                min_advantage=0.15,
+                max_return_variance=0.5,
+            )
+        )
+        self.assertFalse(
+            website_information_set._strong_teacher_label(
+                case_complete=True,
+                paired_count=2,
+                requested_count=2,
+                advantage=1.0,
+                candidate_return_variance=0.0,
+                lower_bound=1.0,
                 robust_across_profiles=True,
                 min_advantage=0.15,
                 max_return_variance=0.5,

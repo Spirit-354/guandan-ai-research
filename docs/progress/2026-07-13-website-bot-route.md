@@ -250,3 +250,30 @@ Supplement plan v1 assigns a five-game train session and a three-game
 development session, targeting at least 600 consistent train/development
 decisions. No website game was started while preparing this plan because the
 credential environment variables were not present in the running process.
+
+## High-Confidence Teacher Dataset Gate
+
+Another exact-tempo profile found that large hands spent most decision time
+enumerating bombs for a two-hand finish that was mathematically impossible. In
+a two-deck game, one legal play contains at most ten cards; therefore a hand
+larger than twenty cannot be cleared by one bomb plus one remaining legal play.
+The arena-only optimizer now skips that unreachable search. The slow reference
+state fell from about 19.5 seconds to 2.5 seconds, and a fresh 200-state
+comparison against the unmodified baseline again produced zero mismatches.
+
+With that optimization, game 13872 turn 4 completed all 64 requested
+counterfactual rollouts in about 25.2 minutes. Playing the four-card bomb instead
+of the behavior single produced mean team return 0.875 versus -0.25. The paired
+advantage was 1.125, its 95% lower bound was 0.623, candidate return variance was
+0.25, and greedy/tempo continuation advantages were 1.0/1.25. No hidden or
+future information was used. Smoke runs below 16 paired rollouts are now
+explicitly forbidden from producing strong teacher labels.
+
+A dedicated 513-state/54-action website teacher builder recovers each selected
+physical action from the original frozen train sample instead of treating the
+375 compatibility action ID as the paper action. It accepts only complete,
+stable-seed, greedy-plus-tempo rollout files and verifies state identity, hand
+subset, legal action membership, and train-only provenance. The current dataset
+contains two independent high-confidence games (13868 and 13872), both legal and
+with no locked-test access. Its training gate remains false until at least 20
+independent high-confidence teacher games exist, so no model training follows.

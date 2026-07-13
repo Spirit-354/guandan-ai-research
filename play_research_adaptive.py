@@ -10049,6 +10049,8 @@ def offline_unique_card_combinations(hand: list[str], size: int) -> Any:
 def offline_install_arena_baseline_optimizations() -> Any:
     original_choose_all_out = engine.choose_all_out_if_possible
     original_choose_non_bomb_follow = engine.choose_non_bomb_follow
+    original_choose_bomb_to_set_up_finish = engine.choose_bomb_to_set_up_finish
+    original_choose_lead_bomb_to_set_up_finish = engine.choose_lead_bomb_to_set_up_finish
     original_exact_remaining_groups = engine.exact_remaining_groups
     original_legal_play_options_cached = engine._legal_play_options_cached
 
@@ -10090,6 +10092,20 @@ def offline_install_arena_baseline_optimizations() -> Any:
         if len(hand) > 10:
             return None
         return original_choose_all_out(hand, last_play, level)
+
+    def arena_choose_bomb_to_set_up_finish(
+        hand: list[str], last_play: list[str], level: str
+    ) -> list[str] | None:
+        if len(hand) > 20:
+            return None
+        return original_choose_bomb_to_set_up_finish(hand, last_play, level)
+
+    def arena_choose_lead_bomb_to_set_up_finish(
+        hand: list[str], level: str
+    ) -> list[str] | None:
+        if len(hand) > 20:
+            return None
+        return original_choose_lead_bomb_to_set_up_finish(hand, level)
 
     def arena_choose_non_bomb_follow(
         hand: list[str],
@@ -10149,12 +10165,16 @@ def offline_install_arena_baseline_optimizations() -> Any:
 
     engine.choose_all_out_if_possible = arena_choose_all_out_if_possible
     engine.choose_non_bomb_follow = arena_choose_non_bomb_follow
+    engine.choose_bomb_to_set_up_finish = arena_choose_bomb_to_set_up_finish
+    engine.choose_lead_bomb_to_set_up_finish = arena_choose_lead_bomb_to_set_up_finish
     engine.exact_remaining_groups = offline_exact_remaining_groups_fast
     engine._legal_play_options_cached = arena_legal_play_options_cached
 
     def restore() -> None:
         engine.choose_all_out_if_possible = original_choose_all_out
         engine.choose_non_bomb_follow = original_choose_non_bomb_follow
+        engine.choose_bomb_to_set_up_finish = original_choose_bomb_to_set_up_finish
+        engine.choose_lead_bomb_to_set_up_finish = original_choose_lead_bomb_to_set_up_finish
         engine.exact_remaining_groups = original_exact_remaining_groups
         engine._legal_play_options_cached = original_legal_play_options_cached
 
@@ -17737,6 +17757,15 @@ def parse_args() -> argparse.Namespace:
     parser.add_argument("--information-set-cache-baseline-actions", action="store_true")
     parser.add_argument("--information-set-risk-priority", action="store_true")
     parser.add_argument("--information-set-case-keys", default="")
+    parser.add_argument(
+        "--build-website-information-set-teacher-dataset",
+        help="Comma-separated completed website information-set rollout JSON files.",
+    )
+    parser.add_argument("--website-information-set-teacher-base-dataset")
+    parser.add_argument(
+        "--website-information-set-teacher-out",
+        default="website_information_set_teacher_dataset.pth",
+    )
     parser.add_argument("--summary", help="Print an Elo research summary from research_results.json.")
     parser.add_argument("--recent-window", type=int, default=10)
     parser.add_argument("--website-goal-min-games", type=int, default=500)
@@ -18084,6 +18113,15 @@ def main() -> None:
         finally:
             if restore_baseline is not None:
                 restore_baseline()
+        return
+    if args.build_website_information_set_teacher_dataset:
+        import website_information_set
+
+        if not args.website_information_set_teacher_base_dataset:
+            raise RuntimeError(
+                "--website-information-set-teacher-base-dataset is required"
+            )
+        website_information_set.build_teacher_dataset(args)
         return
     if args.offline_env_sanity_check:
         run_offline_env_sanity_check(args)
