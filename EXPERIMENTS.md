@@ -207,6 +207,49 @@ Decision:
 - Do not screen these states or train from them before the extension v2
   partitions and manifests pass their existing gates.
 
+## Website Dataset Extension v2
+
+Status: frozen; coverage gate passed.
+
+Evidence:
+
+- The extension v1 manifest content hash was verified as
+  `db209561f6961b289dda668861687fcd7a258a2f283cecaae065501b2006f429`
+  before rebuilding.
+- Extension v2 contains 70 accepted bot-only games, 40 wins, 30 losses, 1,753
+  decisions, and 49,549 legal candidates; rejected files or games: 0.
+- All 58 extension v1 games, their split assignments, all 12 old sessions, and
+  every old source-file hash are unchanged. The nine-game locked-test set is
+  exactly identical.
+- New game IDs 13985, 13986, 13987, 13989, 13991, 13992, 13994, 13996, 13997,
+  13999, 14000, and 14002 all entered train. New development and locked-test
+  games: 0.
+- The 1,473 old samples are unchanged after excluding the expected new split
+  manifest hash field. All 280 new samples are train, bot-verified,
+  `leaderboard_elo`, information-set consistent, and sourced from the new
+  supplement session.
+- The physical train/development partition contains 882 decisions across 61
+  games: 718 train and 164 development, with 37,452 legal candidates.
+- Physical coverage includes 141 lead, 741 follow, 659 level-card, 278 wildcard,
+  619 endgame, and 500 bomb-candidate decisions; all levels and first-player
+  seats are represented across both Elo bands.
+- Duplicate state count is zero. Coverage, information-set rollout, and dataset
+  threshold gates pass; capability evidence remains ineligible.
+- The isolated locked-test partition contains the same nine games and 90
+  consistent decisions. It was audited only for isolation and membership, not
+  used for candidate design or tuning.
+- Extension v2 manifest content hash:
+  `31c5bc501286ac41d3a791811c7089200e49097132bfd886aa10d281c5ddb27e`.
+
+Decision:
+
+- Freeze extension v2 and use only its physical train/development partition in
+  the next teacher-candidate stage.
+- Keep the complete bundle and isolated locked-test partition out of screening,
+  threshold selection, and label construction.
+- Preserve teacher v2 as the frozen 11-label base; do not train during the next
+  teacher expansion.
+
 ## Model A / Shared Self-Play / BC / PPO / DMC
 
 Status: not eligible for website control.
@@ -242,21 +285,24 @@ Decision:
 
 ## Current Next Experiment
 
-Name: Frozen Website Dataset Extension v2.
+Name: Extension v2 information-set teacher candidate expansion.
 
 Purpose:
 
-- Add the completed supplement v2 train session to a new frozen dataset
-  extension without changing extension v1 or its locked-test set.
-- Produce new v2 dataset, physical partitions, split manifest, and data card
-  for a later teacher-candidate stage.
+- Screen every eligible consistent train decision from the 12 new games using
+  legal information-set determinization.
+- Confirm only high-evidence candidates against both greedy and frozen-tempo
+  continuations, then append accepted labels to frozen teacher v2.
 
 Acceptance:
 
-- All 58 extension v1 games and splits remain unchanged.
-- All 12 supplement v2 games enter train; locked-test membership is exactly
-  unchanged.
-- New extension v2 artifacts pass split, physical-consistency, coverage,
-  duplicate-state, bot-table, Elo-source, and zero-model-control checks.
-- Do not run teacher rollout, train a model, play website games, or start any
-  model-controlled website stage.
+- Load only `website_danzero_shadow_extension_v2.train_dev.pth`; locked-test
+  loads and hidden/future information use: 0.
+- Enumerate all 280 new train decisions, report ineligible states, and screen
+  every eligible state without allowing greedy-only signals to become labels.
+- Every accepted label passes existing 16-rollout completeness, variance,
+  advantage, positive-confidence, and dual-continuation robustness gates.
+- Frozen teacher v2 labels remain unchanged and physical-action remap errors
+  are zero.
+- Report the resulting independent teacher-game count, but do not train a model
+  in this stage.

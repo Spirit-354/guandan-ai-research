@@ -382,3 +382,65 @@ files. This stage did not rebuild a dataset, run teacher rollout, train a model,
 or allow model-controlled website play. The next stage is limited to rebuilding
 new extension v2 artifacts while preserving every extension v1 assignment and
 the exact nine-game locked-test set.
+
+## Frozen Dataset Extension v2
+
+The extension v1 manifest content hash was verified as
+`db209561f6961b289dda668861687fcd7a258a2f283cecaae065501b2006f429`
+before construction. Its 58 game IDs, split lists, 12 session assignments, 58
+source paths and source hashes, and five artifact SHA-256 values were recorded.
+No extension v2 output existed before the build.
+
+The builder used extension v1 as its frozen manifest base and added only
+`logs_website_shadow_supplement_train_002` through the cumulative v2 assignment
+file. It accepted all 70 source games and rejected none. The new bundle contains
+40 wins, 30 losses, 1,753 decisions, and 49,549 legal candidates. Every game is
+bot verified, every metric source is `leaderboard_elo`, and the
+model-controlled action count is zero.
+
+Independent manifest comparison found zero removed old games, old split
+changes, old session changes, old source-hash changes, or locked-test set
+changes. The 12 added game IDs exactly match the new session logs and all 12
+entered train; none entered development or locked test. Comparing serialized
+samples found all 1,473 old samples unchanged except for the expected v2 split
+manifest hash field. All 280 new samples are consistent train samples from the
+new session.
+
+The physical train/development partition now contains 882 consistent decisions
+across 61 games: 718 train and 164 development, with 37,452 legal candidates.
+It includes 141 lead, 741 follow, 659 level-card, 278 wildcard, 619 endgame, and
+500 bomb-candidate decisions. All 13 level values and all four first-player
+seats remain covered across the 1900-1999 and 2000-2099 Elo bands, and duplicate
+state count remains zero. The isolated locked-test partition remains the same
+nine games with 90 consistent decisions.
+
+The dataset coverage, information-set rollout, and threshold gates all pass.
+Capability evidence remains ineligible, and no website play, teacher rollout,
+model training, or locked-test candidate use occurred. The extension v2
+manifest content hash is
+`31c5bc501286ac41d3a791811c7089200e49097132bfd886aa10d281c5ddb27e`.
+The next stage may read only the v2 physical train/development partition and
+screen the 280 new train decisions for robust teacher candidates.
+
+The frozen artifact SHA-256 audit is:
+
+- extension v1 bundle:
+  `2b442112a494cd68dc919d372784aeaf9d9c3692747bc6750d11f622c7d6f7d1`;
+- extension v1 train/development partition:
+  `9fb93a87f625230638ee0beeac32a1edfb2ca3d9718aa514a972c683a189d6b0`;
+- extension v1 locked-test partition:
+  `e1a769328fbf8ec86600c833126f0342468a537be908863df0edbbf2d00145f0`;
+- extension v1 manifest file:
+  `1794483391ad9c8e223bc9f44e27e601d65d434e18f01902b017ba34e6f0b90f`;
+- extension v1 data card:
+  `436436f4c6d9ab27eab86c6a8b3ad899ff28b1942d3f2b81154fa13916fe14d3`;
+- extension v2 bundle:
+  `15751388b891cbc9985f21418130fad626bfaefcc7f1fd3cf0b210af2342aaeb`;
+- extension v2 train/development partition:
+  `03d1a0967429fd75433ea3753a96c4bce43660f636a7cf9801140bd02777cc60`;
+- extension v2 locked-test partition:
+  `b53605e702b09c8ef8b750740ddedf9c64fc150daa9a1477d9fdadbe1a61da47`;
+- extension v2 manifest file:
+  `72841302506d427fdbb1c18a4fefd82b4b0615661e9a843022d11c4fd61214e3`;
+- extension v2 data card:
+  `8c866a690ed4012124caacece00b8c493e563ef31ac363eaecc73a74da11e601`.

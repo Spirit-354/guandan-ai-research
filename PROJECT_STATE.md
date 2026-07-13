@@ -8,7 +8,7 @@ Branch: `agent/stage5-website-bot-adaptation`
 
 Latest completed stage:
 
-- Website Shadow Supplement v2 baseline-only train collection.
+- Frozen Website Dataset Extension v2.
 
 Primary program:
 
@@ -27,39 +27,38 @@ The project is in website-domain data adaptation, not model website control.
 Current website dataset:
 
 - The original 50-game baseline-only dataset remains frozen and unchanged.
-- Extension v1 contains 58 baseline-only website bot games: 32 wins and 26
-  losses.
-- The eight-game supplement contributed 179 decisions from four wins and four
-  losses; all eight games used `leaderboard_elo` and verified bot tables.
-- Extension v1 contains 1,473 decisions and 42,919 legal candidates.
+- Extension v1 remains frozen and unchanged at 58 games.
+- Current extension v2 contains 70 baseline-only website bot games: 40 wins and
+  30 losses, 1,753 decisions, and 49,549 legal candidates.
 - Frozen base manifest hash:
   `83a58a43ea91f5662e2588494d7bad1b3d9d18de51c30216e5be0e589e0437e4`.
-- Extension manifest hash:
+- Extension v1 manifest hash:
   `db209561f6961b289dda668861687fcd7a258a2f283cecaae065501b2006f429`.
-- Curated evidence: `website_dataset_split_manifest_extension_v1.json` and
-  `website_dataset_card_extension_v1.json`.
-- Supplement v2 has been collected but is not yet part of a rebuilt dataset:
-  12 new baseline-only train-session games, 8 wins and 4 losses, with 280
-  exhaustive information-set-consistent Shadow decisions.
-- The supplement moved leaderboard Elo from 2060 to 2102, a net change of +42.
+- Extension v2 manifest hash:
+  `31c5bc501286ac41d3a791811c7089200e49097132bfd886aa10d281c5ddb27e`.
+- Curated evidence: `website_dataset_split_manifest_extension_v2.json` and
+  `website_dataset_card_extension_v2.json`.
+- All 12 Supplement v2 games and 280 decisions entered train; rejected new
+  games or decisions: 0.
 
 Information-set-consistent train/development subset:
 
-- 602 decisions across 49 independent games.
-- 438 train decisions and 164 development decisions.
-- 30,822 legal candidates.
-- 88 lead decisions and 514 follow decisions.
-- 471 level-card states, including 212 wildcard states.
-- 351 endgame states and 375 bomb-candidate states.
+- 882 decisions across 61 independent games.
+- 718 train decisions and 164 development decisions.
+- 37,452 legal candidates.
+- 141 lead decisions and 741 follow decisions.
+- 659 level-card states, including 278 wildcard states.
+- 619 endgame states and 500 bomb-candidate states.
 - All 13 level values and all four first-player seats are represented; the
   website account itself remains in seat 0.
-- Elo bands: 174 decisions in `1900-1999` and 428 in `2000-2099`.
+- Elo bands: 174 decisions in `1900-1999` and 708 in `2000-2099`.
 - Duplicate state count: 0.
 
 Locked test:
 
-- The original nine-game locked-test set is exactly unchanged in extension v1.
+- The original nine-game locked-test set is exactly unchanged in extension v2.
 - No new session or game was assigned to locked test.
+- The isolated physical locked-test partition remains 90 consistent decisions.
 - The locked-test partition remains prohibited for training, candidate design,
   checkpoint selection, and teacher threshold tuning.
 
@@ -82,9 +81,9 @@ Current blocker:
 - Training remains blocked until at least 20 independent high-confidence
   teacher games exist; the current count is 11 and at least 9 more independent
   strong-label games are required.
-- The eligible extension v1 train pool is exhausted. Supplement v2 is complete,
-  but its games must first be added through a new frozen dataset extension
-  before any teacher screening can use them.
+- The eligible extension v1 train pool is exhausted. Extension v2 now exposes
+  280 new consistent train decisions from 12 independent games for the next
+  teacher-candidate stage.
 
 ## Active Stage Plan
 
@@ -186,19 +185,40 @@ Acceptance:
 Goal: add the preassigned supplement v2 train session without changing any
 frozen extension v1 game or split.
 
+Status: completed.
+
+Acceptance:
+
+- New extension v2 bundle, physical partitions, manifest, and data card were
+  written without overwriting v1.
+- All 58 extension v1 games, 12 old session assignments, old source hashes, and
+  old split memberships are unchanged; locked-test set changes: 0.
+- All 12 supplement v2 games entered train, contributing 280 accepted decisions;
+  new development or locked-test games: 0.
+- The final dataset contains 70 games, 40 wins, 30 losses, 1,753 decisions, and
+  49,549 candidates; rejected files/games: 0.
+- The physical train/development partition contains 882 consistent decisions;
+  duplicate states: 0; coverage and threshold gates pass.
+- Model-controlled actions: 0; no website play, teacher rollout, or training
+  occurred.
+
+### Stage 4.7: Extension v2 Teacher Candidate Expansion
+
+Goal: screen every eligible new train state from the 12 Supplement v2 games and
+append only robust information-set labels to the frozen teacher v2 base.
+
 Status: next stage; not started.
 
 Acceptance:
 
-- Rebuild to new extension v2 artifacts; do not overwrite extension v1.
-- All 58 extension v1 games and assignments remain unchanged, and the locked
-  nine-game set remains exactly identical.
-- All 12 supplement v2 games enter train; no new game enters development or
-  locked test.
-- Dataset, physical train/development partition, locked partition, split
-  manifest, and data card pass their existing integrity and coverage gates.
-- Do not run teacher rollout, train a model, or start model-controlled website
-  play in this dataset-only stage.
+- Use only `website_danzero_shadow_extension_v2.train_dev.pth`; do not load the
+  complete bundle or locked-test partition.
+- Restrict screening to new game IDs 13985-14002 listed in `NEXT_TASK.md`.
+- Accept labels only through the existing completeness, variance, advantage,
+  confidence, and greedy-plus-frozen-tempo robustness gates.
+- Preserve all 11 teacher v2 labels and verify physical-action remapping.
+- Do not train a model in this teacher-expansion stage, even if the 20-game gate
+  is reached.
 
 ### Stage 5: Training Gate
 
