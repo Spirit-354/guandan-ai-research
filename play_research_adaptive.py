@@ -17580,6 +17580,9 @@ def parse_args() -> argparse.Namespace:
         help="Comma-separated website Shadow log directories or files to convert offline.",
     )
     parser.add_argument("--website-dataset-out", default="website_danzero_dataset.pth")
+    parser.add_argument("--freeze-website-splits", action="store_true")
+    parser.add_argument("--website-split-manifest-out", default="website_dataset_split_manifest.json")
+    parser.add_argument("--website-data-card-out", default="website_dataset_card.json")
     parser.add_argument("--train-website-danzero-action-value", help="Train the 513+54 Q model from website data.")
     parser.add_argument("--website-danzero-init", help="Optional compatible DanZero Q checkpoint.")
     parser.add_argument("--website-danzero-out-dir", default="models_website_danzero_smoke")
@@ -17588,6 +17591,7 @@ def parse_args() -> argparse.Namespace:
     parser.add_argument("--website-danzero-batch-size", type=int, default=128)
     parser.add_argument("--website-danzero-learning-rate", type=float, default=0.00003)
     parser.add_argument("--website-danzero-validation-split", type=float, default=0.2)
+    parser.add_argument("--website-danzero-allow-provisional-smoke", action="store_true")
     parser.add_argument("--summary", help="Print an Elo research summary from research_results.json.")
     parser.add_argument("--recent-window", type=int, default=10)
     parser.add_argument("--website-goal-min-games", type=int, default=500)
@@ -17888,6 +17892,9 @@ def main() -> None:
         result = website_danzero_dataset.build_dataset(
             args.build_website_danzero_dataset,
             args.website_dataset_out,
+            freeze_splits=args.freeze_website_splits,
+            split_manifest_path=args.website_split_manifest_out,
+            data_card_path=args.website_data_card_out,
         )
         print(json.dumps(result, ensure_ascii=False, indent=2))
         return

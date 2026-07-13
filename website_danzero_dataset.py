@@ -2,11 +2,13 @@ from __future__ import annotations
 
 from collections import Counter
 from collections import deque
+import copy
 import hashlib
 import json
 import math
 from pathlib import Path
 import random
+from datetime import datetime, timezone
 from typing import Any, Iterable
 
 import numpy as np
@@ -75,9 +77,11 @@ def _state_fingerprint(state: list[float]) -> str:
 
 def _assign_provisional_splits(samples: list[dict]) -> dict[str, str]:
     sessions: dict[str, str] = {}
+    session_games: dict[str, set[str]] = {}
     for sample in samples:
         session = str(sample.get("source_session") or "unknown")
         completed_at = str(sample.get("completed_at") or "")
+        session_games.setdefault(session, set()).add(str(sample.get("game_id")))
         current = sessions.get(session)
         if current is None or completed_at < current:
             sessions[session] = completed_at
@@ -85,9 +89,106 @@ def _assign_provisional_splits(samples: list[dict]) -> dict[str, str]:
     if len(ordered) < 3:
         return {name: "train" for name in ordered}
     assignments = {name: "train" for name in ordered}
-    assignments[ordered[-2]] = "development"
-    assignments[ordered[-1]] = "locked_test"
+    target_games = max(1, math.ceil(len({sample.get("game_id") for sample in samples}) * 0.15))
+    assigned_locked = 0
+    assigned_development = 0
+    for name in reversed(ordered):
+        if assigned_locked < target_games:
+            assignments[name] = "locked_test"
+            assigned_locked += len(session_games[name])
+        elif assigned_development < target_games:
+            assignments[name] = "development"
+            assigned_development += len(session_games[name])
     return assignments
+
+
+def _file_sha256(path: Path) -> str:
+    digest = hashlib.sha256()
+    with path.open("rb") as handle:
+        for chunk in iter(lambda: handle.read(1024 * 1024), b""):
+            digest.update(chunk)
+    return digest.hexdigest()
+
+
+def _freeze_dataset(
+    paths: list[Path],
+    samples: list[dict],
+    summary: dict,
+    manifest_path: Path,
+    data_card_path: Path,
+) -> None:
+    if not summary.get("coverage_gate_passed"):
+        raise RuntimeError("website dataset coverage gate must pass before split freeze")
+    split_game_ids = {
+        split: sorted(
+            {str(sample.get("game_id")) for sample in samples if sample.get("split") == split}
+        )
+        for split in ("train", "development", "locked_test")
+    }
+    if any(not game_ids for game_ids in split_game_ids.values()):
+        raise RuntimeError("train, development, and locked_test must all contain complete games")
+    overlap = (
+        set(split_game_ids["train"]) & set(split_game_ids["development"])
+        | set(split_game_ids["train"]) & set(split_game_ids["locked_test"])
+        | set(split_game_ids["development"]) & set(split_game_ids["locked_test"])
+    )
+    if overlap:
+        raise RuntimeError(f"game split overlap detected: {sorted(overlap)}")
+    immutable = {
+        "schema_version": "website_dataset_split_manifest_v1",
+        "dataset_format": DATASET_FORMAT,
+        "split_policy": "temporal_collection_sessions_target_70_15_15",
+        "split_grouping": summary.get("split_grouping"),
+        "session_split_assignments": summary.get("session_split_assignments"),
+        "split_game_ids": split_game_ids,
+        "source_files": [
+            {"path": str(path), "sha256": _file_sha256(path), "size_bytes": path.stat().st_size}
+            for path in paths
+        ],
+        "state_dim": STATE_DIM,
+        "action_dim": ACTION_DIM,
+        "metric_source": "leaderboard_elo",
+        "behavior_value_scope": "Q(s,a_behavior)_only",
+        "locked_test_policy": "never_train_tune_select_or_design",
+    }
+    content_hash = hashlib.sha256(
+        json.dumps(immutable, sort_keys=True, ensure_ascii=False, separators=(",", ":")).encode("utf-8")
+    ).hexdigest()
+    manifest = {
+        **immutable,
+        "content_hash": content_hash,
+        "frozen_at_utc": datetime.now(timezone.utc).isoformat(),
+    }
+    if manifest_path.exists():
+        existing = json.loads(manifest_path.read_text(encoding="utf-8"))
+        if existing.get("content_hash") != content_hash:
+            raise RuntimeError("existing split manifest differs; frozen splits cannot be rewritten")
+        manifest = existing
+    else:
+        manifest_path.parent.mkdir(parents=True, exist_ok=True)
+        manifest_path.write_text(json.dumps(manifest, ensure_ascii=False, indent=2), encoding="utf-8")
+    for sample in samples:
+        sample["split_status"] = "frozen"
+        sample["split_manifest_content_hash"] = content_hash
+    summary["split_status"] = "frozen"
+    summary["split_manifest_path"] = str(manifest_path)
+    summary["split_manifest_content_hash"] = content_hash
+    summary["data_card_path"] = str(data_card_path)
+    summary["capability_evidence_eligible"] = False
+    data_card = {
+        "schema_version": "website_dataset_card_v1",
+        "manifest_path": str(manifest_path),
+        "manifest_content_hash": content_hash,
+        "summary": summary,
+        "capability_limit": (
+            "Behavior logs supervise Q(s,a_behavior) only; unexecuted candidates have no factual return label."
+        ),
+        "hidden_information_policy": "decision_time_information_set_only",
+        "locked_test_access": "prohibited_for_training_tuning_checkpoint_selection_and_rule_design",
+        "formal_website_control_data_reuse": "prohibited_until_declared_study_concludes",
+    }
+    data_card_path.parent.mkdir(parents=True, exist_ok=True)
+    data_card_path.write_text(json.dumps(data_card, ensure_ascii=False, indent=2), encoding="utf-8")
 
 
 def _coverage_summary(samples: list[dict]) -> dict:
@@ -275,7 +376,55 @@ def write_dataset(path: Path, samples: list[dict], summary: dict) -> None:
     torch.save({"format": DATASET_FORMAT, "summary": summary, "samples": samples}, path)
 
 
-def build_dataset(raw_dirs: str, output_path: str) -> dict:
+def _partition_path(path: Path, role: str) -> Path:
+    return path.with_name(f"{path.stem}.{role}{path.suffix}")
+
+
+def _write_frozen_partitions(path: Path, samples: list[dict], summary: dict) -> dict:
+    train_dev = [sample for sample in samples if sample.get("split") in {"train", "development"}]
+    locked = [sample for sample in samples if sample.get("split") == "locked_test"]
+    if not train_dev or not locked:
+        raise RuntimeError("frozen dataset requires physical train_dev and locked_test partitions")
+    train_dev_path = _partition_path(path, "train_dev")
+    locked_path = _partition_path(path, "locked_test")
+    train_dev_summary = copy.deepcopy(summary)
+    train_dev_summary.update(
+        {
+            "partition_role": "train_development",
+            "contains_locked_test_samples": False,
+            "sample_count": len(train_dev),
+            "excluded_locked_test_sample_count": len(locked),
+            "excluded_locked_test_game_count": len(
+                {str(sample.get("game_id")) for sample in locked}
+            ),
+        }
+    )
+    locked_summary = copy.deepcopy(summary)
+    locked_summary.update(
+        {
+            "partition_role": "locked_test",
+            "contains_training_samples": False,
+            "sample_count": len(locked),
+        }
+    )
+    write_dataset(train_dev_path, train_dev, train_dev_summary)
+    write_dataset(locked_path, locked, locked_summary)
+    return {
+        "train_dev_path": str(train_dev_path),
+        "locked_test_path": str(locked_path),
+        "train_dev_sample_count": len(train_dev),
+        "locked_test_sample_count": len(locked),
+    }
+
+
+def build_dataset(
+    raw_dirs: str,
+    output_path: str,
+    *,
+    freeze_splits: bool = False,
+    split_manifest_path: str = "website_dataset_split_manifest.json",
+    data_card_path: str = "website_dataset_card.json",
+) -> dict:
     paths = _iter_log_paths(raw_dirs)
     samples: list[dict] = []
     reject_reasons: Counter[str] = Counter()
@@ -386,6 +535,19 @@ def build_dataset(raw_dirs: str, output_path: str) -> dict:
         "behavior_value_scope": "Q(s,a_behavior)_only",
         "threshold_passed": bool(paths and accepted_games and samples),
     }
+    if freeze_splits:
+        _freeze_dataset(
+            paths,
+            samples,
+            summary,
+            Path(split_manifest_path),
+            Path(data_card_path),
+        )
+        summary["partition_role"] = "complete_bundle"
+        summary["contains_locked_test_samples"] = True
+        summary["physical_partitions"] = _write_frozen_partitions(
+            Path(output_path), samples, summary
+        )
     write_dataset(Path(output_path), samples, summary)
     return summary
 
@@ -490,14 +652,28 @@ def train_action_value(args: Any) -> dict:
         raise RuntimeError(f"website DanZero dataset contains {invalid_count} invalid samples")
     if any(sample.get("split") not in {"train", "development", "locked_test"} for sample in samples):
         raise RuntimeError("website dataset must contain explicit train/development/locked_test splits")
+    formal_frozen = (
+        dataset_summary.get("split_status") == "frozen"
+        and dataset_summary.get("partition_role") == "train_development"
+        and dataset_summary.get("contains_locked_test_samples") is False
+    )
+    if not formal_frozen and not args.website_danzero_allow_provisional_smoke:
+        raise RuntimeError(
+            "formal training requires the frozen train_dev partition without locked-test samples; "
+            "use --website-danzero-allow-provisional-smoke only for plumbing"
+        )
     train_samples = [sample for sample in samples if sample.get("split") == "train"]
     validation_samples = [sample for sample in samples if sample.get("split") == "development"]
     locked_samples = [sample for sample in samples if sample.get("split") == "locked_test"]
     train_ids = {str(sample.get("game_id")) for sample in train_samples}
     validation_ids = {str(sample.get("game_id")) for sample in validation_samples}
     locked_ids = {str(sample.get("game_id")) for sample in locked_samples}
-    if not train_samples or not validation_samples or not locked_samples:
-        raise RuntimeError("website dataset requires non-empty train, development, and locked_test splits")
+    if not train_samples or not validation_samples:
+        raise RuntimeError("website training dataset requires non-empty train and development splits")
+    if formal_frozen and locked_samples:
+        raise RuntimeError("locked-test samples were physically loaded by the formal training path")
+    if not formal_frozen and not locked_samples:
+        raise RuntimeError("provisional smoke bundle is missing its diagnostic locked-test split")
     device, device_info = _resolve_device(args.device)
     if args.website_danzero_init:
         model, init_payload = danzero_dmc.load_q_checkpoint(Path(args.website_danzero_init), device)
@@ -596,10 +772,16 @@ def train_action_value(args: Any) -> dict:
         "game_count": len(train_ids) + len(validation_ids),
         "train_game_count": len(train_ids),
         "validation_game_count": len(validation_ids),
-        "locked_test_game_count": len(locked_ids),
+        "locked_test_game_count": int(
+            dataset_summary.get("excluded_locked_test_game_count") or len(locked_ids)
+        ),
         "train_sample_count": len(train_samples),
         "validation_sample_count": len(validation_samples),
-        "locked_test_sample_count": len(locked_samples),
+        "locked_test_sample_count": int(
+            dataset_summary.get("excluded_locked_test_sample_count") or len(locked_samples)
+        ),
+        "locked_test_loaded_sample_count": len(locked_samples),
+        "locked_test_physically_loaded": bool(locked_samples),
         "locked_test_used_for_training": False,
         "locked_test_used_for_checkpoint_selection": False,
         "invalid_sample_count": invalid_count,
@@ -615,6 +797,7 @@ def train_action_value(args: Any) -> dict:
         "behavior_value_scope": "Q(s,a_behavior)_only",
         "candidate_ranking_claim_allowed": False,
         "capability_claim_allowed": False,
+        "split_status": dataset_summary.get("split_status"),
         "threshold_passed": bool(best_path.exists() and latest_path.exists() and invalid_count == 0),
     }
     log_path = Path(args.website_danzero_log_out)

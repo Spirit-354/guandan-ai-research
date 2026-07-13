@@ -111,3 +111,21 @@ observed level ranks, 62 wildcard-available decisions, 153 bomb-available
 states, two Elo bands, and a zero duplicate-state rate. Future collection must
 improve independent train-session and level/Elo coverage before a split is
 frozen; increasing epochs is explicitly disallowed as a substitute.
+
+## Frozen 50-Game Dataset
+
+Additional independent collection sessions brought the snapshot to 50 verified-
+bot games. The coverage gate passed with 28 wins, 22 losses, 1,294 decisions,
+35,231 candidate actions, all four first-player positions, all 13 level ranks,
+two Elo bands, and zero duplicate states or integrity errors.
+
+The temporal session split is frozen at 31 train, 10 development, and 9 locked-
+test games. Locked-test samples are physically isolated from the train/dev file;
+formal training refuses a bundle that contains them. The immutable manifest
+content hash is recorded in `docs/research/website-dataset-card-050.md`.
+
+Five-epoch behavior-Q diagnostics from an old DanZero initialization and from
+scratch both completed without loading locked test. Their development metrics
+are not policy evidence. No model was promoted, no candidate ranking claim was
+made, and additional epochs were rejected in favor of information-set rollout
+teacher work.

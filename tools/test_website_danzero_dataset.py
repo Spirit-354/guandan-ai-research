@@ -24,6 +24,29 @@ class WebsiteDanZeroDatasetTests(unittest.TestCase):
         self.assertEqual(len(train_ids), 8)
         self.assertEqual(len(validation_ids), 2)
 
+    def test_session_split_targets_multiple_recent_sessions(self) -> None:
+        samples = []
+        for session in range(10):
+            for game in range(5):
+                samples.append(
+                    {
+                        "source_session": f"session-{session}",
+                        "completed_at": f"2026-07-{session + 1:02d}",
+                        "game_id": f"{session}-{game}",
+                    }
+                )
+        assignments = website_danzero_dataset._assign_provisional_splits(samples)
+        self.assertEqual(sum(value == "locked_test" for value in assignments.values()), 2)
+        self.assertEqual(sum(value == "development" for value in assignments.values()), 2)
+        self.assertEqual(sum(value == "train" for value in assignments.values()), 6)
+
+    def test_partition_paths_do_not_replace_source_suffix(self) -> None:
+        source = Path("dataset.pth")
+        self.assertEqual(
+            website_danzero_dataset._partition_path(source, "train_dev").name,
+            "dataset.train_dev.pth",
+        )
+
     def test_completed_verified_shadow_log_is_exported(self) -> None:
         state = sample_state()
         audit = website_shadow.build_shadow_audit(state, ["ST"], ["ST"])
