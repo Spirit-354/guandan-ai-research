@@ -2,6 +2,7 @@ from __future__ import annotations
 
 from collections import Counter
 from collections import deque
+import hashlib
 import json
 import math
 from pathlib import Path
@@ -52,6 +53,102 @@ def _iter_log_paths(raw_dirs: str) -> list[Path]:
         elif path.is_dir():
             paths.extend(sorted(path.glob("research_game_*.json")))
     return sorted(set(paths), key=lambda item: str(item))
+
+
+def _first_player(final_state: dict) -> int | None:
+    for item in final_state.get("trick_history") or []:
+        if not isinstance(item, (list, tuple)) or len(item) < 2 or not item[1]:
+            continue
+        try:
+            seat = int(item[0])
+        except (TypeError, ValueError):
+            continue
+        if 0 <= seat < 4:
+            return seat
+    return None
+
+
+def _state_fingerprint(state: list[float]) -> str:
+    packed = json.dumps(state, separators=(",", ":"), ensure_ascii=True).encode("ascii")
+    return hashlib.sha256(packed).hexdigest()
+
+
+def _assign_provisional_splits(samples: list[dict]) -> dict[str, str]:
+    sessions: dict[str, str] = {}
+    for sample in samples:
+        session = str(sample.get("source_session") or "unknown")
+        completed_at = str(sample.get("completed_at") or "")
+        current = sessions.get(session)
+        if current is None or completed_at < current:
+            sessions[session] = completed_at
+    ordered = sorted(sessions, key=lambda name: (sessions[name], name))
+    if len(ordered) < 3:
+        return {name: "train" for name in ordered}
+    assignments = {name: "train" for name in ordered}
+    assignments[ordered[-2]] = "development"
+    assignments[ordered[-1]] = "locked_test"
+    return assignments
+
+
+def _coverage_summary(samples: list[dict]) -> dict:
+    game_ids = {str(sample.get("game_id")) for sample in samples}
+    state_fingerprints = [str(sample.get("state_fingerprint")) for sample in samples]
+    duplicate_count = len(state_fingerprints) - len(set(state_fingerprints))
+    split_games: dict[str, set[str]] = {"train": set(), "development": set(), "locked_test": set()}
+    split_decisions = Counter()
+    first_players = Counter()
+    levels = Counter()
+    elo_bands = Counter()
+    tables = Counter()
+    seats = Counter()
+    for sample in samples:
+        split = str(sample.get("split") or "unassigned")
+        split_decisions[split] += 1
+        if split in split_games:
+            split_games[split].add(str(sample.get("game_id")))
+        first_players[str(sample.get("first_player"))] += 1
+        levels[str(sample.get("level"))] += 1
+        elo_bands[str(sample.get("elo_band_100"))] += 1
+        tables[str(sample.get("robot_table_signature"))] += 1
+        seats[str(sample.get("your_seat"))] += 1
+    outcome_counts = Counter(str(sample.get("outcome")) for sample in samples)
+    coverage = {
+        "independent_games": len(game_ids),
+        "decisions": len(samples),
+        "candidate_actions": sum(int(sample.get("legal_action_count") or 0) for sample in samples),
+        "win_decisions": outcome_counts.get("win", 0),
+        "loss_decisions": outcome_counts.get("loss", 0),
+        "seat_coverage": dict(seats),
+        "first_player_coverage": dict(first_players),
+        "level_card_coverage_count": sum(bool(sample.get("level_card_available")) for sample in samples),
+        "wildcard_coverage_count": sum(bool(sample.get("heart_level_wildcard_available")) for sample in samples),
+        "lead_count": sum(bool(sample.get("was_lead")) for sample in samples),
+        "follow_count": sum(bool(sample.get("was_follow")) for sample in samples),
+        "endgame_count": sum(bool(sample.get("is_endgame")) for sample in samples),
+        "bomb_state_count": sum(bool(sample.get("bomb_candidate_available")) for sample in samples),
+        "level_distribution": dict(levels),
+        "elo_band_coverage": dict(elo_bands),
+        "robot_table_coverage": dict(tables),
+        "source_session_count": len({sample.get("source_session") for sample in samples}),
+        "duplicate_state_count": duplicate_count,
+        "duplicate_state_rate": duplicate_count / len(samples) if samples else 0.0,
+        "split_game_counts": {name: len(ids) for name, ids in split_games.items()},
+        "split_decision_counts": dict(split_decisions),
+    }
+    coverage["coverage_gate_passed"] = bool(
+        coverage["independent_games"] >= 50
+        and outcome_counts.get("win", 0) > 0
+        and outcome_counts.get("loss", 0) > 0
+        and len([key for key in first_players if key != "None"]) == 4
+        and coverage["wildcard_coverage_count"] > 0
+        and coverage["lead_count"] > 0
+        and coverage["follow_count"] > 0
+        and coverage["endgame_count"] > 0
+        and coverage["bomb_state_count"] > 0
+        and len(elo_bands) >= 2
+        and all(coverage["split_game_counts"].get(name, 0) > 0 for name in split_games)
+    )
+    return coverage
 
 
 def _record_rejection(record: dict, shadow_summary: dict) -> str | None:
@@ -200,12 +297,44 @@ def build_dataset(raw_dirs: str, output_path: str) -> dict:
             continue
         game_samples: list[dict] = []
         game_failed = False
+        final_state = record.get("final_state") or {}
+        bot_evidence = final_state.get("_bot_table_evidence") or {}
+        source_session = path.parent.name
+        first_player = _first_player(final_state)
+        table_signature = "|".join(str(item) for item in (bot_evidence.get("observed_seats") or []))
         for decision in record.get("decisions") or []:
             sample, reason = _decision_sample(record, decision)
             if reason:
                 reject_reasons[f"decision:{reason}"] += 1
                 game_failed = True
                 break
+            hand = list(decision.get("hand") or [])
+            level = str(sample.get("level"))
+            candidate_types = {
+                str(item.get("action_type") or "") for item in sample.get("legal_action_metadata") or []
+            }
+            sample.update(
+                {
+                    "completed_at": record.get("completed_at"),
+                    "source_session": source_session,
+                    "source_time_block": str(record.get("completed_at") or "")[:10],
+                    "robot_table_signature": table_signature,
+                    "your_seat": final_state.get("your_seat"),
+                    "first_player": first_player,
+                    "level_card_available": any(
+                        card not in {"B", "R"} and str(card)[1:] == level for card in hand
+                    ),
+                    "heart_level_wildcard_available": f"H{level}" in hand,
+                    "is_endgame": "endgame" in str(sample.get("scenario") or "").lower()
+                    or min(list(decision.get("hand_counts") or [27])) <= 6,
+                    "bomb_candidate_available": any(
+                        action_type in {"bomb", "straight_flush", "quad_kings"}
+                        or action_type.endswith("_bomb")
+                        for action_type in candidate_types
+                    ),
+                    "state_fingerprint": _state_fingerprint(sample["state"]),
+                }
+            )
             key = (sample["game_id"], sample["turn_index"])
             if key in seen_decisions:
                 reject_reasons["duplicate_decision"] += 1
@@ -220,6 +349,12 @@ def build_dataset(raw_dirs: str, output_path: str) -> dict:
         samples.extend(game_samples)
         accepted_games += 1
         accepted_wins += int(game_samples[0]["outcome"] == "win")
+
+    split_assignments = _assign_provisional_splits(samples)
+    for sample in samples:
+        sample["split"] = split_assignments.get(str(sample.get("source_session")), "unassigned")
+        sample["split_status"] = "provisional"
+    coverage = _coverage_summary(samples)
 
     summary = {
         "format": DATASET_FORMAT,
@@ -242,6 +377,13 @@ def build_dataset(raw_dirs: str, output_path: str) -> dict:
         "metric_source": "leaderboard_elo",
         "bot_tables_only": True,
         "model_controlled_action_count": 0,
+        "split_status": "provisional",
+        "split_grouping": "complete_game+source_session+time_block+robot_table_signature",
+        "session_split_assignments": split_assignments,
+        "coverage": coverage,
+        "coverage_gate_passed": coverage["coverage_gate_passed"],
+        "capability_evidence_eligible": False,
+        "behavior_value_scope": "Q(s,a_behavior)_only",
         "threshold_passed": bool(paths and accepted_games and samples),
     }
     write_dataset(Path(output_path), samples, summary)
@@ -346,11 +488,16 @@ def train_action_value(args: Any) -> dict:
     )
     if invalid_count:
         raise RuntimeError(f"website DanZero dataset contains {invalid_count} invalid samples")
-    train_ids, validation_ids = _split_game_ids(
-        samples, float(args.website_danzero_validation_split), 20260713
-    )
-    train_samples = [sample for sample in samples if str(sample.get("game_id")) in train_ids]
-    validation_samples = [sample for sample in samples if str(sample.get("game_id")) in validation_ids]
+    if any(sample.get("split") not in {"train", "development", "locked_test"} for sample in samples):
+        raise RuntimeError("website dataset must contain explicit train/development/locked_test splits")
+    train_samples = [sample for sample in samples if sample.get("split") == "train"]
+    validation_samples = [sample for sample in samples if sample.get("split") == "development"]
+    locked_samples = [sample for sample in samples if sample.get("split") == "locked_test"]
+    train_ids = {str(sample.get("game_id")) for sample in train_samples}
+    validation_ids = {str(sample.get("game_id")) for sample in validation_samples}
+    locked_ids = {str(sample.get("game_id")) for sample in locked_samples}
+    if not train_samples or not validation_samples or not locked_samples:
+        raise RuntimeError("website dataset requires non-empty train, development, and locked_test splits")
     device, device_info = _resolve_device(args.device)
     if args.website_danzero_init:
         model, init_payload = danzero_dmc.load_q_checkpoint(Path(args.website_danzero_init), device)
@@ -449,8 +596,12 @@ def train_action_value(args: Any) -> dict:
         "game_count": len(train_ids) + len(validation_ids),
         "train_game_count": len(train_ids),
         "validation_game_count": len(validation_ids),
+        "locked_test_game_count": len(locked_ids),
         "train_sample_count": len(train_samples),
         "validation_sample_count": len(validation_samples),
+        "locked_test_sample_count": len(locked_samples),
+        "locked_test_used_for_training": False,
+        "locked_test_used_for_checkpoint_selection": False,
         "invalid_sample_count": invalid_count,
         "initialized_from": initialized_from,
         "epochs": int(args.website_danzero_epochs),
@@ -461,6 +612,9 @@ def train_action_value(args: Any) -> dict:
         "best_validation_loss": best_loss,
         "best_checkpoint": str(best_path),
         "latest_checkpoint": str(latest_path),
+        "behavior_value_scope": "Q(s,a_behavior)_only",
+        "candidate_ranking_claim_allowed": False,
+        "capability_claim_allowed": False,
         "threshold_passed": bool(best_path.exists() and latest_path.exists() and invalid_count == 0),
     }
     log_path = Path(args.website_danzero_log_out)

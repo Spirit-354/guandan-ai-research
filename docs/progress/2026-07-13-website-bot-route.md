@@ -1,5 +1,9 @@
 # Website Bot Domain-Adaptation Route
 
+The mandatory research constraints are defined in
+`docs/research/website-domain-protocol.md`. That protocol takes precedence over
+milestone counts or favorable intermediate metrics.
+
 The user authorized staged automated play on a dedicated test account against
 website bots only. Leaderboard Elo is no longer a stop-loss objective, but it
 remains a required environment variable because score economics and matched bot
@@ -97,3 +101,13 @@ A two-game paired Arena compatibility smoke completed with all integrity
 counters zero but 0 model wins. This is a pipeline validation only; the model
 is not eligible for Shadow recommendations or website control. More independent
 website games are required before the next training comparison.
+
+After adopting the mandatory website-domain protocol, the 16-game snapshot was
+rebuilt with provisional session-level isolation. The three collection sessions
+currently map to 1 train game, 5 development games, and 10 locked-test games.
+This is intentionally unsuitable for capability training and its coverage gate
+is false. The audit nevertheless confirms all four first-player seats, nine
+observed level ranks, 62 wildcard-available decisions, 153 bomb-available
+states, two Elo bands, and a zero duplicate-state rate. Future collection must
+improve independent train-session and level/Elo coverage before a split is
+frozen; increasing epochs is explicitly disallowed as a substitute.

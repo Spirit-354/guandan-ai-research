@@ -68,6 +68,9 @@ class WebsiteDanZeroDatasetTests(unittest.TestCase):
         self.assertEqual(len(sample["legal_actions"]), sample["legal_action_count"])
         self.assertEqual(sample["team_reward"], 1.0)
         self.assertEqual(sample["elo_band_100"], "2200-2299")
+        self.assertEqual(sample["split"], "train")
+        self.assertFalse(summary["coverage_gate_passed"])
+        self.assertEqual(summary["behavior_value_scope"], "Q(s,a_behavior)_only")
 
     def test_unverified_bot_table_is_rejected(self) -> None:
         with tempfile.TemporaryDirectory() as temp_dir:
