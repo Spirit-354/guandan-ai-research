@@ -81,6 +81,9 @@
       "source_session_count": 10,
       "duplicate_state_count": 0,
       "duplicate_state_rate": 0.0,
+      "information_set_consistent_count": 513,
+      "information_set_inconsistent_count": 781,
+      "information_set_consistent_rate": 0.3964451313755796,
       "split_game_counts": {
         "train": 31,
         "development": 10,
@@ -91,7 +94,8 @@
         "development": 242,
         "locked_test": 199
       },
-      "coverage_gate_passed": true
+      "coverage_gate_passed": true,
+      "information_set_rollout_gate_passed": false
     },
     "coverage_gate_passed": true,
     "capability_evidence_eligible": false,

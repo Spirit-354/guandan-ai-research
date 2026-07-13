@@ -28,13 +28,21 @@ actions without information-set counterfactual evaluation.
 - rejected games or decisions: 0
 - duplicate state rate: 0
 
+The original online encoder treated the website's rolling 40-action history as
+complete history. A post-freeze information-set audit found only 513/1,294
+states preserved the physical unknown-card invariant; the remaining 781 are
+retained for audit provenance but are forbidden from behavior-Q or rollout
+training.
+
 ## Physical Isolation
 
-- train: 31 games, included in `website_danzero_shadow_050_frozen.train_dev.pth`
-- development: 10 games, included in the same train/dev file
-- locked test: 9 games, stored only in
+- train/development: 423 information-set-consistent decisions physically stored
+  in `website_danzero_shadow_050_frozen.train_dev.pth`
+- locked test: 90 consistent decisions physically stored only in
   `website_danzero_shadow_050_frozen.locked_test.pth`
 - formal training refuses the complete bundle and never loads the locked-test file
+- 672 inconsistent train/dev and 109 inconsistent locked-test decisions are
+  excluded from the physical partitions
 
 ## Coverage
 
@@ -54,9 +62,13 @@ Elo band and observed behavior remain the available strength covariates.
 
 ## Behavior-Q Diagnostic
 
-Two five-epoch train/dev diagnostics were run without opening the locked-test
-partition. Random initialization reached development MSE about 0.946 and sign
-accuracy about 53.7%. Initializing from the prior v5 DanZero checkpoint reached
-MSE about 1.325 and sign accuracy about 60.3%. These are representation and
-calibration observations only. Neither checkpoint is a policy candidate, and
-no ranking or capability claim is permitted.
+The first two behavior-Q diagnostics are invalidated because they predated the
+information-set consistency gate and included impossible states. Neither
+checkpoint may be reused. A 50-state, eight-determinization sanity check on the
+filtered train/dev partition completed 400/400 restores with exact 513-state
+re-encoding and 108-card conservation.
+
+Ten stratified train cases then completed 496 paired greedy-continuation
+rollouts. No strong teacher label was emitted: apparent advantages had negative
+95% lower bounds or excessive paired-return variance. This is a successful
+uncertainty gate, not evidence that the behavior action was optimal.

@@ -27,7 +27,7 @@ def sample_state() -> dict:
         "your_seat": 0,
         "your_team": 0,
         "your_hand": hand,
-        "hand_counts": [27, 26, 26, 26],
+        "hand_counts": [27, 27, 27, 26],
         "last_play": ["S9"],
         "last_player": 3,
         "ranking": [],
@@ -36,6 +36,18 @@ def sample_state() -> dict:
 
 
 class WebsiteShadowTests(unittest.TestCase):
+    def test_public_history_extends_growing_and_rolling_windows(self) -> None:
+        tracker: list[tuple[int, list[str]]] = []
+        first = {"trick_history": [[0, ["S2"]], [1, []], [2, ["H3"]]]}
+        second = {"trick_history": [[0, ["S2"]], [1, []], [2, ["H3"]], [3, []]]}
+        rolling = {"trick_history": [[2, ["H3"]], [3, []], [0, ["D4"]]]}
+        self.assertTrue(website_shadow.extend_public_history(tracker, first)["consistent"])
+        self.assertEqual(website_shadow.extend_public_history(tracker, second)["new_entry_count"], 1)
+        result = website_shadow.extend_public_history(tracker, rolling)
+        self.assertTrue(result["consistent"])
+        self.assertEqual(result["overlap_count"], 2)
+        self.assertEqual(result["history"][-1], (0, ["D4"]))
+
     def test_state_adapter_and_shadow_audit(self) -> None:
         state = sample_state()
         audit = website_shadow.build_shadow_audit(state, ["ST"], ["ST"])
@@ -45,6 +57,7 @@ class WebsiteShadowTests(unittest.TestCase):
         self.assertTrue(audit["submitted_action"]["cards_in_hand"])
         self.assertTrue(audit["submitted_action"]["local_legal"])
         self.assertTrue(audit["submitted_action"]["oracle_match"])
+        self.assertTrue(audit["information_set_consistent"])
         self.assertFalse(audit["model_controlled_action"])
         self.assertEqual(len(audit["legal_candidates"]), audit["legal_candidate_count"])
         self.assertTrue(audit["legal_candidates"])

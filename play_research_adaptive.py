@@ -6476,6 +6476,7 @@ def run_game(
     print(f"joined game_id={game_id}")
     before_fields = extract_rating_fields(join_data)
     decisions: list[dict] = []
+    public_history_tracker: list[tuple[int, list[str]]] = []
     scenario = "all_unknown"
     selected_profile = fixed_profile or "tempo_baseline"
     final_state = {}
@@ -6621,8 +6622,16 @@ def run_game(
             decision.update(lead_probe_metadata(state, game_id, turn_count, selected_profile, scenario, coord))
             decision.update(bait_attempt_observation_metadata(state, selected_profile, coord, decision))
             if args.website_shadow:
+                history_result = live_shadow.extend_public_history(public_history_tracker, state)
+                shadow_state = dict(state)
+                shadow_state["trick_history"] = [
+                    [seat, list(cards)] for seat, cards in history_result["history"]
+                ]
+                shadow_state["_public_history_source"] = history_result["source"]
+                shadow_state["_public_history_consistent"] = history_result["consistent"]
+                shadow_state["_public_history_overlap_count"] = history_result["overlap_count"]
                 decision["website_shadow"] = live_shadow.build_shadow_audit(
-                    state,
+                    shadow_state,
                     coord,
                     coord,
                     suggestion_source=live_shadow.SHADOW_SUGGESTION_SOURCE,
@@ -17592,6 +17601,18 @@ def parse_args() -> argparse.Namespace:
     parser.add_argument("--website-danzero-learning-rate", type=float, default=0.00003)
     parser.add_argument("--website-danzero-validation-split", type=float, default=0.2)
     parser.add_argument("--website-danzero-allow-provisional-smoke", action="store_true")
+    parser.add_argument("--website-information-set-sanity")
+    parser.add_argument("--information-set-sanity-out", default="website_information_set_sanity.json")
+    parser.add_argument("--information-set-sanity-samples", type=int, default=20)
+    parser.add_argument("--information-set-determinizations", type=int, default=8)
+    parser.add_argument("--website-information-set-rollout-eval")
+    parser.add_argument("--information-set-rollout-out", default="website_information_set_rollout.json")
+    parser.add_argument("--information-set-rollout-samples", type=int, default=5)
+    parser.add_argument("--information-set-rollout-candidates", type=int, default=4)
+    parser.add_argument("--information-set-rollouts-per-action", type=int, default=8)
+    parser.add_argument("--information-set-rollout-max-steps", type=int, default=300)
+    parser.add_argument("--information-set-min-advantage", type=float, default=0.15)
+    parser.add_argument("--information-set-max-variance", type=float, default=0.50)
     parser.add_argument("--summary", help="Print an Elo research summary from research_results.json.")
     parser.add_argument("--recent-window", type=int, default=10)
     parser.add_argument("--website-goal-min-games", type=int, default=500)
@@ -17902,6 +17923,20 @@ def main() -> None:
         import website_danzero_dataset
 
         website_danzero_dataset.train_action_value(args)
+        return
+    if args.website_information_set_sanity:
+        import website_information_set
+
+        website_information_set.run_sanity(args, offline_load_guandan_components())
+        return
+    if args.website_information_set_rollout_eval:
+        import website_information_set
+
+        website_information_set.run_rollout_eval(
+            args,
+            offline_load_guandan_components(),
+            sys.modules[__name__],
+        )
         return
     if args.offline_env_sanity_check:
         run_offline_env_sanity_check(args)

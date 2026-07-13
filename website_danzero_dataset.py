@@ -233,6 +233,17 @@ def _coverage_summary(samples: list[dict]) -> dict:
         "source_session_count": len({sample.get("source_session") for sample in samples}),
         "duplicate_state_count": duplicate_count,
         "duplicate_state_rate": duplicate_count / len(samples) if samples else 0.0,
+        "information_set_consistent_count": sum(
+            bool(sample.get("information_set_consistent")) for sample in samples
+        ),
+        "information_set_inconsistent_count": sum(
+            not bool(sample.get("information_set_consistent")) for sample in samples
+        ),
+        "information_set_consistent_rate": (
+            sum(bool(sample.get("information_set_consistent")) for sample in samples) / len(samples)
+            if samples
+            else 0.0
+        ),
         "split_game_counts": {name: len(ids) for name, ids in split_games.items()},
         "split_decision_counts": dict(split_decisions),
     }
@@ -248,6 +259,11 @@ def _coverage_summary(samples: list[dict]) -> dict:
         and coverage["bomb_state_count"] > 0
         and len(elo_bands) >= 2
         and all(coverage["split_game_counts"].get(name, 0) > 0 for name in split_games)
+    )
+    coverage["information_set_rollout_gate_passed"] = bool(
+        coverage["coverage_gate_passed"]
+        and coverage["information_set_consistent_rate"] >= 0.90
+        and coverage["information_set_consistent_count"] >= 500
     )
     return coverage
 
@@ -331,6 +347,12 @@ def _decision_sample(record: dict, decision: dict) -> tuple[dict | None, str | N
         "level": shadow.get("level") or decision.get("level"),
         "was_lead": bool(shadow.get("was_lead")),
         "was_follow": bool(shadow.get("was_follow")),
+        "hand_before": list(decision.get("hand") or []),
+        "hand_counts": [int(value) for value in (decision.get("hand_counts") or [])],
+        "last_play_before_action": list(decision.get("last_play") or []),
+        "last_player": decision.get("last_player"),
+        "current_turn": decision.get("current_turn"),
+        "trick_index": decision.get("trick_index"),
         "state": [float(value) for value in state],
         "state_dim": STATE_DIM,
         "chosen_action": [float(value) for value in action],
@@ -381,8 +403,10 @@ def _partition_path(path: Path, role: str) -> Path:
 
 
 def _write_frozen_partitions(path: Path, samples: list[dict], summary: dict) -> dict:
-    train_dev = [sample for sample in samples if sample.get("split") in {"train", "development"}]
-    locked = [sample for sample in samples if sample.get("split") == "locked_test"]
+    train_dev_all = [sample for sample in samples if sample.get("split") in {"train", "development"}]
+    locked_all = [sample for sample in samples if sample.get("split") == "locked_test"]
+    train_dev = [sample for sample in train_dev_all if sample.get("information_set_consistent")]
+    locked = [sample for sample in locked_all if sample.get("information_set_consistent")]
     if not train_dev or not locked:
         raise RuntimeError("frozen dataset requires physical train_dev and locked_test partitions")
     train_dev_path = _partition_path(path, "train_dev")
@@ -393,10 +417,12 @@ def _write_frozen_partitions(path: Path, samples: list[dict], summary: dict) -> 
             "partition_role": "train_development",
             "contains_locked_test_samples": False,
             "sample_count": len(train_dev),
-            "excluded_locked_test_sample_count": len(locked),
+            "excluded_locked_test_sample_count": len(locked_all),
             "excluded_locked_test_game_count": len(
-                {str(sample.get("game_id")) for sample in locked}
+                {str(sample.get("game_id")) for sample in locked_all}
             ),
+            "excluded_inconsistent_train_dev_sample_count": len(train_dev_all) - len(train_dev),
+            "all_samples_information_set_consistent": True,
         }
     )
     locked_summary = copy.deepcopy(summary)
@@ -405,6 +431,8 @@ def _write_frozen_partitions(path: Path, samples: list[dict], summary: dict) -> 
             "partition_role": "locked_test",
             "contains_training_samples": False,
             "sample_count": len(locked),
+            "excluded_inconsistent_locked_test_sample_count": len(locked_all) - len(locked),
+            "all_samples_information_set_consistent": True,
         }
     )
     write_dataset(train_dev_path, train_dev, train_dev_summary)
@@ -414,6 +442,8 @@ def _write_frozen_partitions(path: Path, samples: list[dict], summary: dict) -> 
         "locked_test_path": str(locked_path),
         "train_dev_sample_count": len(train_dev),
         "locked_test_sample_count": len(locked),
+        "excluded_inconsistent_train_dev_sample_count": len(train_dev_all) - len(train_dev),
+        "excluded_inconsistent_locked_test_sample_count": len(locked_all) - len(locked),
     }
 
 
@@ -482,7 +512,23 @@ def build_dataset(
                         for action_type in candidate_types
                     ),
                     "state_fingerprint": _state_fingerprint(sample["state"]),
+                    "information_set_unknown_count": int(round(sum(sample["state"][54:108]))),
+                    "information_set_expected_unknown_count": (
+                        sum(int(value) for value in (decision.get("hand_counts") or []))
+                        - int((decision.get("hand_counts") or [0])[int(final_state.get("your_seat", 0))])
+                    ),
+                    "public_history_source": (decision.get("website_shadow") or {}).get(
+                        "public_history_source", "legacy_server_snapshot"
+                    ),
+                    "public_history_consistent": bool(
+                        (decision.get("website_shadow") or {}).get("public_history_consistent", True)
+                    ),
                 }
+            )
+            sample["information_set_consistent"] = bool(
+                sample["information_set_unknown_count"]
+                == sample["information_set_expected_unknown_count"]
+                and sample["public_history_consistent"]
             )
             key = (sample["game_id"], sample["turn_index"])
             if key in seen_decisions:
@@ -646,6 +692,7 @@ def train_action_value(args: Any) -> dict:
         or float(sample.get("team_reward", 0.0)) not in {-1.0, 1.0}
         or sample.get("metric_source") != "leaderboard_elo"
         or not sample.get("bot_table_verified")
+        or not sample.get("information_set_consistent")
         for sample in samples
     )
     if invalid_count:

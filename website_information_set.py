@@ -1,0 +1,542 @@
+from __future__ import annotations
+
+from collections import Counter
+import json
+from pathlib import Path
+import random
+from typing import Any
+import statistics
+
+import numpy as np
+
+import danzero_features as features
+import website_danzero_dataset as website_data
+
+
+INFORMATION_SET_SCHEMA_VERSION = "website_information_set_v1"
+
+
+def _integer_counts(values: list[float], name: str) -> np.ndarray:
+    array = np.asarray(values, dtype=np.float32)
+    rounded = np.rint(array)
+    if not np.allclose(array, rounded, atol=1e-6):
+        raise ValueError(f"{name} contains fractional card counts")
+    if np.any(rounded < 0) or np.any(rounded > 2):
+        raise ValueError(f"{name} contains out-of-range card counts")
+    return rounded.astype(np.int16)
+
+
+def _cards_from_counts(counts: np.ndarray) -> list[str]:
+    cards: list[str] = []
+    for index, count in enumerate(counts.tolist()):
+        cards.extend([features.CARD_KEYS_54[index]] * int(count))
+    return cards
+
+
+def decode_public_card_state(sample: dict) -> dict:
+    state = list(sample.get("state") or [])
+    if len(state) != features.DANZERO_COMPACT_STATE_DIM:
+        raise ValueError("information-set sample state dimension is not 513")
+    your_seat = int(sample.get("your_seat", 0))
+    hand_counts = [int(value) for value in (sample.get("hand_counts") or [])]
+    if len(hand_counts) != 4 or not 0 <= your_seat < 4:
+        raise ValueError("information-set sample lacks four hand counts or valid seat")
+    self_hand = _integer_counts(state[0:54], "self_hand")
+    unknown_remaining = _integer_counts(state[54:108], "unknown_remaining")
+    other_seats = [(your_seat + offset) % 4 for offset in (1, 2, 3)]
+    played_by_seat = [np.zeros(54, dtype=np.int16) for _ in range(4)]
+    for index, seat in enumerate(other_seats):
+        start = 300 + index * 54
+        played_by_seat[seat] = _integer_counts(state[start : start + 54], f"played_seat_{seat}")
+    all_played = np.full(54, 2, dtype=np.int16) - self_hand - unknown_remaining
+    self_played = all_played - sum((played_by_seat[seat] for seat in other_seats), np.zeros(54, dtype=np.int16))
+    if np.any(self_played < 0) or np.any(self_played > 2):
+        raise ValueError("decoded self played cards are inconsistent")
+    played_by_seat[your_seat] = self_played
+    if int(unknown_remaining.sum()) != sum(hand_counts) - hand_counts[your_seat]:
+        raise ValueError("unknown pool size does not match opponent and teammate hand counts")
+    if int(self_hand.sum()) != hand_counts[your_seat]:
+        raise ValueError("encoded self hand does not match hand count")
+    return {
+        "your_seat": your_seat,
+        "hand_counts": hand_counts,
+        "self_hand_counts": self_hand,
+        "unknown_remaining_counts": unknown_remaining,
+        "played_by_seat_counts": played_by_seat,
+        "teammate_last_counts": _integer_counts(state[162:216], "teammate_last"),
+    }
+
+
+def sample_determinization(sample: dict, rng: random.Random) -> dict:
+    decoded = decode_public_card_state(sample)
+    your_seat = decoded["your_seat"]
+    hidden_pool = _cards_from_counts(decoded["unknown_remaining_counts"])
+    rng.shuffle(hidden_pool)
+    hands: list[list[str]] = [[] for _ in range(4)]
+    hands[your_seat] = _cards_from_counts(decoded["self_hand_counts"])
+    offset = 0
+    for seat in range(4):
+        if seat == your_seat:
+            continue
+        count = decoded["hand_counts"][seat]
+        hands[seat] = hidden_pool[offset : offset + count]
+        offset += count
+    if offset != len(hidden_pool):
+        raise ValueError("determinization did not consume the full hidden pool")
+    return {
+        **decoded,
+        "hands": hands,
+        "played_by_seat": [
+            _cards_from_counts(counts) for counts in decoded["played_by_seat_counts"]
+        ],
+        "hidden_card_sampling_method": "uniform_physical_assignment_given_public_counts_v1",
+    }
+
+
+def _level_int(level: str) -> int:
+    ranks = ("2", "3", "4", "5", "6", "7", "8", "9", "T", "J", "Q", "K", "A")
+    return ranks.index(str(level).upper()) + 2
+
+
+def _inferred_pass_count(last_player: int, current_player: int, hand_counts: list[int]) -> int:
+    count = 0
+    seat = (int(last_player) + 1) % 4
+    while seat != int(current_player):
+        if hand_counts[seat] > 0:
+            count += 1
+        seat = (seat + 1) % 4
+    return count
+
+
+def restore_game(sample: dict, components: dict, rng: random.Random) -> Any:
+    determinization = sample_determinization(sample, rng)
+    game = components["GuandanGame"](
+        active_level=_level_int(str(sample.get("level"))),
+        verbose=False,
+        print_history=False,
+    )
+    for seat, player in enumerate(game.players):
+        player.hand = game.sort_cards(list(determinization["hands"][seat]))
+        player.played_cards = list(determinization["played_by_seat"][seat])
+        player.last_played_cards = []
+    your_seat = int(determinization["your_seat"])
+    teammate = (your_seat + 2) % 4
+    game.players[teammate].last_played_cards = _cards_from_counts(
+        determinization["teammate_last_counts"]
+    )
+    last_play = [
+        features.canonical_local_card(card)
+        for card in (sample.get("last_play_before_action") or [])
+    ]
+    current_player = int(sample.get("current_turn", your_seat))
+    if current_player != your_seat:
+        raise ValueError("website decision sample is not the acting player's turn")
+    game.current_player = current_player
+    game.last_play = last_play or None
+    game.last_player = int(sample.get("last_player")) if last_play else -1
+    game.pass_count = (
+        _inferred_pass_count(game.last_player, current_player, determinization["hand_counts"])
+        if last_play
+        else 0
+    )
+    game.ranking = []
+    game.is_free_turn = not bool(last_play)
+    game.jiefeng = False
+    game.is_game_over = False
+    game.winning_team = 0
+    game.recent_actions = [["None"], ["None"], ["None"], ["None"]]
+    game.history = []
+    return game
+
+
+def _candidate_metadata(sample: dict) -> list[dict]:
+    return [
+        {
+            "cards": list(item.get("cards") or []),
+            "action_type": item.get("action_type"),
+        }
+        for item in sample.get("legal_action_metadata") or []
+    ]
+
+
+def run_sanity(args: Any, components: dict) -> dict:
+    samples, dataset_summary = website_data.load_dataset(Path(args.website_information_set_sanity))
+    if dataset_summary.get("partition_role") != "train_development":
+        raise RuntimeError("information-set sanity requires the frozen train_dev partition")
+    if any(sample.get("split") == "locked_test" for sample in samples):
+        raise RuntimeError("information-set sanity refuses locked-test samples")
+    prefilter = [
+        sample
+        for sample in samples
+        if sample.get("split") == "train" and all(int(value) > 0 for value in sample.get("hand_counts") or [])
+    ]
+    eligible = [sample for sample in prefilter if sample.get("information_set_consistent")][
+        : int(args.information_set_sanity_samples)
+    ]
+    counters = Counter()
+    max_state_error = 0.0
+    failure_samples: list[dict] = []
+    for sample_index, sample in enumerate(eligible):
+        for determinization_index in range(int(args.information_set_determinizations)):
+            rng = random.Random(20260713 + sample_index * 1009 + determinization_index)
+            try:
+                game = restore_game(sample, components, rng)
+                integrity_cards: list[str] = []
+                for player in game.players:
+                    integrity_cards.extend(player.hand)
+                    integrity_cards.extend(player.played_cards)
+                counts = Counter(integrity_cards)
+                if len(integrity_cards) != 108 or any(count != 2 for count in counts.values()):
+                    raise ValueError("restored game does not preserve the two-deck 108-card invariant")
+                encoded = features.encode_compact_state_513(
+                    game,
+                    int(sample.get("your_seat", 0)),
+                    legal_candidates=_candidate_metadata(sample),
+                )
+                expected = np.asarray(sample["state"], dtype=np.float32)
+                error = float(np.max(np.abs(encoded - expected)))
+                max_state_error = max(max_state_error, error)
+                if error > 1e-6:
+                    raise ValueError(f"re-encoded state differs by {error}")
+                counters["successful_determinizations"] += 1
+            except Exception as exc:
+                counters["failed_determinizations"] += 1
+                if len(failure_samples) < 20:
+                    failure_samples.append(
+                        {
+                            "game_id": sample.get("game_id"),
+                            "turn_index": sample.get("turn_index"),
+                            "determinization_index": determinization_index,
+                            "error": f"{type(exc).__name__}: {exc}",
+                        }
+                    )
+    result = {
+        "schema_version": INFORMATION_SET_SCHEMA_VERSION,
+        "dataset_path": str(args.website_information_set_sanity),
+        "dataset_split_status": dataset_summary.get("split_status"),
+        "locked_test_loaded": False,
+        "evaluated_samples": len(eligible),
+        "prefilter_train_samples": len(prefilter),
+        "excluded_inconsistent_information_set_samples": sum(
+            not bool(sample.get("information_set_consistent")) for sample in prefilter
+        ),
+        "determinizations_per_sample": int(args.information_set_determinizations),
+        "successful_determinizations": counters["successful_determinizations"],
+        "failed_determinizations": counters["failed_determinizations"],
+        "max_state_reencode_error": max_state_error,
+        "hidden_card_sampling_method": "uniform_physical_assignment_given_public_counts_v1",
+        "future_information_used": False,
+        "opponent_or_teammate_true_hands_used": False,
+        "failure_samples": failure_samples,
+        "threshold_passed": bool(eligible and counters["failed_determinizations"] == 0),
+    }
+    Path(args.information_set_sanity_out).write_text(
+        json.dumps(result, ensure_ascii=False, indent=2), encoding="utf-8"
+    )
+    print(json.dumps(result, ensure_ascii=False, indent=2))
+    if not result["threshold_passed"]:
+        raise RuntimeError("website information-set sanity gate failed")
+    return result
+
+
+def _candidate_key(cards: list[str]) -> tuple[tuple[str, int], ...]:
+    return tuple(sorted(Counter(cards).items()))
+
+
+def _rollout_candidates(sample: dict, game: Any, components: dict, adaptive: Any, limit: int) -> list[dict]:
+    behavior_key = _candidate_key(list(sample.get("chosen_cards") or []))
+    candidates: list[dict] = []
+    seen: set[tuple[tuple[str, int], ...]] = set()
+    for metadata in sample.get("legal_action_metadata") or []:
+        website_cards = list(metadata.get("cards") or [])
+        key = _candidate_key(website_cards)
+        if key in seen:
+            continue
+        local_cards = adaptive.website_cards_to_local(website_cards)
+        info = adaptive.offline_make_action_info_from_cards(
+            game,
+            components,
+            local_cards,
+            random.Random(0),
+            policy="information_set_candidate",
+            audit_masks=False,
+        )
+        if info.get("illegal") or info.get("materialization_fail") or info.get("hand_card_mismatch"):
+            continue
+        seen.add(key)
+        candidates.append(
+            {
+                "action_id": int(info.get("action_id") or 0),
+                "physical_cards": list(info.get("chosen_cards") or []),
+                "physical_cards_website": website_cards,
+                "action_type": str(info.get("action_type") or metadata.get("action_type") or "unknown"),
+                "is_bomb": bool(info.get("is_bomb")),
+                "is_behavior_action": key == behavior_key,
+            }
+        )
+    candidates.sort(
+        key=lambda item: (
+            not item["is_behavior_action"],
+            item["is_bomb"],
+            len(item["physical_cards"]),
+            int(item["action_id"]),
+        )
+    )
+    behavior = [item for item in candidates if item["is_behavior_action"]]
+    others = [item for item in candidates if not item["is_behavior_action"]]
+    selected: list[dict] = []
+
+    def select(item: dict | None) -> None:
+        if item is not None and item not in selected and len(selected) < int(limit):
+            selected.append(item)
+
+    select(behavior[0] if behavior else None)
+    if others:
+        select(others[0])
+    non_pass = [item for item in others if item["physical_cards"]]
+    if non_pass:
+        select(max(non_pass, key=lambda item: len(item["physical_cards"])))
+    bombs = [item for item in others if item["is_bomb"]]
+    if bombs:
+        select(min(bombs, key=lambda item: (len(item["physical_cards"]), item["action_id"])))
+    for item in others:
+        if len(selected) >= int(limit):
+            break
+        select(item)
+    return selected[: int(limit)]
+
+
+def _stratified_train_samples(samples: list[dict], limit: int) -> list[dict]:
+    eligible = [
+        sample
+        for sample in samples
+        if sample.get("split") == "train"
+        and sample.get("information_set_consistent")
+        and all(int(value) > 0 for value in sample.get("hand_counts") or [])
+    ]
+    by_game: dict[str, list[dict]] = {}
+    for sample in eligible:
+        by_game.setdefault(str(sample.get("game_id")), []).append(sample)
+    rng = random.Random(20260713)
+    for game_samples in by_game.values():
+        rng.shuffle(game_samples)
+    game_ids = sorted(by_game)
+    rng.shuffle(game_ids)
+    selected: list[dict] = []
+    depth = 0
+    while len(selected) < int(limit):
+        added = False
+        for game_id in game_ids:
+            game_samples = by_game[game_id]
+            if depth < len(game_samples):
+                selected.append(game_samples[depth])
+                added = True
+                if len(selected) >= int(limit):
+                    break
+        if not added:
+            break
+        depth += 1
+    return selected
+
+
+def _simulate_candidate(
+    base_game: Any,
+    candidate: dict,
+    components: dict,
+    adaptive: Any,
+    seed: int,
+    max_steps: int,
+) -> tuple[float | None, dict | None]:
+    import copy
+
+    rng = random.Random(seed)
+    game = copy.deepcopy(base_game)
+    acting_player = int(game.current_player)
+    team_id = adaptive.offline_team_id(acting_player)
+    action = adaptive.offline_make_action_info_from_cards(
+        game,
+        components,
+        list(candidate.get("physical_cards") or []),
+        rng,
+        policy="information_set_counterfactual",
+        sampled_action_id=int(candidate.get("action_id") or 0),
+        audit_masks=False,
+    )
+    if action.get("illegal") or action.get("materialization_fail") or action.get("hand_card_mismatch"):
+        return None, {"reason": "candidate_apply_invalid"}
+    record = adaptive.offline_apply_action(game, action)
+    if record.get("materialization_fail") or record.get("hand_card_mismatch"):
+        return None, {"reason": "candidate_apply_failed"}
+    steps = 0
+    while not game.is_game_over and steps < int(max_steps):
+        adaptive.offline_prepare_turn(game)
+        if game.current_player in game.ranking:
+            steps += 1
+            continue
+        next_action = adaptive.rollout_greedy_action_info(
+            game, components, rng, policy="information_set_greedy_bot"
+        )
+        record = adaptive.offline_apply_action(game, next_action)
+        if record.get("materialization_fail") or record.get("hand_card_mismatch"):
+            return None, {"reason": "continuation_action_failed", "step": steps}
+        steps += 1
+    if not game.is_game_over:
+        return None, {"reason": "rollout_depth_exhausted", "steps": steps}
+    winner_team = adaptive.offline_winner_team_id(game)
+    if winner_team is None:
+        return None, {"reason": "winner_team_unavailable"}
+    return (1.0 if int(winner_team) == int(team_id) else -1.0), None
+
+
+def _sample_variance(values: list[float]) -> float:
+    return float(statistics.variance(values)) if len(values) >= 2 else 0.0
+
+
+def run_rollout_eval(args: Any, components: dict, adaptive: Any) -> dict:
+    samples, dataset_summary = website_data.load_dataset(Path(args.website_information_set_rollout_eval))
+    if dataset_summary.get("partition_role") != "train_development":
+        raise RuntimeError("information-set rollout requires the frozen train_dev partition")
+    if any(sample.get("split") == "locked_test" for sample in samples):
+        raise RuntimeError("information-set rollout refuses locked-test samples")
+    eligible = _stratified_train_samples(samples, int(args.information_set_rollout_samples))
+    case_results: list[dict] = []
+    strong_labels: list[dict] = []
+    integrity_failures: list[dict] = []
+    total_rollouts = 0
+    completed_rollouts = 0
+    for case_index, sample in enumerate(eligible):
+        base_rng = random.Random(20260713 + case_index * 100003)
+        candidate_game = restore_game(sample, components, base_rng)
+        candidates = _rollout_candidates(
+            sample,
+            candidate_game,
+            components,
+            adaptive,
+            int(args.information_set_rollout_candidates),
+        )
+        returns: list[list[float]] = [[] for _ in candidates]
+        paired_returns: list[list[float | None]] = [[] for _ in candidates]
+        failures: list[list[dict]] = [[] for _ in candidates]
+        for rollout_index in range(int(args.information_set_rollouts_per_action)):
+            determinization_seed = 20260713 + case_index * 1_000_003 + rollout_index
+            base_game = restore_game(sample, components, random.Random(determinization_seed))
+            for candidate_index, candidate in enumerate(candidates):
+                total_rollouts += 1
+                value, failure = _simulate_candidate(
+                    base_game,
+                    candidate,
+                    components,
+                    adaptive,
+                    determinization_seed,
+                    int(args.information_set_rollout_max_steps),
+                )
+                paired_returns[candidate_index].append(value)
+                if value is not None:
+                    returns[candidate_index].append(float(value))
+                    completed_rollouts += 1
+                elif failure and len(failures[candidate_index]) < 5:
+                    failures[candidate_index].append(failure)
+        candidate_results: list[dict] = []
+        for candidate, values in zip(candidates, returns):
+            candidate_results.append(
+                {
+                    **candidate,
+                    "rollout_count": len(values),
+                    "mean_return": sum(values) / len(values) if values else None,
+                    "return_variance": _sample_variance(values),
+                    "completion_rate": len(values) / int(args.information_set_rollouts_per_action),
+                }
+            )
+        valid_indices = [
+            index for index, result in enumerate(candidate_results) if result["mean_return"] is not None
+        ]
+        behavior_index = next(
+            (index for index, result in enumerate(candidate_results) if result["is_behavior_action"]), None
+        )
+        best_index = max(valid_indices, key=lambda index: candidate_results[index]["mean_return"]) if valid_indices else None
+        label = None
+        if behavior_index is not None and best_index is not None and best_index != behavior_index:
+            paired_differences = [
+                float(best) - float(behavior)
+                for best, behavior in zip(paired_returns[best_index], paired_returns[behavior_index])
+                if best is not None and behavior is not None
+            ]
+            advantage = sum(paired_differences) / len(paired_differences) if paired_differences else 0.0
+            variance = _sample_variance(paired_differences)
+            standard_error = (variance / len(paired_differences)) ** 0.5 if paired_differences else float("inf")
+            lower_bound = advantage - 1.96 * standard_error
+            confidence = max(0.0, min(1.0, 0.5 + lower_bound / 2.0))
+            strong = bool(
+                len(paired_differences) == int(args.information_set_rollouts_per_action)
+                and advantage >= float(args.information_set_min_advantage)
+                and variance <= float(args.information_set_max_variance)
+                and lower_bound > 0.0
+            )
+            label = {
+                "best_candidate_index": best_index,
+                "behavior_candidate_index": behavior_index,
+                "candidate_advantage": advantage,
+                "paired_return_variance": variance,
+                "advantage_95_lower_bound": lower_bound,
+                "label_confidence": confidence,
+                "strong_teacher_label": strong,
+            }
+            if strong:
+                strong_labels.append(
+                    {
+                        "game_id": sample.get("game_id"),
+                        "turn_index": sample.get("turn_index"),
+                        "state": sample.get("state"),
+                        "legal_actions": sample.get("legal_actions"),
+                        "teacher_action": candidate_results[best_index],
+                        "behavior_action": candidate_results[behavior_index],
+                        "rollout_count": len(paired_differences),
+                        "hidden_card_sampling_method": "uniform_physical_assignment_given_public_counts_v1",
+                        "mean_return": candidate_results[best_index]["mean_return"],
+                        "return_variance": candidate_results[best_index]["return_variance"],
+                        **label,
+                    }
+                )
+        case_results.append(
+            {
+                "game_id": sample.get("game_id"),
+                "turn_index": sample.get("turn_index"),
+                "scenario": sample.get("scenario"),
+                "candidate_results": candidate_results,
+                "teacher_label": label,
+                "candidate_failures": failures,
+            }
+        )
+    result = {
+        "schema_version": "website_information_set_rollout_v1",
+        "dataset_path": str(args.website_information_set_rollout_eval),
+        "dataset_partition_role": dataset_summary.get("partition_role"),
+        "locked_test_loaded": False,
+        "evaluated_cases": len(case_results),
+        "candidate_count": sum(len(case["candidate_results"]) for case in case_results),
+        "requested_rollouts_per_action": int(args.information_set_rollouts_per_action),
+        "total_rollouts": total_rollouts,
+        "completed_rollouts": completed_rollouts,
+        "rollout_completion_rate": completed_rollouts / total_rollouts if total_rollouts else 0.0,
+        "hidden_card_sampling_method": "uniform_physical_assignment_given_public_counts_v1",
+        "continuation_policy": "greedy_bot_feasibility_only",
+        "future_information_used": False,
+        "opponent_or_teammate_true_hands_used": False,
+        "strong_teacher_label_count": len(strong_labels),
+        "strong_teacher_labels": strong_labels,
+        "case_results": case_results,
+        "integrity_failures": integrity_failures,
+        "threshold_passed": bool(
+            case_results
+            and completed_rollouts == total_rollouts
+            and not integrity_failures
+        ),
+        "capability_claim_allowed": False,
+    }
+    Path(args.information_set_rollout_out).write_text(
+        json.dumps(result, ensure_ascii=False, indent=2), encoding="utf-8"
+    )
+    print(json.dumps({key: value for key, value in result.items() if key not in {"case_results", "strong_teacher_labels"}}, ensure_ascii=False, indent=2))
+    if not result["threshold_passed"]:
+        raise RuntimeError("information-set rollout feasibility gate failed")
+    return result

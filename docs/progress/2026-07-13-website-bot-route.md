@@ -129,3 +129,27 @@ scratch both completed without loading locked test. Their development metrics
 are not policy evidence. No model was promoted, no candidate ranking claim was
 made, and additional epochs were rejected in favor of information-set rollout
 teacher work.
+
+## Information-Set Audit
+
+The website caps public action history near 40 entries. The original 513 encoder
+therefore produced impossible unknown-card pools after the cap: only 513/1,294
+frozen decisions preserved card-count consistency. The earlier behavior-Q
+checkpoints are invalidated and must not be reused.
+
+Formal physical partitions now contain only consistent states: 423 train/dev
+and 90 locked-test decisions. A cumulative rolling-window overlap tracker was
+added for future online Shadow collection. A separate 30-decision live
+engineering smoke accumulated 111 public actions and kept all 30 information
+sets consistent with zero Shadow errors; it is not added to the frozen dataset.
+
+Information-set determinization was validated on 50 train states with eight
+seeds each: 400/400 restores preserved all 108 physical cards and re-encoded the
+original 513-vector exactly. Rollout remains restricted to states where nobody
+has finished; ranking and partner-wind states await separate state-machine
+coverage.
+
+A first stratified teacher feasibility run evaluated 10 games, 31 candidates,
+and 496 paired greedy-continuation rollouts. All reached legal terminal states,
+but no comparison met the frozen advantage, variance, and confidence criteria.
+No teacher label was produced and no model training followed.

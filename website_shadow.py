@@ -15,6 +15,7 @@ import play_step_0902 as engine
 
 SHADOW_SCHEMA_VERSION = "website_shadow_v1"
 SHADOW_SUGGESTION_SOURCE = "tempo_baseline_mirror"
+PUBLIC_HISTORY_SOURCE = "cumulative_poll_overlap_v1"
 
 
 def _level_to_int(level: str | int) -> int:
@@ -52,6 +53,35 @@ def _history_entries(state: dict) -> list[tuple[int, list[str]]]:
         if 0 <= seat < 4:
             entries.append((seat, list(raw[1] or [])))
     return entries
+
+
+def extend_public_history(tracker: list[tuple[int, list[str]]], state: dict) -> dict:
+    current = _history_entries(state)
+    if not tracker:
+        tracker.extend((seat, list(cards)) for seat, cards in current)
+        return {
+            "history": list(tracker),
+            "overlap_count": 0,
+            "new_entry_count": len(current),
+            "consistent": True,
+            "source": PUBLIC_HISTORY_SOURCE,
+        }
+    max_overlap = min(len(tracker), len(current))
+    overlap = 0
+    for size in range(max_overlap, 0, -1):
+        if tracker[-size:] == current[:size]:
+            overlap = size
+            break
+    consistent = bool(not current or overlap > 0)
+    if consistent:
+        tracker.extend((seat, list(cards)) for seat, cards in current[overlap:])
+    return {
+        "history": list(tracker),
+        "overlap_count": overlap,
+        "new_entry_count": len(current) - overlap if consistent else 0,
+        "consistent": consistent,
+        "source": PUBLIC_HISTORY_SOURCE,
+    }
 
 
 def validate_team_mapping(state: dict) -> dict:
@@ -241,6 +271,16 @@ def build_shadow_audit(
     your_seat = int(state.get("your_seat"))
     paper_state = features.encode_compact_state_513(game, your_seat, legal_candidates=candidates)
     website_state = features.encode_website_compact_state_487(game, your_seat, legal_candidates=candidates)
+    hand_counts = [int(value) for value in (state.get("hand_counts") or [])]
+    expected_unknown_count = (
+        sum(hand_counts) - hand_counts[your_seat] if len(hand_counts) == 4 else None
+    )
+    encoded_unknown_count = int(round(float(paper_state[54:108].sum())))
+    information_set_consistent = bool(
+        expected_unknown_count is not None
+        and encoded_unknown_count == expected_unknown_count
+        and state.get("_public_history_consistent", True)
+    )
     encoded_candidates = [
         {
             "cards": list(candidate.get("cards") or []),
@@ -276,6 +316,13 @@ def build_shadow_audit(
         "legal_candidate_action_encoding_version": features.DANZERO_PHYSICAL_ACTION_ENCODING_VERSION,
         "oracle_validation_mode": oracle_validation_mode,
         "oracle_exhaustive": enumerate_all_candidates,
+        "public_history_source": state.get("_public_history_source", "server_snapshot"),
+        "public_history_consistent": bool(state.get("_public_history_consistent", True)),
+        "public_history_length": len(_history_entries(state)),
+        "public_history_overlap_count": state.get("_public_history_overlap_count"),
+        "information_set_unknown_count": encoded_unknown_count,
+        "information_set_expected_unknown_count": expected_unknown_count,
+        "information_set_consistent": information_set_consistent,
         "paper_state_513": paper_state.tolist(),
         "website_state_487": website_state.tolist(),
         "paper_state_dim": int(paper_state.shape[0]),
@@ -329,6 +376,7 @@ def summarize_decisions(decisions: Sequence[dict]) -> dict:
         "website_acceptance_inferred_count": 0,
         "suggestion_diff_count": 0,
         "level_wildcard_error_count": 0,
+        "information_set_inconsistent_count": 0,
         "threshold_passed": False,
     }
     for audit in audits:
@@ -359,6 +407,9 @@ def summarize_decisions(decisions: Sequence[dict]) -> dict:
             suggested.get("contains_heart_level_wildcard")
             and suggested.get("physical_action_count") != suggested.get("size")
         )
+        result["information_set_inconsistent_count"] += int(
+            not bool(audit.get("information_set_consistent", True))
+        )
     error_fields = (
         "state_encoding_error_count",
         "team_mapping_error_count",
@@ -368,6 +419,7 @@ def summarize_decisions(decisions: Sequence[dict]) -> dict:
         "materialization_fail_count",
         "website_rule_disagree_count",
         "level_wildcard_error_count",
+        "information_set_inconsistent_count",
     )
     result["threshold_passed"] = bool(audits and all(result[name] == 0 for name in error_fields))
     return result
@@ -477,6 +529,7 @@ def replay_historical_logs(profile: str, out_path: str, max_games: int = 0) -> d
         "website_acceptance_inferred_count",
         "suggestion_diff_count",
         "level_wildcard_error_count",
+        "information_set_inconsistent_count",
     )
     result = {
         "schema_version": SHADOW_SCHEMA_VERSION,
@@ -549,6 +602,7 @@ def replay_historical_logs(profile: str, out_path: str, max_games: int = 0) -> d
         "materialization_fail_count",
         "website_rule_disagree_count",
         "level_wildcard_error_count",
+        "information_set_inconsistent_count",
     )
     result["threshold_passed"] = bool(
         result["evaluated_games"] > 0
@@ -592,6 +646,7 @@ def summarize_shadow_log_dir(log_dir: str, out_path: str, minimum_games: int = 2
         "website_acceptance_inferred_count",
         "suggestion_diff_count",
         "level_wildcard_error_count",
+        "information_set_inconsistent_count",
     )
     result = {
         "schema_version": SHADOW_SCHEMA_VERSION,
@@ -627,6 +682,7 @@ def summarize_shadow_log_dir(log_dir: str, out_path: str, minimum_games: int = 2
         "website_rule_disagree_count",
         "suggestion_diff_count",
         "level_wildcard_error_count",
+        "information_set_inconsistent_count",
     )
     result["all_decisions_oracle_exhaustive"] = bool(
         result["shadow_decision_count"] > 0
