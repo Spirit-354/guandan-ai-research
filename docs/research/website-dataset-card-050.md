@@ -93,8 +93,16 @@ the same hidden-card determinizations. Candidate-return variance, paired
 advantage confidence bounds, and per-continuation advantages are reported
 separately.
 
-Only game 13868 turn 10 currently passes the full greedy-plus-frozen-tempo
-confirmation gate at 64 paired evaluations. Its five-card bomb has mean return
-0.90625, return variance 0.1815, paired advantage 0.5625, and a 95% advantage
-lower bound of 0.3239 over the recorded pass. This is one independent game and
-is insufficient for training, checkpoint selection, or any policy claim.
+Seven independent train games currently pass the full stable-seed
+greedy-plus-frozen-tempo confirmation gate: games 13861, 13865, 13868, 13871,
+13872, 13879, and 13882. Every accepted case has at least 16 paired evaluations
+per candidate, positive advantage under both continuation profiles, candidate
+return variance no greater than 0.50, and a positive 95% advantage lower bound.
+The strongest confirmed case remains game 13872 turn 4, whose four-card bomb
+improves mean team return from -0.25 to 0.875 with paired advantage 1.125 and a
+95% lower bound of about 0.623.
+
+The remapped 513-state/54-action teacher dataset accepts all seven labels without
+reading locked test data. Seven independent games remain below the frozen
+20-game training gate, so this evidence is insufficient for training,
+checkpoint selection, candidate ranking, or any policy claim.

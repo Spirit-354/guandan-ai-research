@@ -273,7 +273,27 @@ A dedicated 513-state/54-action website teacher builder recovers each selected
 physical action from the original frozen train sample instead of treating the
 375 compatibility action ID as the paper action. It accepts only complete,
 stable-seed, greedy-plus-tempo rollout files and verifies state identity, hand
-subset, legal action membership, and train-only provenance. The current dataset
-contains two independent high-confidence games (13868 and 13872), both legal and
-with no locked-test access. Its training gate remains false until at least 20
-independent high-confidence teacher games exist, so no model training follows.
+subset, legal action membership, and train-only provenance.
+
+The final low-variance confirmation sweep produced five more independent strong
+labels. Games 13865 turn 8 and 13871 turn 9 replace a pass or a small-joker pair
+with a four-card bomb; game 13882 turn 10 replaces a three-with-pair with a
+six-card bomb; game 13861 turn 10 replaces a single with a steel; and game 13879
+turn 6 chooses a different three-with-pair. Their paired advantages range from
+0.5 to 0.875, every greedy and frozen-tempo continuation advantage is positive,
+and every 95% advantage lower bound is above zero.
+
+The sweep also supplied useful rejections. Game 13881 turn 7 retained positive
+mean advantage but had a negative 95% lower bound. Games 13864 and 13883 were not
+robust across continuation profiles, game 13866 had no behavior advantage, and
+games 13862, 13877, 13884, and 13885 failed advantage, variance, confidence, or
+robustness gates. The six-case final independent batch required about 20.6
+minutes; game 13877 alone used about 13.7 minutes and still produced no label.
+This supports collecting new independent states instead of repeatedly expanding
+rollouts on the exhausted old candidate pool.
+
+The rebuilt teacher dataset contains seven accepted labels from seven independent
+games, with no rejection during source remapping, no locked-test access, and the
+expected 513-state/54-action representation. Its training gate remains false
+until at least 20 independent high-confidence teacher games exist, so no model
+training follows.
