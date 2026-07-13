@@ -1,0 +1,9 @@
+{
+  "schema_version": "website_dataset_extension_session_splits_v1",
+  "session_split_assignments": {
+    "logs_website_shadow_supplement_train_001": "train",
+    "logs_website_shadow_supplement_development_001": "development",
+    "logs_website_shadow_supplement_train_002": "train",
+    "logs_website_shadow_supplement_train_003": "train"
+  }
+}

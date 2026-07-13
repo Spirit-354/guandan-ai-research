@@ -297,6 +297,43 @@ Decision:
   explicitly preassigned baseline-only train supplement without weakening any
   teacher threshold.
 
+## Website Shadow Supplement v3
+
+Status: completed; baseline-only collection gate passed.
+
+Evidence:
+
+- `website_dataset_extension_session_splits_v3.json` preserves all three prior
+  assignments and adds only `logs_website_shadow_supplement_train_003` as
+  train; no session is assigned to locked test.
+- Exactly 12 verified bot-table games completed: 9 wins and 3 losses. Game IDs
+  are 14018, 14019, 14020, 14021, 14022, 14023, 14025, 14026, 14027, 14029,
+  14030, and 14031.
+- Leaderboard Elo moved continuously from 2102 to 2158, a net change of +56;
+  all 12 games use `leaderboard_elo` and none infer Elo from final-state scores.
+- The session contains 308 Shadow decisions and 8,322 legal candidates. All
+  308 submissions succeeded, all candidate sets are website-oracle exhaustive,
+  and all decision-time information sets are consistent.
+- Every submitted action came from frozen `tempo_baseline`; model-controlled
+  actions and suggestion differences are zero.
+- Failed games, non-bot actions, state encoding, team mapping, hand subset,
+  local legality, oracle disagreement, materialization, website-rule, inferred
+  acceptance, wildcard, information-set, duplicate-turn, extra error-log, and
+  unrecoverable-desync counts are all zero.
+- Runtime credential occurrences in the new logs, Shadow summary, cumulative
+  assignment, global research results, and tracked files are zero.
+- Frozen extension v2 and teacher v3 hashes are unchanged. No dataset rebuild,
+  teacher rollout, model training, offline evaluation, or model-controlled
+  website play occurred in this stage.
+
+Decision:
+
+- Accept all 12 games as the next explicitly preassigned train supplement.
+- Keep extension v2 and teacher v3 frozen until a separate dataset-extension
+  stage builds and validates new v3 artifacts.
+- Do not screen these states or train from them before the v3 physical
+  partitions, manifest, and coverage gates pass.
+
 ## Model A / Shared Self-Play / BC / PPO / DMC
 
 Status: not eligible for website control.
@@ -332,25 +369,25 @@ Decision:
 
 ## Current Next Experiment
 
-Name: Website Shadow Supplement v3.
+Name: Frozen Website Dataset Extension v3.
 
 Purpose:
 
-- Preassign one unused v3 supplement session to train, then collect exactly 12
-  completed verified bot-table games with frozen `tempo_baseline`.
-- Record exhaustive website-oracle Shadow candidates and consistent
-  decision-time information sets for a later dataset-extension stage.
+- Extend frozen website dataset v2 with only the already preassigned Supplement
+  v3 train session.
+- Produce new v3 bundle, physical partitions, manifest, and data card without
+  overwriting any v2 artifact or changing old split membership.
 
 Acceptance:
 
-- Exactly 12 verified bot-only games complete in the new preassigned train
-  session; non-bot tables stop before the first action.
-- Every submitted action comes from frozen `tempo_baseline`; model-controlled
-  actions and suggestion submissions are zero.
-- Submission, communication, encoding, legality, oracle, materialization,
-  wildcard, information-set, duplicate-submit, and desync error counts are
-  zero.
-- Per-game Elo before/after is sourced only from `leaderboard_elo`.
-- Dataset rebuild, teacher rollout, model training, offline evaluation, and
-  model-controlled website play are all zero; credential occurrences in new
-  tracked/curated files are zero.
+- All 70 extension v2 games, old source hashes, session assignments, split
+  membership, and the nine-game locked-test set remain unchanged.
+- Exactly 12 new games and 308 decisions enter train; new development and
+  locked-test games are zero.
+- Expected totals are 82 games, 49 wins, 33 losses, 2,061 decisions, and 57,871
+  candidates; the physical train/development partition is expected to contain
+  1,190 consistent decisions.
+- Coverage, duplicate-state, information-set, physical-isolation, manifest,
+  and credential gates pass.
+- Website play, teacher rollout, model training, offline evaluation, and
+  model-controlled website play are all zero.

@@ -484,3 +484,36 @@ mapping, and 513-state/54-action dimensions all passed. Its SHA-256 is
 The dataset contains 13 labels from 13 independent games, so the 20-game gate
 remains closed. This stage ran no website games, model training, offline
 evaluation, or model-controlled website play.
+
+## Website Shadow Supplement v3
+
+Before collection, a cumulative v3 assignment file preserved all three prior
+session assignments and added only `logs_website_shadow_supplement_train_003`
+as train. The new directory was unused, and no session was assigned to locked
+test. Frozen extension v2, teacher v3, and `tempo_baseline` hashes passed their
+preflight checks.
+
+Frozen `tempo_baseline` then completed exactly 12 verified bot-table games:
+games 14018, 14019, 14020, 14021, 14022, 14023, 14025, 14026, 14027, 14029,
+14030, and 14031. Results were 9 wins and 3 losses. Leaderboard Elo was
+continuous across every boundary, moving from 2102 to 2158 for a net change of
++56. Every before/after value came from `leaderboard_elo`; final-state scores
+remained proxy-only.
+
+The session contains 308 submitted decisions and 8,322 legal candidates. All
+308 submissions succeeded, all 308 candidate sets were generated through
+exhaustive website-oracle validation, and all 308 decision-time information
+sets were consistent. Every table had the verified four-bot signature, every
+action came from `tempo_baseline`, and model-controlled actions were zero.
+
+The online Shadow gate passed. Failed games, non-bot actions, state encoding,
+team mapping, hand subset, local legality, oracle disagreement,
+materialization, website-rule, inferred acceptance, wildcard, information-set,
+duplicate-turn, extra error-log, and unrecoverable-desync counts were zero. A
+targeted scan of the new logs, summary, assignment, global research results,
+and tracked files found zero runtime credential occurrences.
+
+This stage did not rebuild a dataset, run teacher rollout, train a model, run
+offline evaluation, or allow model-controlled website play. The next stage is
+limited to constructing extension v3 artifacts from frozen extension v2 plus
+this preassigned train session.
