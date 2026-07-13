@@ -444,3 +444,43 @@ The frozen artifact SHA-256 audit is:
   `72841302506d427fdbb1c18a4fefd82b4b0615661e9a843022d11c4fd61214e3`;
 - extension v2 data card:
   `8c866a690ed4012124caacece00b8c493e563ef31ac363eaecc73a74da11e601`.
+
+## Extension v2 Teacher Expansion
+
+The extension v2 physical train/development partition was the only dataset
+loaded for selection and rollout. Its SHA-256 remained
+`03d1a0967429fd75433ea3753a96c4bce43660f636a7cf9801140bd02777cc60`;
+the complete bundle and isolated locked-test partition were not read.
+
+All 280 decisions from new train games 13985, 13986, 13987, 13989, 13991,
+13992, 13994, 13996, 13997, 13999, 14000, and 14002 were enumerated. Thirty-one
+were ineligible because at least one public hand count was nonpositive. The
+remaining 249 states all completed greedy-only screening: 720 candidates and
+5,760/5,760 rollouts, with zero timeout or integrity failure. Screening emitted
+no strong labels.
+
+Twelve positive-95%-lower-bound screen signals covered six independent games.
+The strongest signal per game was confirmed first, followed only by the two
+remaining positive-screen alternatives for failed games. Across the two
+confirmation batches, eight cases and 32 candidates completed 512/512 paired
+rollouts, evenly divided between greedy and frozen-tempo continuations. Every
+run used uniform physical information-set assignment, stable game/turn/seed
+determinizations shared across profiles, and no hidden-hand or future
+information. Locked-test loads, incomplete accepted files, timeouts, and
+integrity failures remained zero.
+
+Two cases passed every frozen gate. Games 13992 turn 16 and 14000 turn 5 each
+had paired advantage 0.875, 95% lower bound 0.373, candidate return variance
+0.0, and greedy/frozen-tempo advantages 1.0/0.75. The two game-13986 candidates
+were rejected for variance above 0.50. The candidates from games 13987, 13991,
+and 14002 failed confidence or continuation robustness, and no other game had a
+remaining positive-screen alternative.
+
+`website_information_set_teacher_dataset_v3.pth` preserves all 11 teacher v2
+samples exactly after deserialization and appends only `13992:16` and
+`14000:5`. Source states, behavior actions, legal teacher actions, physical-card
+mapping, and 513-state/54-action dimensions all passed. Its SHA-256 is
+`901ebe397d4fea8842e439e80cd0dfa7605985133ab01b5172bac4708a1a75b1`.
+The dataset contains 13 labels from 13 independent games, so the 20-game gate
+remains closed. This stage ran no website games, model training, offline
+evaluation, or model-controlled website play.

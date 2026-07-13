@@ -1,120 +1,82 @@
 # NEXT_TASK.md
 
-## Next Task
+## Single Next Stage
 
-Screen every eligible new train state from Website Dataset Extension v2 for
-robust information-set teacher candidates, then append accepted labels to the
-frozen teacher v2 base.
+Run Website Shadow Supplement v3 as one baseline-only collection stage. Do not
+rebuild the dataset, run teacher rollout, train or evaluate a model, or begin
+model-controlled website play in this stage.
 
-Do not run website games or train a model in this task, even if the teacher
-training gate reaches 20 independent games.
+## Frozen Inputs and Preconditions
 
-## Locked Conclusion From the Previous Stage
-
-- Extension v2 contains 70 bot-only games, 40 wins, 30 losses, 1,753 decisions,
-  and 49,549 legal candidates; rejected files or games: 0.
-- The physical train/development partition contains 882 consistent decisions:
-  718 train and 164 development.
-- All 12 Supplement v2 games and all 280 of their decisions entered train.
-- Extension v1 games, splits, sessions, source hashes, and the nine-game locked
-  set are unchanged.
-- Extension v2 manifest content hash:
+- Branch: `agent/stage5-website-bot-adaptation`.
+- Frozen website strategy: `tempo_baseline`; do not change its core semantics.
+- Frozen extension v2 manifest content hash:
   `31c5bc501286ac41d3a791811c7089200e49097132bfd886aa10d281c5ddb27e`.
-- The current teacher v2 base remains frozen at 11 labels from 11 independent
-  games; the 20-game training gate is closed.
+- Frozen teacher v3 SHA-256:
+  `901ebe397d4fea8842e439e80cd0dfa7605985133ab01b5172bac4708a1a75b1`.
+- Teacher gate: 13 of 20 independent high-confidence games; training remains
+  prohibited.
+- Extend the existing cumulative session assignment into
+  `website_dataset_extension_session_splits_v3.json`. Preserve every existing
+  session assignment exactly and preassign only the unused session
+  `logs_website_shadow_supplement_train_003` to `train` before collection.
+- Runtime credentials must come only from `GUANDAN_USER` and
+  `GUANDAN_PASSWORD`. Do not print or persist their values.
 
-## Authoritative Inputs
+## Scope
 
-- Load only `website_danzero_shadow_extension_v2.train_dev.pth` for state
-  selection and rollout evaluation.
-- Train/development partition SHA-256:
-  `03d1a0967429fd75433ea3753a96c4bce43660f636a7cf9801140bd02777cc60`.
-- Restrict candidate states to these new train game IDs:
-  `13985`, `13986`, `13987`, `13989`, `13991`, `13992`, `13994`, `13996`,
-  `13997`, `13999`, `14000`, and `14002`.
-- Use `website_information_set_teacher_dataset_v2.pth` only as the frozen base
-  teacher dataset when rebuilding accepted labels.
-- Frozen teacher v2 SHA-256:
-  `620b378675ef1964f16043c7c2cdd4d75dc8db3bb7377cab773c3bbe8aec250f`.
-- Write a new `website_information_set_teacher_dataset_v3.pth`; do not
-  overwrite teacher v2.
-- Do not load `website_danzero_shadow_extension_v2.pth` or
-  `website_danzero_shadow_extension_v2.locked_test.pth`.
+1. Verify the frozen hashes, current branch, clean starting worktree, cumulative
+   v2 session assignments, and that the new session directory is unused.
+2. Create the cumulative v3 assignment file before website play. Existing
+   train/development assignments and the locked-test set must not change; the
+   new session must be assigned only to train.
+3. Collect exactly 12 completed verified bot-table games in
+   `logs_website_shadow_supplement_train_003`.
+4. Stop any non-bot table before the first submitted action. Only frozen
+   `tempo_baseline` may submit actions; model suggestions may be observed but
+   must never control or be submitted.
+5. For every decision, retain exhaustive website-oracle candidates and a
+   decision-time-consistent information set. Do not use hidden hands, future
+   actions, future states, or post-game information as features.
+6. Read and record actual `leaderboard_elo` before and after every completed
+   game. Never treat `final_state["scores"]` as Elo.
+7. Audit game count, wins/losses, Elo continuity, decisions, successful
+   submissions, bot/table signature, candidate exhaustiveness, information-set
+   consistency, model-control count, and all safety/error counters.
+8. Do not rebuild extension v3, screen teacher candidates, build teacher v4,
+   train a model, run offline Arena, or start model-controlled website play.
+9. Update `PROJECT_STATE.md`, `EXPERIMENTS.md`, `NEXT_TASK.md`, and
+   `docs/progress/2026-07-13-website-bot-route.md`; keep raw logs and large JSON
+   ignored. Run validation, scan tracked/curated changes for credentials,
+   commit with a conventional message, and push.
 
-## Constraints
+## Acceptance Criteria
 
-- Do not access or use locked test for screening, candidate design, threshold
-  tuning, checkpoint selection, or any conclusion.
-- Use only decision-time information and the `website_oracle` legal mask.
-- Hidden-card simulation must use legal information-set determinization.
-- Do not use opponent hands, teammate hands, future actions, future states, or
-  post-game-only information as features or labels.
-- Do not modify `tempo_baseline`, the website protocol, leaderboard Elo
-  semantics, teacher thresholds, or frozen artifacts.
-- Greedy-only results are screening signals and must never become strong
-  labels directly.
-- Strong labels must have at least 16 complete paired rollouts, acceptable
-  candidate-return variance, positive advantage and 95% lower bound, and
-  positive advantages against both greedy and frozen-tempo continuations.
-- Do not weaken thresholds or repeatedly expand low-evidence candidates to
-  force the 20-game gate.
-- Do not continue into training, offline evaluation, or website play after the
-  teacher dataset conclusion is locked.
+- New preassigned train sessions: exactly 1; changed prior assignments: 0;
+  locked-test membership changes: 0.
+- Completed verified bot-only website games: exactly 12.
+- Every website action is submitted by frozen `tempo_baseline`; model-controlled
+  or model-suggestion-submitted actions: 0.
+- Every submission succeeds and every retained decision has exhaustive
+  website-oracle candidates plus a consistent decision-time information set.
+- Non-bot actions, failed games, communication, encoding, team mapping,
+  hand-subset, legality, oracle, materialization, website-rule, wildcard,
+  information-set, duplicate-submit, and unrecoverable-desync errors: 0.
+- Each game has continuous `leaderboard_elo` before/after evidence; inferred
+  Elo from final-state scores: 0.
+- Dataset builds, teacher rollouts, teacher labels, model training, offline
+  evaluation, and model-controlled website play in this stage: 0.
+- Frozen extension v2 and teacher v3 hashes remain unchanged.
+- Credential occurrences in new tracked/curated files: 0.
+- Handoff updates, validation, conventional commit, and push all succeed before
+  the stage Goal is marked complete.
 
-## Required Work
+## Ready-to-Use Goal Prompt
 
-1. Verify Git state and re-read the canonical handoff files.
-2. Verify the train/development partition hash, partition role, information-set
-   consistency, and zero locked-test samples before screening.
-3. Enumerate all 280 new train decisions. Report eligible and ineligible counts
-   and reasons; screen every state eligible under the existing public-hand-count
-   and information-set rules.
-4. Run the existing stable-seed greedy-only screening over every eligible new
-   state and record complete candidate/rollout coverage. Do not emit labels from
-   this pass.
-5. Select only high-evidence signals for 16-rollout greedy-plus-frozen-tempo
-   confirmation, using common deterministic hidden-card assignments across
-   continuation profiles.
-6. Record rollout count, hidden-card sampling method, mean return, candidate and
-   paired variance, candidate advantage, 95% lower bound, confidence,
-   completion rate, and per-profile advantages for every confirmed case.
-7. Accept only labels that pass the existing completeness, variance, advantage,
-   confidence, and dual-continuation robustness gates.
-8. Rebuild teacher v3 from the frozen teacher v2 base plus accepted new labels.
-   Verify all 11 old labels are unchanged, every new source is train, and every
-   physical action remaps to the original legal 54-dimensional action.
-9. Report the resulting independent high-confidence teacher-game count and
-   whether the 20-game gate is reached. Do not train in this stage.
-10. Update `PROJECT_STATE.md`, `EXPERIMENTS.md`, and `NEXT_TASK.md`; update the
-    durable progress document, run the narrowest relevant validation, then
-    commit and push.
-
-## Success Criteria
-
-- New train decisions enumerated: 280; every eligible state is screened.
-- Locked-test samples loaded or used: 0.
-- Hidden/future information leaks: 0.
-- Greedy-only labels accepted: 0.
-- Incomplete rollout files accepted: 0.
-- Every accepted new label has at least 16 complete paired rollouts, acceptable
-  candidate variance, positive mean advantage and 95% lower bound, and positive
-  greedy and frozen-tempo continuation advantages.
-- Frozen teacher v2 labels changed or removed: 0.
-- Teacher label physical-action remap errors: 0.
-- Teacher v3 reports accepted new labels, total labels, independent games, and
-  the 20-game gate accurately.
-- Website games, model training, offline evaluation, and model-controlled
-  website play performed in this stage: 0.
-- Runtime credential occurrences in new tracked/curated files: 0.
-- The next single-stage Goal prompt is written only after the teacher v3
-  conclusion is locked.
-
-## Stage Goal Prompt
-
-```text
 请创建一个阶段 Goal：
-目标名称：完成 extension v2 新增 12 个 train 游戏的信息集 teacher candidate 全量筛选、稳健确认和 teacher v3 重建。
-约束：本阶段不运行网站对局、不训练模型、不进行离线能力评估，不修改 tempo_baseline、网站协议、leaderboard Elo 语义、teacher 阈值或冻结 artifacts。只能加载 website_danzero_shadow_extension_v2.train_dev.pth，其 SHA-256 必须为 03d1a0967429fd75433ea3753a96c4bce43660f636a7cf9801140bd02777cc60；不得加载 complete bundle 或 locked_test partition。只筛选 game_id 13985、13986、13987、13989、13991、13992、13994、13996、13997、13999、14000、14002。只能使用决策点可见信息和 website_oracle legal mask；隐藏牌模拟必须采用合法信息集 determinization。greedy-only 结果只能用于初筛，不能直接成为强标签。强标签必须至少有 16 个完整配对 rollout，candidate variance 合格，优势和 95% 下界为正，并且 greedy 与 frozen-tempo continuation 优势都为正。即使独立 teacher 游戏达到 20，本阶段也不得训练。
-任务：1. 检查 Git 与交接文件。2. 核验 train_dev hash、partition role、全样本信息集一致和 locked_test 为 0。3. 枚举 280 个新增 train 决策，报告现有规则下的 eligible/ineligible 数量和原因，并筛选每个 eligible 状态。4. 使用稳定种子完成全量 greedy-only 初筛，记录完整候选与 rollout 覆盖，不接受标签。5. 只对高证据信号运行 16-rollout greedy+frozen-tempo 确认，两种 continuation 共用确定性隐藏牌分配。6. 记录 rollout count、隐藏牌采样、均值、candidate/paired variance、优势、95% 下界、置信度、完成率和 profile 优势。7. 只接受通过现有完整性、方差、优势、置信度和双 continuation 稳健门的标签。8. 以 website_information_set_teacher_dataset_v2.pth 为冻结基线重建 website_information_set_teacher_dataset_v3.pth，核验 11 条旧标签不变、新 source 全为 train、physical action 合法映射到原始 54 维动作。9. 报告 teacher 总标签、独立游戏和 20-game gate，但不训练。10. 更新交接和进展文档，运行最窄相关验证，commit 并 push。
-验收：280 个新增 train 决策全部枚举且所有 eligible 状态完成筛选；locked_test 访问 0；隐藏或未来信息泄漏 0；greedy-only 接受标签 0；不完整 rollout 接受 0；每个新增标签至少 16 个完整配对 rollout，并通过 candidate variance、正优势、正 95% 下界以及 greedy/frozen-tempo 双正门槛；teacher v2 旧标签改动或删除 0；physical-action remap error 0；teacher v3 准确报告新增、总标签、独立游戏和 20-game gate；本阶段网站对局、模型训练、离线评估、模型控制网站均为 0；新 tracked/curated 文件凭据出现 0；只有全部验收、交接、验证、commit 和 push 成功后才能完成 Goal。
-```
+
+目标名称：完成 Website Shadow Supplement v3 的 12 局基线专用训练会话采集。
+
+约束：先在 `website_dataset_extension_session_splits_v3.json` 中完整保留既有累计分配，并将唯一的新会话 `logs_website_shadow_supplement_train_003` 预分配到 train；新目录必须未使用。只能由冻结 `tempo_baseline` 提交网站动作，遇到非机器人桌必须在首个动作前停止。凭据只从 `GUANDAN_USER` 和 `GUANDAN_PASSWORD` 读取，不得打印、落盘或提交。每个决策保留 exhaustive website-oracle candidates 和决策时一致的信息集；不得使用隐藏手牌、未来动作或赛后信息。每局 Elo 必须来自 `leaderboard_elo`，严禁把 `final_state["scores"]` 当 Elo。本阶段不得重建数据集、运行 teacher rollout、构建 teacher v4、训练模型、运行离线评估或进行模型控制网站对局。
+
+验收：恰好 12 局完成且均为 verified bot table；全部动作由 `tempo_baseline` 提交；提交成功率 100%；candidate exhaustiveness 与 information-set consistency 100%；非机器人动作、失败局、通信、编码、队伍映射、手牌子集、合法性、oracle、materialization、网站规则、wildcard、信息集、重复提交、不可恢复 desync 和模型控制计数均为 0；每局 `leaderboard_elo` 前后连续可核验；旧 session assignment 和 locked-test 变化均为 0；extension v2 与 teacher v3 冻结哈希不变；新 tracked/curated 文件凭据命中 0；更新全部交接文件、运行验证、commit 并 push，全部满足后才能完成 Goal。

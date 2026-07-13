@@ -8,7 +8,7 @@ Branch: `agent/stage5-website-bot-adaptation`
 
 Latest completed stage:
 
-- Frozen Website Dataset Extension v2.
+- Extension v2 Information-Set Teacher Candidate Expansion.
 
 Primary program:
 
@@ -64,26 +64,26 @@ Locked test:
 
 Teacher dataset:
 
-- Frozen base: `website_information_set_teacher_dataset_v1.pth`, unchanged at
-  7 labels from 7 independent games.
-- Current dataset: `website_information_set_teacher_dataset_v2.pth`.
-- 11 accepted high-confidence teacher labels from 11 independent games: 7
-  frozen labels plus 4 extension v1 labels.
-- New accepted cases: `13958:12`, `13959:7`, `13957:14`, and `13960:15`.
+- Frozen base: `website_information_set_teacher_dataset_v2.pth`, unchanged at
+  11 labels from 11 independent games.
+- Current dataset: `website_information_set_teacher_dataset_v3.pth`.
+- 13 accepted high-confidence teacher labels from 13 independent games: 11
+  frozen labels plus 2 extension v2 labels.
+- New accepted cases: `13992:16` and `14000:5`.
 - Representation: 513 state dimensions, 54 website action dimensions.
-- Teacher v2 SHA-256:
-  `620b378675ef1964f16043c7c2cdd4d75dc8db3bb7377cab773c3bbe8aec250f`.
+- Teacher v3 SHA-256:
+  `901ebe397d4fea8842e439e80cd0dfa7605985133ab01b5172bac4708a1a75b1`.
 - Training gate is closed until at least 20 independent high-confidence teacher
   games exist.
 
 Current blocker:
 
 - Training remains blocked until at least 20 independent high-confidence
-  teacher games exist; the current count is 11 and at least 9 more independent
+  teacher games exist; the current count is 13 and at least 7 more independent
   strong-label games are required.
-- The eligible extension v1 train pool is exhausted. Extension v2 now exposes
-  280 new consistent train decisions from 12 independent games for the next
-  teacher-candidate stage.
+- The eligible extension v2 train pool is exhausted: all 249 rollout-eligible
+  states were screened and every positive-lower-bound alternative was either
+  confirmed or rejected by the frozen strong-label gates.
 
 ## Active Stage Plan
 
@@ -207,18 +207,45 @@ Acceptance:
 Goal: screen every eligible new train state from the 12 Supplement v2 games and
 append only robust information-set labels to the frozen teacher v2 base.
 
-Status: next stage; not started.
+Status: completed.
 
 Acceptance:
 
-- Use only `website_danzero_shadow_extension_v2.train_dev.pth`; do not load the
-  complete bundle or locked-test partition.
-- Restrict screening to new game IDs 13985-14002 listed in `NEXT_TASK.md`.
-- Accept labels only through the existing completeness, variance, advantage,
-  confidence, and greedy-plus-frozen-tempo robustness gates.
-- Preserve all 11 teacher v2 labels and verify physical-action remapping.
-- Do not train a model in this teacher-expansion stage, even if the 20-game gate
-  is reached.
+- Only `website_danzero_shadow_extension_v2.train_dev.pth` was loaded; complete
+  bundle and locked-test loads were zero.
+- All 280 new train decisions were enumerated: 249 eligible states completed
+  greedy-only screening and 31 were ineligible because a public hand count was
+  nonpositive.
+- Greedy-only screening completed 5,760/5,760 rollouts and accepted zero strong
+  labels. Dual-continuation confirmation completed 512/512 rollouts across
+  eight selected cases, with no timeout or integrity failure.
+- `13992:16` and `14000:5` passed the frozen completeness, variance, advantage,
+  confidence, and greedy-plus-frozen-tempo gates; every other positive-screen
+  alternative was rejected.
+- All 11 teacher v2 samples were preserved exactly after deserialization;
+  state, behavior-action, legality, 54-dimensional physical-action remap, and
+  credential errors were zero.
+- Teacher v3 contains 13 labels from 13 games. The 20-game gate remains closed,
+  and website play, model training, offline evaluation, and model-controlled
+  website actions were all zero in this stage.
+
+### Stage 4.8: Website Shadow Supplement v3
+
+Goal: collect the next explicitly assigned baseline-only train session for new
+independent information-set teacher candidates.
+
+Status: next stage; not started.
+
+Constraints:
+
+- Preassign one unused session to train before collection.
+- Only frozen `tempo_baseline` may submit website actions.
+- Collect exactly 12 completed verified bot-table games with exhaustive Shadow
+  candidates and consistent decision-time information sets.
+- Record actual `leaderboard_elo` before and after every game; never infer Elo
+  from final-state scores.
+- Do not rebuild a dataset, run teacher rollout, train a model, run offline
+  evaluation, or allow model-controlled website play in this collection stage.
 
 ### Stage 5: Training Gate
 
