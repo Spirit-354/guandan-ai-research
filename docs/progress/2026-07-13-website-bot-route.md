@@ -351,3 +351,34 @@ The 20-game training gate therefore remains closed, no model was trained, and
 the next stage is baseline-only collection of 12 new explicitly assigned train
 games rather than threshold relaxation or further search over exhausted
 low-evidence states.
+
+## Website Shadow Supplement v2
+
+Before collection, `logs_website_shadow_supplement_train_002` was assigned to
+train in a cumulative v2 session-split file. Both v1 supplement assignments were
+preserved exactly and no session was assigned to locked test. The target
+directory was verified unused, and runtime credentials were loaded only from
+the user-level process environment without displaying their values.
+
+Frozen `tempo_baseline` then completed exactly 12 verified bot-table games. The
+session produced 8 wins and 4 losses, moving leaderboard Elo continuously from
+2060 to 2102 for a net change of +42. Per-game deltas were -17, +14, +14, +14,
+-17, +13, -16, +13, -17, +14, +14, and +13. Every measurement came from
+`leaderboard_elo`; final-state scores remained proxy-only.
+
+The 12 games contain 280 submitted decisions. Every submission succeeded,
+every decision recorded an exhaustive website-oracle candidate set, and every
+decision-time information set was consistent. All tables used the verified
+four-bot signature. Model-controlled actions, failed games, state encoding,
+team mapping, hand-subset, local-legality, oracle-disagreement,
+materialization, website-rule, inferred-acceptance, wildcard, information-set,
+duplicate-submit, and unrecoverable-desync counts were all zero. Strategy
+failure tags such as missed blocks remain research diagnostics and are not
+communication or integrity failures; the formal online Shadow gate passed.
+
+A targeted scan found zero runtime credential occurrences in the new session
+logs, Shadow summary, global research results, preassignment, or tracked stage
+files. This stage did not rebuild a dataset, run teacher rollout, train a model,
+or allow model-controlled website play. The next stage is limited to rebuilding
+new extension v2 artifacts while preserving every extension v1 assignment and
+the exact nine-game locked-test set.

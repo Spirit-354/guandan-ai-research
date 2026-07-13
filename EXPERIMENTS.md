@@ -172,6 +172,41 @@ Decision:
   baseline-only train supplement rather than weaken thresholds or repeatedly
   expand low-evidence candidates.
 
+## Website Shadow Supplement v2
+
+Status: completed; baseline-only collection gate passed.
+
+Evidence:
+
+- `logs_website_shadow_supplement_train_002` was assigned to train before
+  collection in `website_dataset_extension_session_splits_v2.json`; the two v1
+  supplement assignments are unchanged and no session is assigned to locked
+  test.
+- Exactly 12 verified bot-table games completed: 8 wins and 4 losses.
+- Leaderboard Elo moved continuously from 2060 to 2102, a net change of +42;
+  all 12 games use `leaderboard_elo` and none infer Elo from final-state scores.
+- The session contains 280 Shadow decisions. All 280 submissions succeeded,
+  all 280 candidate sets are website-oracle exhaustive, and all 280
+  decision-time information sets are consistent.
+- Every submitted action came from frozen `tempo_baseline`; model-controlled
+  actions and suggestion disagreements are zero.
+- Failed games, state encoding, team mapping, hand subset, local legality,
+  oracle disagreement, materialization, website-rule, inferred acceptance,
+  wildcard, information-set, duplicate-submit, and unrecoverable-desync counts
+  are all zero.
+- Runtime credential occurrences in the session logs, Shadow summary, global
+  research results, preassignment, and tracked stage files are zero.
+- No dataset rebuild, teacher rollout, model training, or model-controlled
+  website play occurred in this stage.
+
+Decision:
+
+- Accept all 12 games as the new preassigned train-session supplement.
+- Keep extension v1 and teacher v2 frozen until a separate dataset-extension
+  stage rebuilds new v2 artifacts.
+- Do not screen these states or train from them before the extension v2
+  partitions and manifests pass their existing gates.
+
 ## Model A / Shared Self-Play / BC / PPO / DMC
 
 Status: not eligible for website control.
@@ -207,24 +242,21 @@ Decision:
 
 ## Current Next Experiment
 
-Name: Website Shadow Supplement v2 collection.
+Name: Frozen Website Dataset Extension v2.
 
 Purpose:
 
-- Collect 12 new independent verified bot-table games in one explicitly
-  assigned train session.
-- Preserve `tempo_baseline` as the only website submission policy while
-  recording exhaustive Shadow evidence for a later dataset/teacher stage.
+- Add the completed supplement v2 train session to a new frozen dataset
+  extension without changing extension v1 or its locked-test set.
+- Produce new v2 dataset, physical partitions, split manifest, and data card
+  for a later teacher-candidate stage.
 
 Acceptance:
 
-- Exactly 12 completed bot-only games; non-bot tables stop before the first
-  action.
-- Model-controlled website actions: 0; all submitted actions come from frozen
-  `tempo_baseline`.
-- Every game records `leaderboard_elo` before and after, exhaustive Shadow
-  candidates, and a complete terminal result.
-- All communication, legality, materialization, hand-subset, duplicate-submit,
-  information-set, and unrecoverable-desync counters remain zero.
-- Do not rebuild datasets, run teacher screening, train a model, or begin any
-  model-controlled website play in the collection stage.
+- All 58 extension v1 games and splits remain unchanged.
+- All 12 supplement v2 games enter train; locked-test membership is exactly
+  unchanged.
+- New extension v2 artifacts pass split, physical-consistency, coverage,
+  duplicate-state, bot-table, Elo-source, and zero-model-control checks.
+- Do not run teacher rollout, train a model, play website games, or start any
+  model-controlled website stage.
