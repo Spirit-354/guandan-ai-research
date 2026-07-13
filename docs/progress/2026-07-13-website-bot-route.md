@@ -196,3 +196,36 @@ is not enough independent evidence to train or promote a model.
 A three-case tempo confirmation batch exceeded 30 minutes and was terminated;
 no partial result was accepted. Rollout evaluation now supports an optional
 per-case time budget so one expensive state cannot invalidate a whole batch.
+
+## Exact-Tempo Rollout Performance Audit
+
+An optional frozen-tempo action cache now keys the complete visible state
+returned by `offline_arena_state_for_player`, including public history and
+ranking. A 200-state cache materialization check reproduced the uncached cards,
+action type, and pass decision with zero mismatches. The cache is not a general
+speed solution: a real case-13872 probe produced only 3 hits across 530 baseline
+decisions (0.57%). Hidden hands are not included in the key or timing samples.
+
+Profiling isolated two offline-only combinatorial costs. The original exact
+remaining-group recursion consumed about 106 of 107 profiled seconds on one
+small-hand decision. A bitmask dynamic program returned the same exact group
+count and reduced the same unprofiled decision from about 62.4 seconds to 0.90
+seconds. Large-hand legal-play enumeration also repeated equivalent combinations
+because the two decks contain duplicate physical card codes; the arena-only
+enumerator now visits each distinct physical multiset once while preserving the
+original recognition and ranking rules.
+
+The first post-DP case-13872 probe improved from 4/64 completed rollouts (6.25%)
+to 14/64 (21.88%) within the same 180-second case budget, but it still timed out
+and emitted no teacher label. This is engineering progress, not a completed
+teacher comparison. Exact frozen-tempo continuation remains reserved for narrow
+confirmation until the final equivalence gate and throughput probes pass; broad
+screening continues to use the already validated cheaper continuation policy.
+
+The final arena-only optimizer passed a 200-state comparison against the
+unmodified baseline with zero card, action-type, or pass mismatches. A smaller
+case-13872 throughput probe then completed 7/8 requested rollouts (87.5%) before
+the same 180-second deadline. Its complete-visible-state cache hit rate was only
+0.78%. Because the case was incomplete, the partial comparison is rejected and
+cannot emit a strong teacher label. The optimizer is semantically gated, but
+full-tempo counterfactual search remains too slow for broad dataset generation.

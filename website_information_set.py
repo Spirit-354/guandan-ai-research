@@ -375,6 +375,71 @@ def _stratified_train_samples(
     return selected
 
 
+def _baseline_visible_state_key(game: Any, adaptive: Any) -> str:
+    player_id = int(game.current_player)
+    state = adaptive.offline_arena_state_for_player(game, player_id)
+    return _baseline_visible_state_key_from_state(state)
+
+
+def _baseline_visible_state_key_from_state(state: dict) -> str:
+    return json.dumps(state, ensure_ascii=False, sort_keys=True, separators=(",", ":"))
+
+
+def _cached_baseline_action_info(
+    game: Any,
+    components: dict,
+    adaptive: Any,
+    profile_config: dict,
+    rng: random.Random,
+    cache: dict[str, list[str]] | None,
+    stats: dict[str, Any],
+) -> dict:
+    state = adaptive.offline_arena_state_for_player(game, int(game.current_player))
+    key = _baseline_visible_state_key_from_state(state) if cache is not None else None
+    started = time.monotonic()
+    if key is not None and key in cache:
+        stats["hits"] = stats.get("hits", 0.0) + 1.0
+        info = adaptive.offline_make_action_info_from_cards(
+            game,
+            components,
+            list(cache[key]),
+            rng,
+            policy="information_set_tempo_cached",
+            audit_masks=False,
+        )
+        stats["hit_seconds"] = stats.get("hit_seconds", 0.0) + (time.monotonic() - started)
+        return info
+    info = adaptive.offline_baseline_action_info(
+        game,
+        components,
+        "tempo_baseline",
+        profile_config,
+        rng,
+    )
+    elapsed = time.monotonic() - started
+    stats["misses"] = stats.get("misses", 0.0) + 1.0
+    stats["miss_seconds"] = stats.get("miss_seconds", 0.0) + elapsed
+    stats["max_miss_seconds"] = max(stats.get("max_miss_seconds", 0.0), elapsed)
+    slow_samples = stats.setdefault("slow_samples", [])
+    slow_samples.append(
+        {
+            "seconds": elapsed,
+            "current_player": int(game.current_player),
+            "hand_count": len(state.get("your_hand") or []),
+            "last_play_size": len(state.get("last_play") or []),
+            "hand_counts": list(state.get("hand_counts") or []),
+            "ranking": list(state.get("ranking") or []),
+            "trick_history_count": len(state.get("trick_history") or []),
+            "state": state,
+        }
+    )
+    slow_samples.sort(key=lambda item: float(item["seconds"]), reverse=True)
+    del slow_samples[5:]
+    if key is not None and not info.get("illegal"):
+        cache[key] = list(info.get("chosen_cards") or [])
+    return info
+
+
 def _simulate_candidate(
     base_game: Any,
     candidate: dict,
@@ -385,6 +450,8 @@ def _simulate_candidate(
     continuation_profile: str,
     profile_config: dict,
     deadline_monotonic: float | None = None,
+    baseline_cache: dict[str, list[str]] | None = None,
+    baseline_stats: dict[str, Any] | None = None,
 ) -> tuple[float | None, dict | None]:
     import copy
 
@@ -415,12 +482,14 @@ def _simulate_candidate(
             steps += 1
             continue
         if continuation_profile == "tempo_baseline":
-            next_action = adaptive.offline_baseline_action_info(
+            next_action = _cached_baseline_action_info(
                 game,
                 components,
-                "tempo_baseline",
+                adaptive,
                 profile_config,
                 rng,
+                baseline_cache,
+                baseline_stats if baseline_stats is not None else {},
             )
         elif continuation_profile == "random_bot":
             next_action = adaptive.offline_oracle_sample_action_info(
@@ -454,6 +523,7 @@ def _stable_determinization_seed(sample: dict, determinization_index: int) -> in
 
 def _strong_teacher_label(
     *,
+    case_complete: bool,
     paired_count: int,
     requested_count: int,
     advantage: float,
@@ -464,12 +534,110 @@ def _strong_teacher_label(
     max_return_variance: float,
 ) -> bool:
     return bool(
-        paired_count == requested_count
+        case_complete
+        and paired_count == requested_count
         and advantage >= min_advantage
         and candidate_return_variance <= max_return_variance
         and lower_bound > 0.0
         and robust_across_profiles
     )
+
+
+def run_baseline_cache_equivalence(args: Any, components: dict, adaptive: Any) -> dict:
+    import copy
+
+    sample_target = max(200, int(args.information_set_cache_equivalence_samples))
+    profile_config = adaptive.load_json(adaptive.PROFILE_PATH, {}).get(
+        "tempo_baseline", {"engine_mode": "tempo"}
+    )
+    rng = random.Random(20260713)
+    samples = 0
+    game_index = 0
+    unique_keys: set[str] = set()
+    mismatches: list[dict] = []
+    mismatch_count = 0
+    cache_stats: dict[str, float] = {}
+    GuandanGame = components["GuandanGame"]
+    while samples < sample_target and game_index < sample_target * 2:
+        random.seed(20260713 + game_index)
+        game = GuandanGame(verbose=False, print_history=False)
+        adaptive.offline_set_random_first_player(game, rng)
+        steps = 0
+        while not game.is_game_over and steps < adaptive.OFFLINE_MAX_GAME_STEPS and samples < sample_target:
+            adaptive.offline_prepare_turn(game)
+            if game.current_player in game.ranking:
+                steps += 1
+                continue
+            snapshot = copy.deepcopy(game)
+            direct = adaptive.offline_baseline_action_info(
+                snapshot,
+                components,
+                "tempo_baseline",
+                profile_config,
+                rng,
+            )
+            key = _baseline_visible_state_key(snapshot, adaptive)
+            unique_keys.add(key)
+            cache = {key: list(direct.get("chosen_cards") or [])}
+            cached = _cached_baseline_action_info(
+                snapshot,
+                components,
+                adaptive,
+                profile_config,
+                rng,
+                cache,
+                cache_stats,
+            )
+            direct_cards = tuple(sorted(direct.get("chosen_cards") or []))
+            cached_cards = tuple(sorted(cached.get("chosen_cards") or []))
+            if (
+                direct_cards != cached_cards
+                or str(direct.get("action_type")) != str(cached.get("action_type"))
+                or bool(direct_cards) != bool(cached_cards)
+                or bool(cached.get("illegal"))
+            ):
+                mismatch_count += 1
+                if len(mismatches) < 20:
+                    mismatches.append(
+                        {
+                            "sample_index": samples,
+                            "player_id": int(snapshot.current_player),
+                            "direct_cards": list(direct_cards),
+                            "cached_cards": list(cached_cards),
+                            "direct_action_type": direct.get("action_type"),
+                            "cached_action_type": cached.get("action_type"),
+                            "cached_illegal": bool(cached.get("illegal")),
+                        }
+                    )
+            samples += 1
+            advance = adaptive.offline_first_oracle_action_info(
+                game,
+                components,
+                rng,
+                policy="information_set_cache_equivalence_sampler",
+                fallback_reason="information_set_cache_equivalence_sampler",
+            )
+            adaptive.offline_apply_action(game, advance)
+            steps += 1
+        game_index += 1
+    result = {
+        "schema_version": "website_information_set_baseline_cache_equivalence_v1",
+        "baseline_equivalence_checked": True,
+        "baseline_equivalence_samples": samples,
+        "baseline_equivalence_unique_state_keys": len(unique_keys),
+        "baseline_equivalence_mismatch_count": mismatch_count,
+        "baseline_equivalence_mismatches": mismatches,
+        "cache_key_source": "complete_offline_arena_state_for_player_json_v1",
+        "cache_hit_count": int(cache_stats.get("hits", 0.0)),
+        "threshold_passed": bool(samples >= sample_target and mismatch_count == 0),
+    }
+    Path(args.information_set_cache_equivalence_out).write_text(
+        json.dumps(result, ensure_ascii=False, indent=2), encoding="utf-8"
+    )
+    print(json.dumps(result, ensure_ascii=False, indent=2))
+    if not result["threshold_passed"]:
+        raise RuntimeError("information-set baseline cache equivalence failed")
+    return result
 
 
 def run_rollout_eval(args: Any, components: dict, adaptive: Any) -> dict:
@@ -504,6 +672,10 @@ def run_rollout_eval(args: Any, components: dict, adaptive: Any) -> dict:
         "tempo_baseline", {"engine_mode": "tempo"}
     )
     profile_rollout_counts = Counter()
+    baseline_cache: dict[str, list[str]] | None = (
+        {} if bool(args.information_set_cache_baseline_actions) else None
+    )
+    baseline_stats: dict[str, Any] = {}
     total_rollouts = 0
     completed_rollouts = 0
     timeout_case_count = 0
@@ -554,6 +726,8 @@ def run_rollout_eval(args: Any, components: dict, adaptive: Any) -> dict:
                         continuation_profile,
                         profile_config,
                         case_deadline,
+                        baseline_cache,
+                        baseline_stats,
                     )
                 paired_returns[candidate_index].append(value)
                 if value is not None:
@@ -621,6 +795,7 @@ def run_rollout_eval(args: Any, components: dict, adaptive: Any) -> dict:
             )
             candidate_return_variance = float(candidate_results[best_index]["return_variance"])
             strong = _strong_teacher_label(
+                case_complete=not case_timed_out,
                 paired_count=len(paired_differences),
                 requested_count=int(args.information_set_rollouts_per_action),
                 advantage=advantage,
@@ -702,6 +877,20 @@ def run_rollout_eval(args: Any, components: dict, adaptive: Any) -> dict:
         "continuation_policy": "information_set_profile_ensemble_v1",
         "continuation_profiles": continuation_profiles,
         "continuation_profile_rollout_counts": dict(profile_rollout_counts),
+        "baseline_action_cache_enabled": baseline_cache is not None,
+        "baseline_action_cache_size": len(baseline_cache or {}),
+        "baseline_action_cache_hit_count": int(baseline_stats.get("hits", 0.0)),
+        "baseline_action_cache_miss_count": int(baseline_stats.get("misses", 0.0)),
+        "baseline_action_cache_hit_rate": (
+            baseline_stats.get("hits", 0.0)
+            / (baseline_stats.get("hits", 0.0) + baseline_stats.get("misses", 0.0))
+            if baseline_stats.get("hits", 0.0) + baseline_stats.get("misses", 0.0)
+            else 0.0
+        ),
+        "baseline_action_cache_hit_seconds": baseline_stats.get("hit_seconds", 0.0),
+        "baseline_action_cache_miss_seconds": baseline_stats.get("miss_seconds", 0.0),
+        "baseline_action_max_miss_seconds": baseline_stats.get("max_miss_seconds", 0.0),
+        "baseline_action_slow_samples": list(baseline_stats.get("slow_samples", [])),
         "risk_priority": bool(args.information_set_risk_priority),
         "requested_case_keys": sorted(":".join(item) for item in case_keys),
         "future_information_used": False,
@@ -716,7 +905,17 @@ def run_rollout_eval(args: Any, components: dict, adaptive: Any) -> dict:
     Path(args.information_set_rollout_out).write_text(
         json.dumps(result, ensure_ascii=False, indent=2), encoding="utf-8"
     )
-    print(json.dumps({key: value for key, value in result.items() if key not in {"case_results", "strong_teacher_labels"}}, ensure_ascii=False, indent=2))
+    print(
+        json.dumps(
+            {
+                key: value
+                for key, value in result.items()
+                if key not in {"case_results", "strong_teacher_labels", "baseline_action_slow_samples"}
+            },
+            ensure_ascii=False,
+            indent=2,
+        )
+    )
     if not case_results or integrity_failures:
         raise RuntimeError("information-set rollout feasibility gate failed")
     return result

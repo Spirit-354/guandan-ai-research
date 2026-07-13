@@ -1,5 +1,6 @@
 import argparse
 import copy
+from functools import lru_cache
 import html
 import itertools
 import json
@@ -9980,9 +9981,110 @@ def offline_arena_empty_result(checkpoint: str) -> dict:
     }
 
 
+@lru_cache(maxsize=100_000)
+def offline_exact_remaining_groups_fast(hand_key: tuple[str, ...], level: str) -> int:
+    cards = list(hand_key)
+    card_count = len(cards)
+    if not cards:
+        return 0
+    if engine.recognize(cards, level):
+        return 1
+    if card_count > engine.EXACT_GROUP_HAND_LIMIT:
+        return card_count
+
+    legal_masks_by_index: list[list[int]] = [[] for _ in range(card_count)]
+    legality_cache: dict[tuple[str, ...], bool] = {}
+    for mask in range(1, 1 << card_count):
+        subset = tuple(cards[index] for index in range(card_count) if mask & (1 << index))
+        legal = legality_cache.get(subset)
+        if legal is None:
+            legal = bool(engine.recognize(list(subset), level))
+            legality_cache[subset] = legal
+        if not legal:
+            continue
+        for index in range(card_count):
+            if mask & (1 << index):
+                legal_masks_by_index[index].append(mask)
+
+    @lru_cache(maxsize=None)
+    def solve(remaining_mask: int) -> int:
+        if remaining_mask == 0:
+            return 0
+        first_bit = remaining_mask & -remaining_mask
+        first_index = first_bit.bit_length() - 1
+        best = remaining_mask.bit_count()
+        for play_mask in legal_masks_by_index[first_index]:
+            if play_mask & remaining_mask != play_mask:
+                continue
+            best = min(best, 1 + solve(remaining_mask ^ play_mask))
+            if best == 1:
+                break
+        return best
+
+    return solve((1 << card_count) - 1)
+
+
+def offline_unique_card_combinations(hand: list[str], size: int) -> Any:
+    counts = Counter(hand)
+    unique_cards = sorted(counts)
+    selected: list[str] = []
+
+    def generate(index: int, remaining: int) -> Any:
+        if remaining == 0:
+            yield tuple(selected)
+            return
+        if index >= len(unique_cards):
+            return
+        card = unique_cards[index]
+        max_take = min(counts[card], remaining)
+        for take in range(max_take, -1, -1):
+            selected.extend([card] * take)
+            yield from generate(index + 1, remaining - take)
+            if take:
+                del selected[-take:]
+
+    yield from generate(0, size)
+
+
 def offline_install_arena_baseline_optimizations() -> Any:
     original_choose_all_out = engine.choose_all_out_if_possible
     original_choose_non_bomb_follow = engine.choose_non_bomb_follow
+    original_exact_remaining_groups = engine.exact_remaining_groups
+    original_legal_play_options_cached = engine._legal_play_options_cached
+
+    @lru_cache(maxsize=4096)
+    def arena_legal_play_options_cached(
+        hand_key: tuple[str, ...], level: str
+    ) -> tuple[Any, ...]:
+        hand = list(hand_key)
+        options: dict[tuple[tuple[str, ...], str, str], Any] = {}
+        for size in (1, 2, 3, 4, 5, 6):
+            if size > len(hand):
+                continue
+            for combo in offline_unique_card_combinations(hand, size):
+                cards = tuple(engine.sort_cards(combo, level))
+                for info in engine.recognize(cards, level):
+                    key = (cards, info.type, info.rank)
+                    options[key] = engine.PlayInfo(info.type, info.rank, cards, len(cards))
+
+        wild_card = "H" + level
+        wilds = [card for card in hand if card == wild_card]
+        by_rank: dict[str, list[str]] = {rank: [] for rank in engine.RANKS}
+        for card in hand:
+            if card not in ("B", "R") and card != wild_card:
+                by_rank[card[1]].append(card)
+        for rank, cards_of_rank in by_rank.items():
+            cards_of_rank = engine.sort_cards(cards_of_rank, level)
+            max_size = len(cards_of_rank) + len(wilds)
+            for size in range(7, max_size + 1):
+                need_wild = max(0, size - len(cards_of_rank))
+                if need_wild > len(wilds):
+                    continue
+                selected = cards_of_rank[: size - need_wild] + wilds[:need_wild]
+                cards = tuple(engine.sort_cards(selected, level))
+                key = (cards, "bomb", rank)
+                options[key] = engine.PlayInfo("bomb", rank, cards, len(cards))
+        return tuple(options.values())
 
     def arena_choose_all_out_if_possible(hand: list[str], last_play: list[str], level: str) -> list[str] | None:
         if len(hand) > 10:
@@ -10006,19 +10108,24 @@ def offline_install_arena_baseline_optimizations() -> Any:
         if target_size <= 3:
             return original_choose_non_bomb_follow(hand, last_play, level, prefer_strong=prefer_strong)
         options = []
-        for candidate in engine.legal_play_options(hand, level):
-            if candidate.size != target_size:
-                continue
-            if engine.is_bomb(candidate) or engine.server_treats_as_bomb(candidate.cards, level):
+        for combo in offline_unique_card_combinations(hand, target_size):
+            if engine.server_treats_as_bomb(combo, level):
                 continue
             infos = [
                 info
-                for info in engine.safe_follow_infos(list(candidate.cards), last_play, level)
-                if not engine.is_bomb(info) and (info.type, info.size) in target_types
+                for info in engine.safe_follow_infos(combo, last_play, level)
+                if not engine.is_bomb(info)
             ]
-            if not infos:
+            info_types = {info.type for info in infos}
+            if len(info_types) != 1 or not info_types.issubset(
+                {play_type for play_type, _ in target_types}
+            ):
                 continue
-            options.append((engine.candidate_key(candidate.cards, infos[0], hand, level), candidate.cards))
+            for info in infos:
+                if (info.type, info.size) not in target_types:
+                    continue
+                options.append((engine.candidate_key(combo, info, hand, level), combo))
+                break
         if not options:
             return None
         if prefer_strong:
@@ -10042,10 +10149,14 @@ def offline_install_arena_baseline_optimizations() -> Any:
 
     engine.choose_all_out_if_possible = arena_choose_all_out_if_possible
     engine.choose_non_bomb_follow = arena_choose_non_bomb_follow
+    engine.exact_remaining_groups = offline_exact_remaining_groups_fast
+    engine._legal_play_options_cached = arena_legal_play_options_cached
 
     def restore() -> None:
         engine.choose_all_out_if_possible = original_choose_all_out
         engine.choose_non_bomb_follow = original_choose_non_bomb_follow
+        engine.exact_remaining_groups = original_exact_remaining_groups
+        engine._legal_play_options_cached = original_legal_play_options_cached
 
     return restore
 
@@ -17605,6 +17716,12 @@ def parse_args() -> argparse.Namespace:
     parser.add_argument("--information-set-sanity-out", default="website_information_set_sanity.json")
     parser.add_argument("--information-set-sanity-samples", type=int, default=20)
     parser.add_argument("--information-set-determinizations", type=int, default=8)
+    parser.add_argument("--website-information-set-cache-equivalence", action="store_true")
+    parser.add_argument(
+        "--information-set-cache-equivalence-out",
+        default="website_information_set_cache_equivalence.json",
+    )
+    parser.add_argument("--information-set-cache-equivalence-samples", type=int, default=200)
     parser.add_argument("--website-information-set-rollout-eval")
     parser.add_argument("--information-set-rollout-out", default="website_information_set_rollout.json")
     parser.add_argument("--information-set-rollout-samples", type=int, default=5)
@@ -17615,6 +17732,7 @@ def parse_args() -> argparse.Namespace:
     parser.add_argument("--information-set-max-variance", type=float, default=0.50)
     parser.add_argument("--information-set-continuation-profiles", default="greedy_bot")
     parser.add_argument("--information-set-max-seconds-per-case", type=float, default=0.0)
+    parser.add_argument("--information-set-cache-baseline-actions", action="store_true")
     parser.add_argument("--information-set-risk-priority", action="store_true")
     parser.add_argument("--information-set-case-keys", default="")
     parser.add_argument("--summary", help="Print an Elo research summary from research_results.json.")
@@ -17932,6 +18050,19 @@ def main() -> None:
         import website_information_set
 
         website_information_set.run_sanity(args, offline_load_guandan_components())
+        return
+    if args.website_information_set_cache_equivalence:
+        import website_information_set
+
+        restore_baseline = offline_install_arena_baseline_optimizations()
+        try:
+            website_information_set.run_baseline_cache_equivalence(
+                args,
+                offline_load_guandan_components(),
+                sys.modules[__name__],
+            )
+        finally:
+            restore_baseline()
         return
     if args.website_information_set_rollout_eval:
         import website_information_set
