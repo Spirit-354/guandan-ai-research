@@ -230,13 +230,13 @@ the same 180-second deadline. Its complete-visible-state cache hit rate was only
 cannot emit a strong teacher label. The optimizer is semantically gated, but
 full-tempo counterfactual search remains too slow for broad dataset generation.
 
-## Frozen Dataset Extension Plan
+## Frozen Dataset Extension v1
 
-The physically isolated train/development partition currently contains 423
-information-set-consistent decisions: 319 train and 104 development. It covers
-53 lead and 370 follow decisions, only 11 level-6 decisions, and Elo bands
-1900-1999 and 2000-2099. The 500-decision information-set rollout gate therefore
-remains closed even though the original broad 50-game coverage gate passed.
+The baseline-only supplement completed five train games and three development
+games. All eight were verified bot tables, all 179 submitted actions succeeded,
+and all Shadow safety counters remained zero. The four wins and four losses
+moved leaderboard Elo from 2070 to 2060; every before/after measurement came
+from `leaderboard_elo`.
 
 Dataset construction now supports explicit extension of a frozen manifest. Old
 session assignments and game splits must remain unchanged, every new session
@@ -246,10 +246,15 @@ manifest. The base manifest content hash is verified before extension. An
 extension cannot be frozen until at least 500 consistent train/development
 decisions exist; physically excluded legacy states no longer depress this gate.
 
-Supplement plan v1 assigns a five-game train session and a three-game
-development session, targeting at least 600 consistent train/development
-decisions. No website game was started while preparing this plan because the
-credential environment variables were not present in the running process.
+Extension v1 preserves every original session assignment and the exact
+nine-game locked-test set. New games 13956-13960 are train and 13961-13963 are
+development. The physical train/development partition now contains 602
+information-set-consistent decisions across 49 independent games: 438 train,
+164 development, 88 lead, 514 follow, 212 wildcard, 351 endgame, and 375
+bomb-candidate states. It covers all levels and all first-player seats, both
+observed Elo bands, and has zero duplicate states. The 500-decision gate and
+600-decision target both pass. The extension manifest content hash is
+`db209561f6961b289dda668861687fcd7a258a2f283cecaae065501b2006f429`.
 
 ## High-Confidence Teacher Dataset Gate
 

@@ -3,6 +3,7 @@ from __future__ import annotations
 import sys
 import unittest
 from pathlib import Path
+from unittest import mock
 
 
 ROOT = Path(__file__).resolve().parents[1]
@@ -13,6 +14,22 @@ import play_research_adaptive as research
 
 
 class WebsiteBotGoalTests(unittest.TestCase):
+    def test_json_payload_redacts_runtime_credentials(self) -> None:
+        with mock.patch.dict(
+            research.os.environ,
+            {"GUANDAN_USER": "synthetic-user", "GUANDAN_PASSWORD": "synthetic-password"},
+        ):
+            redacted = research.redact_runtime_credentials(
+                {
+                    "seat": "synthetic-user",
+                    "message": "password=synthetic-password",
+                    "nested": ["prefix-synthetic-user-suffix"],
+                }
+            )
+        self.assertEqual(redacted["seat"], "[REDACTED_RUNTIME_CREDENTIAL]")
+        self.assertEqual(redacted["message"], "password=[REDACTED_RUNTIME_CREDENTIAL]")
+        self.assertEqual(redacted["nested"], ["prefix-[REDACTED_RUNTIME_CREDENTIAL]-suffix"])
+
     def test_wilson_target_requires_confident_seventy_percent(self) -> None:
         records = []
         for index in range(500):

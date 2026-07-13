@@ -174,8 +174,35 @@ def load_json(path: Path, default: Any) -> Any:
         return default
 
 
+def redact_runtime_credentials(payload: Any) -> Any:
+    secrets = tuple(
+        value
+        for name in ("GUANDAN_USER", "GUANDAN_PASSWORD")
+        if (value := os.environ.get(name))
+    )
+    if not secrets:
+        return payload
+    if isinstance(payload, str):
+        for secret in secrets:
+            payload = payload.replace(secret, "[REDACTED_RUNTIME_CREDENTIAL]")
+        return payload
+    if isinstance(payload, dict):
+        return {
+            redact_runtime_credentials(key): redact_runtime_credentials(value)
+            for key, value in payload.items()
+        }
+    if isinstance(payload, list):
+        return [redact_runtime_credentials(value) for value in payload]
+    if isinstance(payload, tuple):
+        return tuple(redact_runtime_credentials(value) for value in payload)
+    return payload
+
+
 def save_json(path: Path, payload: Any) -> None:
-    path.write_text(json.dumps(payload, ensure_ascii=False, indent=2), encoding="utf-8")
+    path.write_text(
+        json.dumps(redact_runtime_credentials(payload), ensure_ascii=False, indent=2),
+        encoding="utf-8",
+    )
 
 
 def require_env(require_password: bool = True) -> None:
