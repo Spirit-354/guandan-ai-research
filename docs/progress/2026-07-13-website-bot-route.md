@@ -229,3 +229,24 @@ the same 180-second deadline. Its complete-visible-state cache hit rate was only
 0.78%. Because the case was incomplete, the partial comparison is rejected and
 cannot emit a strong teacher label. The optimizer is semantically gated, but
 full-tempo counterfactual search remains too slow for broad dataset generation.
+
+## Frozen Dataset Extension Plan
+
+The physically isolated train/development partition currently contains 423
+information-set-consistent decisions: 319 train and 104 development. It covers
+53 lead and 370 follow decisions, only 11 level-6 decisions, and Elo bands
+1900-1999 and 2000-2099. The 500-decision information-set rollout gate therefore
+remains closed even though the original broad 50-game coverage gate passed.
+
+Dataset construction now supports explicit extension of a frozen manifest. Old
+session assignments and game splits must remain unchanged, every new session
+must be assigned before collection, new sessions may enter only train or
+development, and the locked game set must remain exactly equal to the base
+manifest. The base manifest content hash is verified before extension. An
+extension cannot be frozen until at least 500 consistent train/development
+decisions exist; physically excluded legacy states no longer depress this gate.
+
+Supplement plan v1 assigns a five-game train session and a three-game
+development session, targeting at least 600 consistent train/development
+decisions. No website game was started while preparing this plan because the
+credential environment variables were not present in the running process.

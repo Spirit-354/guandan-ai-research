@@ -102,12 +102,113 @@ def _assign_provisional_splits(samples: list[dict]) -> dict[str, str]:
     return assignments
 
 
+def _load_extension_session_assignments(path: Path) -> dict[str, str]:
+    payload = json.loads(path.read_text(encoding="utf-8"))
+    raw = payload.get("session_split_assignments", payload) if isinstance(payload, dict) else None
+    if not isinstance(raw, dict):
+        raise RuntimeError("website extension session split file must contain a JSON object")
+    assignments = {str(session): str(split) for session, split in raw.items()}
+    invalid = {
+        session: split
+        for session, split in assignments.items()
+        if split not in {"train", "development"}
+    }
+    if invalid:
+        raise RuntimeError(
+            "new website sessions may only extend train/development; locked_test is frozen: "
+            + json.dumps(invalid, ensure_ascii=False, sort_keys=True)
+        )
+    return assignments
+
+
+def _assign_extension_splits(
+    samples: list[dict],
+    base_manifest: dict,
+    extension_assignments: dict[str, str],
+) -> dict[str, str]:
+    base_assignments = {
+        str(session): str(split)
+        for session, split in (base_manifest.get("session_split_assignments") or {}).items()
+    }
+    if not base_assignments:
+        raise RuntimeError("base website split manifest has no session assignments")
+    remapped = {
+        session: {"base": base_assignments[session], "extension": split}
+        for session, split in extension_assignments.items()
+        if session in base_assignments and base_assignments[session] != split
+    }
+    if remapped:
+        raise RuntimeError(
+            "frozen website sessions cannot be remapped: "
+            + json.dumps(remapped, ensure_ascii=False, sort_keys=True)
+        )
+    observed_sessions = {str(sample.get("source_session") or "unknown") for sample in samples}
+    missing = sorted(observed_sessions - set(base_assignments) - set(extension_assignments))
+    if missing:
+        raise RuntimeError(
+            "every new website session requires an explicit train/development assignment: "
+            + ", ".join(missing)
+        )
+    assignments = dict(base_assignments)
+    assignments.update(extension_assignments)
+
+    base_game_splits = {
+        str(game_id): split
+        for split, game_ids in (base_manifest.get("split_game_ids") or {}).items()
+        for game_id in game_ids
+    }
+    observed_game_splits: dict[str, str] = {}
+    for sample in samples:
+        game_id = str(sample.get("game_id"))
+        session = str(sample.get("source_session") or "unknown")
+        split = assignments[session]
+        previous = observed_game_splits.setdefault(game_id, split)
+        if previous != split:
+            raise RuntimeError(f"website game {game_id} appears in multiple splits")
+        frozen_split = base_game_splits.get(game_id)
+        if frozen_split is not None and frozen_split != split:
+            raise RuntimeError(
+                f"frozen website game {game_id} moved from {frozen_split} to {split}"
+            )
+    missing_base_games = sorted(set(base_game_splits) - set(observed_game_splits))
+    if missing_base_games:
+        raise RuntimeError(
+            "extension dataset must retain every frozen base game; missing: "
+            + ", ".join(missing_base_games[:20])
+        )
+    base_locked = {
+        str(game_id)
+        for game_id in (base_manifest.get("split_game_ids") or {}).get("locked_test", [])
+    }
+    observed_locked = {
+        game_id for game_id, split in observed_game_splits.items() if split == "locked_test"
+    }
+    if observed_locked != base_locked:
+        raise RuntimeError("extension dataset must preserve the frozen locked_test game set exactly")
+    return assignments
+
+
 def _file_sha256(path: Path) -> str:
     digest = hashlib.sha256()
     with path.open("rb") as handle:
         for chunk in iter(lambda: handle.read(1024 * 1024), b""):
             digest.update(chunk)
     return digest.hexdigest()
+
+
+def _verify_split_manifest_content_hash(manifest: dict) -> None:
+    immutable = {
+        key: value
+        for key, value in manifest.items()
+        if key not in {"content_hash", "frozen_at_utc"}
+    }
+    actual = hashlib.sha256(
+        json.dumps(immutable, sort_keys=True, ensure_ascii=False, separators=(",", ":")).encode(
+            "utf-8"
+        )
+    ).hexdigest()
+    if actual != manifest.get("content_hash"):
+        raise RuntimeError("base website split manifest content hash mismatch")
 
 
 def _freeze_dataset(
@@ -119,6 +220,13 @@ def _freeze_dataset(
 ) -> None:
     if not summary.get("coverage_gate_passed"):
         raise RuntimeError("website dataset coverage gate must pass before split freeze")
+    if (
+        summary.get("base_split_manifest_content_hash")
+        and not (summary.get("coverage") or {}).get("information_set_rollout_gate_passed")
+    ):
+        raise RuntimeError(
+            "website dataset extension requires at least 500 consistent train/development decisions"
+        )
     split_game_ids = {
         split: sorted(
             {str(sample.get("game_id")) for sample in samples if sample.get("split") == split}
@@ -137,7 +245,9 @@ def _freeze_dataset(
     immutable = {
         "schema_version": "website_dataset_split_manifest_v1",
         "dataset_format": DATASET_FORMAT,
-        "split_policy": "temporal_collection_sessions_target_70_15_15",
+        "split_policy": summary.get(
+            "split_policy", "temporal_collection_sessions_target_70_15_15"
+        ),
         "split_grouping": summary.get("split_grouping"),
         "session_split_assignments": summary.get("session_split_assignments"),
         "split_game_ids": split_game_ids,
@@ -151,6 +261,13 @@ def _freeze_dataset(
         "behavior_value_scope": "Q(s,a_behavior)_only",
         "locked_test_policy": "never_train_tune_select_or_design",
     }
+    if summary.get("base_split_manifest_content_hash"):
+        immutable["base_split_manifest_content_hash"] = summary[
+            "base_split_manifest_content_hash"
+        ]
+        immutable["extension_session_assignments"] = summary.get(
+            "extension_session_assignments", {}
+        )
     content_hash = hashlib.sha256(
         json.dumps(immutable, sort_keys=True, ensure_ascii=False, separators=(",", ":")).encode("utf-8")
     ).hexdigest()
@@ -213,6 +330,14 @@ def _coverage_summary(samples: list[dict]) -> dict:
         tables[str(sample.get("robot_table_signature"))] += 1
         seats[str(sample.get("your_seat"))] += 1
     outcome_counts = Counter(str(sample.get("outcome")) for sample in samples)
+    consistent_split_decisions = Counter(
+        str(sample.get("split") or "unassigned")
+        for sample in samples
+        if bool(sample.get("information_set_consistent"))
+    )
+    consistent_train_dev_decisions = sum(
+        consistent_split_decisions.get(split, 0) for split in ("train", "development")
+    )
     coverage = {
         "independent_games": len(game_ids),
         "decisions": len(samples),
@@ -246,6 +371,9 @@ def _coverage_summary(samples: list[dict]) -> dict:
         ),
         "split_game_counts": {name: len(ids) for name, ids in split_games.items()},
         "split_decision_counts": dict(split_decisions),
+        "consistent_split_decision_counts": dict(consistent_split_decisions),
+        "consistent_train_dev_decisions": consistent_train_dev_decisions,
+        "consistent_locked_test_decisions": consistent_split_decisions.get("locked_test", 0),
     }
     coverage["coverage_gate_passed"] = bool(
         coverage["independent_games"] >= 50
@@ -262,8 +390,12 @@ def _coverage_summary(samples: list[dict]) -> dict:
     )
     coverage["information_set_rollout_gate_passed"] = bool(
         coverage["coverage_gate_passed"]
-        and coverage["information_set_consistent_rate"] >= 0.90
-        and coverage["information_set_consistent_count"] >= 500
+        and consistent_train_dev_decisions >= 500
+        and consistent_split_decisions.get("train", 0) > 0
+        and consistent_split_decisions.get("development", 0) > 0
+    )
+    coverage["information_set_rollout_gate_basis"] = (
+        "physical_information_set_consistent_train_development_partition"
     )
     return coverage
 
@@ -455,6 +587,8 @@ def build_dataset(
     freeze_splits: bool = False,
     split_manifest_path: str = "website_dataset_split_manifest.json",
     data_card_path: str = "website_dataset_card.json",
+    base_split_manifest_path: str | None = None,
+    extension_session_splits_path: str | None = None,
 ) -> dict:
     paths = _iter_log_paths(raw_dirs)
     samples: list[dict] = []
@@ -546,7 +680,25 @@ def build_dataset(
         accepted_games += 1
         accepted_wins += int(game_samples[0]["outcome"] == "win")
 
-    split_assignments = _assign_provisional_splits(samples)
+    if bool(base_split_manifest_path) != bool(extension_session_splits_path):
+        raise RuntimeError(
+            "website split extension requires both base manifest and explicit new-session splits"
+        )
+    base_manifest: dict | None = None
+    extension_assignments: dict[str, str] = {}
+    if base_split_manifest_path:
+        if not freeze_splits:
+            raise RuntimeError("website split extension must be written with --freeze-website-splits")
+        base_manifest = json.loads(Path(base_split_manifest_path).read_text(encoding="utf-8"))
+        _verify_split_manifest_content_hash(base_manifest)
+        extension_assignments = _load_extension_session_assignments(
+            Path(str(extension_session_splits_path))
+        )
+        split_assignments = _assign_extension_splits(
+            samples, base_manifest, extension_assignments
+        )
+    else:
+        split_assignments = _assign_provisional_splits(samples)
     for sample in samples:
         sample["split"] = split_assignments.get(str(sample.get("source_session")), "unassigned")
         sample["split_status"] = "provisional"
@@ -574,8 +726,18 @@ def build_dataset(
         "bot_tables_only": True,
         "model_controlled_action_count": 0,
         "split_status": "provisional",
+        "split_policy": (
+            "frozen_manifest_extension_explicit_new_sessions"
+            if base_manifest is not None
+            else "temporal_collection_sessions_target_70_15_15"
+        ),
         "split_grouping": "complete_game+source_session+time_block+robot_table_signature",
         "session_split_assignments": split_assignments,
+        "base_split_manifest_path": str(base_split_manifest_path) if base_manifest else None,
+        "base_split_manifest_content_hash": (
+            base_manifest.get("content_hash") if base_manifest else None
+        ),
+        "extension_session_assignments": extension_assignments,
         "coverage": coverage,
         "coverage_gate_passed": coverage["coverage_gate_passed"],
         "capability_evidence_eligible": False,

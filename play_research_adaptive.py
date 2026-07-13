@@ -17703,6 +17703,8 @@ def parse_args() -> argparse.Namespace:
     parser.add_argument("--freeze-website-splits", action="store_true")
     parser.add_argument("--website-split-manifest-out", default="website_dataset_split_manifest.json")
     parser.add_argument("--website-data-card-out", default="website_dataset_card.json")
+    parser.add_argument("--website-base-split-manifest")
+    parser.add_argument("--website-extension-session-splits")
     parser.add_argument("--train-website-danzero-action-value", help="Train the 513+54 Q model from website data.")
     parser.add_argument("--website-danzero-init", help="Optional compatible DanZero Q checkpoint.")
     parser.add_argument("--website-danzero-out-dir", default="models_website_danzero_smoke")
@@ -18038,6 +18040,8 @@ def main() -> None:
             freeze_splits=args.freeze_website_splits,
             split_manifest_path=args.website_split_manifest_out,
             data_card_path=args.website_data_card_out,
+            base_split_manifest_path=args.website_base_split_manifest,
+            extension_session_splits_path=args.website_extension_session_splits,
         )
         print(json.dumps(result, ensure_ascii=False, indent=2))
         return

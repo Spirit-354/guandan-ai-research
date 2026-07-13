@@ -17,6 +17,97 @@ from test_website_shadow import sample_state
 
 
 class WebsiteDanZeroDatasetTests(unittest.TestCase):
+    def test_extension_splits_preserve_frozen_games_and_locked_set(self) -> None:
+        base_manifest = {
+            "session_split_assignments": {
+                "old-train": "train",
+                "old-dev": "development",
+                "old-locked": "locked_test",
+            },
+            "split_game_ids": {
+                "train": ["g-train"],
+                "development": ["g-dev"],
+                "locked_test": ["g-locked"],
+            },
+        }
+        samples = [
+            {"source_session": "old-train", "game_id": "g-train"},
+            {"source_session": "old-dev", "game_id": "g-dev"},
+            {"source_session": "old-locked", "game_id": "g-locked"},
+            {"source_session": "new-train", "game_id": "g-new-train"},
+            {"source_session": "new-dev", "game_id": "g-new-dev"},
+        ]
+        assignments = website_danzero_dataset._assign_extension_splits(
+            samples,
+            base_manifest,
+            {"new-train": "train", "new-dev": "development"},
+        )
+        self.assertEqual(assignments["old-locked"], "locked_test")
+        self.assertEqual(assignments["new-train"], "train")
+        self.assertEqual(assignments["new-dev"], "development")
+        with self.assertRaisesRegex(RuntimeError, "explicit train/development assignment"):
+            website_danzero_dataset._assign_extension_splits(
+                samples,
+                base_manifest,
+                {"new-train": "train"},
+            )
+        with self.assertRaisesRegex(RuntimeError, "cannot be remapped"):
+            website_danzero_dataset._assign_extension_splits(
+                samples,
+                base_manifest,
+                {"old-locked": "train", "new-train": "train", "new-dev": "development"},
+            )
+
+    def test_extension_split_file_forbids_new_locked_test(self) -> None:
+        with tempfile.TemporaryDirectory() as temp_dir:
+            path = Path(temp_dir, "splits.json")
+            path.write_text(
+                json.dumps({"session_split_assignments": {"new-session": "locked_test"}}),
+                encoding="utf-8",
+            )
+            with self.assertRaisesRegex(RuntimeError, "locked_test is frozen"):
+                website_danzero_dataset._load_extension_session_assignments(path)
+
+    def test_rollout_gate_uses_consistent_train_dev_partition(self) -> None:
+        samples = []
+        for index in range(500):
+            samples.append(
+                {
+                    "game_id": str(index // 10),
+                    "state_fingerprint": f"state-{index}",
+                    "split": "development" if index >= 400 else "train",
+                    "first_player": index % 4,
+                    "level": "7",
+                    "elo_band_100": "2000-2099" if index % 2 else "1900-1999",
+                    "robot_table_signature": "bot-table",
+                    "your_seat": 0,
+                    "outcome": "win" if index % 2 else "loss",
+                    "legal_action_count": 2,
+                    "level_card_available": True,
+                    "heart_level_wildcard_available": index == 0,
+                    "was_lead": index % 5 == 0,
+                    "was_follow": index % 5 != 0,
+                    "is_endgame": index % 3 == 0,
+                    "bomb_candidate_available": index % 7 == 0,
+                    "source_session": "dev" if index >= 400 else "train",
+                    "information_set_consistent": True,
+                }
+            )
+        samples.append(
+            {
+                **samples[0],
+                "game_id": "locked-game",
+                "state_fingerprint": "locked-state",
+                "split": "locked_test",
+                "source_session": "locked",
+            }
+        )
+        samples.append({**samples[0], "state_fingerprint": "legacy-bad", "information_set_consistent": False})
+        coverage = website_danzero_dataset._coverage_summary(samples)
+        self.assertEqual(coverage["consistent_train_dev_decisions"], 500)
+        self.assertLess(coverage["information_set_consistent_rate"], 1.0)
+        self.assertTrue(coverage["information_set_rollout_gate_passed"])
+
     def test_game_level_split_has_no_overlap(self) -> None:
         samples = [{"game_id": str(index)} for index in range(10)]
         train_ids, validation_ids = website_danzero_dataset._split_game_ids(samples, 0.2, 7)

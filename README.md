@@ -81,6 +81,13 @@ After an online Shadow batch, evaluate the hard gate with:
 python -u -B .\play_research_adaptive.py --website-shadow-summary logs_website_shadow_stage2 --shadow-summary-out website_shadow_summary_stage2.json --shadow-minimum-games 20
 ```
 
+Frozen datasets can be extended without reassigning old sessions by supplying
+both `--website-base-split-manifest` and
+`--website-extension-session-splits`. Every new session must be assigned to
+train or development before collection; adding or changing locked-test games is
+rejected. The current supplement protocol is documented in
+[`docs/research/website-shadow-supplement-plan-v1.md`](docs/research/website-shadow-supplement-plan-v1.md).
+
 ## Distributed DanZero DMC
 
 The Stage 3 runtime uses four shared-policy actors, one GPU learner, a bounded
