@@ -153,3 +153,11 @@ A first stratified teacher feasibility run evaluated 10 games, 31 candidates,
 and 496 paired greedy-continuation rollouts. All reached legal terminal states,
 but no comparison met the frozen advantage, variance, and confidence criteria.
 No teacher label was produced and no model training followed.
+
+A continuation-policy robustness probe then combined deterministic greedy and
+frozen tempo policies on four distinct games. All 72 paired rollouts reached a
+legal terminal state with no hidden-hand or future-information access. No
+candidate robustly beat the behavior action across both policies, so again no
+teacher label was emitted. The probe took about 8.9 minutes (roughly 7.4 seconds
+per rollout); broader search requires disagreement-state filtering and caching,
+not a blind multiplication of rollouts.

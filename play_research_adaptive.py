@@ -17613,6 +17613,7 @@ def parse_args() -> argparse.Namespace:
     parser.add_argument("--information-set-rollout-max-steps", type=int, default=300)
     parser.add_argument("--information-set-min-advantage", type=float, default=0.15)
     parser.add_argument("--information-set-max-variance", type=float, default=0.50)
+    parser.add_argument("--information-set-continuation-profiles", default="greedy_bot")
     parser.add_argument("--summary", help="Print an Elo research summary from research_results.json.")
     parser.add_argument("--recent-window", type=int, default=10)
     parser.add_argument("--website-goal-min-games", type=int, default=500)
@@ -17931,12 +17932,20 @@ def main() -> None:
         return
     if args.website_information_set_rollout_eval:
         import website_information_set
-
-        website_information_set.run_rollout_eval(
-            args,
-            offline_load_guandan_components(),
-            sys.modules[__name__],
+        restore_baseline = (
+            offline_install_arena_baseline_optimizations()
+            if "tempo_baseline" in str(args.information_set_continuation_profiles).split(",")
+            else None
         )
+        try:
+            website_information_set.run_rollout_eval(
+                args,
+                offline_load_guandan_components(),
+                sys.modules[__name__],
+            )
+        finally:
+            if restore_baseline is not None:
+                restore_baseline()
         return
     if args.offline_env_sanity_check:
         run_offline_env_sanity_check(args)

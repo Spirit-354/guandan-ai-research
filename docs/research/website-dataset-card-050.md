@@ -72,3 +72,9 @@ Ten stratified train cases then completed 496 paired greedy-continuation
 rollouts. No strong teacher label was emitted: apparent advantages had negative
 95% lower bounds or excessive paired-return variance. This is a successful
 uncertainty gate, not evidence that the behavior action was optimal.
+
+A second robustness probe used both greedy and frozen-tempo continuation on
+four distinct train games. Its 72 rollouts all completed legally, but no action
+showed a low-variance positive advantage across both continuation policies.
+No strong label was created. This reinforces that the current behavior data is
+an initialization resource, not a source of candidate-ranking truth.

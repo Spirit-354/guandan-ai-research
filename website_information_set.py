@@ -346,6 +346,8 @@ def _simulate_candidate(
     adaptive: Any,
     seed: int,
     max_steps: int,
+    continuation_profile: str,
+    profile_config: dict,
 ) -> tuple[float | None, dict | None]:
     import copy
 
@@ -373,9 +375,22 @@ def _simulate_candidate(
         if game.current_player in game.ranking:
             steps += 1
             continue
-        next_action = adaptive.rollout_greedy_action_info(
-            game, components, rng, policy="information_set_greedy_bot"
-        )
+        if continuation_profile == "tempo_baseline":
+            next_action = adaptive.offline_baseline_action_info(
+                game,
+                components,
+                "tempo_baseline",
+                profile_config,
+                rng,
+            )
+        elif continuation_profile == "random_bot":
+            next_action = adaptive.offline_oracle_sample_action_info(
+                game, components, rng, policy="information_set_random_bot"
+            )
+        else:
+            next_action = adaptive.rollout_greedy_action_info(
+                game, components, rng, policy="information_set_greedy_bot"
+            )
         record = adaptive.offline_apply_action(game, next_action)
         if record.get("materialization_fail") or record.get("hand_card_mismatch"):
             return None, {"reason": "continuation_action_failed", "step": steps}
@@ -402,6 +417,18 @@ def run_rollout_eval(args: Any, components: dict, adaptive: Any) -> dict:
     case_results: list[dict] = []
     strong_labels: list[dict] = []
     integrity_failures: list[dict] = []
+    continuation_profiles = [
+        item.strip()
+        for item in str(args.information_set_continuation_profiles).split(",")
+        if item.strip()
+    ]
+    allowed_profiles = {"greedy_bot", "tempo_baseline", "random_bot"}
+    if not continuation_profiles or any(item not in allowed_profiles for item in continuation_profiles):
+        raise RuntimeError("information-set continuation profiles must be greedy_bot, tempo_baseline, or random_bot")
+    profile_config = adaptive.load_json(adaptive.PROFILE_PATH, {}).get(
+        "tempo_baseline", {"engine_mode": "tempo"}
+    )
+    profile_rollout_counts = Counter()
     total_rollouts = 0
     completed_rollouts = 0
     for case_index, sample in enumerate(eligible):
@@ -419,6 +446,8 @@ def run_rollout_eval(args: Any, components: dict, adaptive: Any) -> dict:
         failures: list[list[dict]] = [[] for _ in candidates]
         for rollout_index in range(int(args.information_set_rollouts_per_action)):
             determinization_seed = 20260713 + case_index * 1_000_003 + rollout_index
+            continuation_profile = continuation_profiles[rollout_index % len(continuation_profiles)]
+            profile_rollout_counts[continuation_profile] += len(candidates)
             base_game = restore_game(sample, components, random.Random(determinization_seed))
             for candidate_index, candidate in enumerate(candidates):
                 total_rollouts += 1
@@ -429,6 +458,8 @@ def run_rollout_eval(args: Any, components: dict, adaptive: Any) -> dict:
                     adaptive,
                     determinization_seed,
                     int(args.information_set_rollout_max_steps),
+                    continuation_profile,
+                    profile_config,
                 )
                 paired_returns[candidate_index].append(value)
                 if value is not None:
@@ -466,11 +497,32 @@ def run_rollout_eval(args: Any, components: dict, adaptive: Any) -> dict:
             standard_error = (variance / len(paired_differences)) ** 0.5 if paired_differences else float("inf")
             lower_bound = advantage - 1.96 * standard_error
             confidence = max(0.0, min(1.0, 0.5 + lower_bound / 2.0))
+            policy_advantages: dict[str, dict] = {}
+            for profile in continuation_profiles:
+                differences = [
+                    float(paired_returns[best_index][rollout_index])
+                    - float(paired_returns[behavior_index][rollout_index])
+                    for rollout_index in range(int(args.information_set_rollouts_per_action))
+                    if continuation_profiles[rollout_index % len(continuation_profiles)] == profile
+                    and paired_returns[best_index][rollout_index] is not None
+                    and paired_returns[behavior_index][rollout_index] is not None
+                ]
+                policy_advantages[profile] = {
+                    "paired_count": len(differences),
+                    "mean_advantage": sum(differences) / len(differences) if differences else None,
+                    "variance": _sample_variance(differences),
+                }
+            robust_across_profiles = all(
+                metrics["mean_advantage"] is not None
+                and float(metrics["mean_advantage"]) >= float(args.information_set_min_advantage)
+                for metrics in policy_advantages.values()
+            )
             strong = bool(
                 len(paired_differences) == int(args.information_set_rollouts_per_action)
                 and advantage >= float(args.information_set_min_advantage)
                 and variance <= float(args.information_set_max_variance)
                 and lower_bound > 0.0
+                and robust_across_profiles
             )
             label = {
                 "best_candidate_index": best_index,
@@ -479,6 +531,8 @@ def run_rollout_eval(args: Any, components: dict, adaptive: Any) -> dict:
                 "paired_return_variance": variance,
                 "advantage_95_lower_bound": lower_bound,
                 "label_confidence": confidence,
+                "continuation_policy_advantages": policy_advantages,
+                "robust_across_continuation_profiles": robust_across_profiles,
                 "strong_teacher_label": strong,
             }
             if strong:
@@ -519,7 +573,9 @@ def run_rollout_eval(args: Any, components: dict, adaptive: Any) -> dict:
         "completed_rollouts": completed_rollouts,
         "rollout_completion_rate": completed_rollouts / total_rollouts if total_rollouts else 0.0,
         "hidden_card_sampling_method": "uniform_physical_assignment_given_public_counts_v1",
-        "continuation_policy": "greedy_bot_feasibility_only",
+        "continuation_policy": "information_set_profile_ensemble_v1",
+        "continuation_profiles": continuation_profiles,
+        "continuation_profile_rollout_counts": dict(profile_rollout_counts),
         "future_information_used": False,
         "opponent_or_teammate_true_hands_used": False,
         "strong_teacher_label_count": len(strong_labels),
