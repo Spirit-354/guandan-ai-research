@@ -8,7 +8,8 @@ Branch: `agent/stage5-website-bot-adaptation`
 
 Latest completed stage:
 
-- Website Shadow Supplement v1 collection and frozen dataset extension.
+- Extension v1 information-set teacher candidate expansion and teacher dataset
+  v2 rebuild.
 
 Primary program:
 
@@ -61,19 +62,26 @@ Locked test:
 
 Teacher dataset:
 
-- `website_information_set_teacher_dataset_v1.pth`
-- 7 accepted high-confidence teacher labels.
-- 7 independent teacher games.
+- Frozen base: `website_information_set_teacher_dataset_v1.pth`, unchanged at
+  7 labels from 7 independent games.
+- Current dataset: `website_information_set_teacher_dataset_v2.pth`.
+- 11 accepted high-confidence teacher labels from 11 independent games: 7
+  frozen labels plus 4 extension v1 labels.
+- New accepted cases: `13958:12`, `13959:7`, `13957:14`, and `13960:15`.
 - Representation: 513 state dimensions, 54 website action dimensions.
+- Teacher v2 SHA-256:
+  `620b378675ef1964f16043c7c2cdd4d75dc8db3bb7377cab773c3bbe8aec250f`.
 - Training gate is closed until at least 20 independent high-confidence teacher
   games exist.
 
 Current blocker:
 
-- The new train/development states are ready for information-set teacher
-  candidate screening.
 - Training remains blocked until at least 20 independent high-confidence
-  teacher games exist; the current count remains 7.
+  teacher games exist; the current count is 11 and at least 9 more independent
+  strong-label games are required.
+- The eligible extension v1 train pool is exhausted. More independently
+  collected baseline-only train games are required before another teacher
+  expansion can close the gate.
 
 ## Active Stage Plan
 
@@ -134,14 +142,40 @@ Acceptance:
 Goal: screen only new train/development states for robust information-set
 teacher labels.
 
+Status: completed.
+
+Acceptance:
+
+- All 103 eligible decisions from new train games 13956-13960 were screened;
+  the 60 development decisions remained held out from teacher-label creation.
+- Locked-test states read: 0; hidden/future information use: 0.
+- All 3,464 screening and confirmation rollouts completed; incomplete files
+  accepted: 0.
+- Four new labels passed the existing completeness, variance, advantage,
+  confidence, and greedy-plus-frozen-tempo robustness gates.
+- Frozen v1 samples are byte-content equivalent after deserialization, source
+  state and physical-action remap checks pass, and remap errors are zero.
+- Teacher gate remains closed at 11 of 20 independent games.
+
+### Stage 4.5: Website Shadow Supplement v2
+
+Goal: collect the next explicitly assigned baseline-only train session for new
+independent information-set teacher candidates.
+
 Status: next stage; not started.
 
 Acceptance:
 
-- No locked-test state is read.
-- No hidden information or future information is used.
-- Strong labels require robust greedy-plus-frozen-tempo advantages.
-- Teacher gate remains closed until 20 independent teacher games exist.
+- Exactly 12 new completed verified bot-table games in one preassigned train
+  session.
+- `tempo_baseline` is the only website action submitter; model-controlled
+  website actions: 0.
+- Every game records leaderboard Elo before/after and exhaustive Shadow
+  candidates.
+- Communication, legality, materialization, hand-subset, duplicate-submit,
+  information-set, and unrecoverable-desync counters are all zero.
+- No dataset rebuild, teacher screening, model training, or model-controlled
+  website play occurs in this collection stage.
 
 ### Stage 5: Training Gate
 

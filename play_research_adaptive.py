@@ -17789,6 +17789,7 @@ def parse_args() -> argparse.Namespace:
         help="Comma-separated completed website information-set rollout JSON files.",
     )
     parser.add_argument("--website-information-set-teacher-base-dataset")
+    parser.add_argument("--website-information-set-teacher-frozen-base")
     parser.add_argument(
         "--website-information-set-teacher-out",
         default="website_information_set_teacher_dataset.pth",

@@ -45,9 +45,14 @@ Status: promising but below training gate.
 
 Accepted strong labels:
 
-- 7 independent strong teacher labels.
-- Current teacher dataset: `website_information_set_teacher_dataset_v1.pth`.
+- Frozen v1 contributed 7 unchanged labels from 7 independent games.
+- Extension v1 contributed 4 labels from 4 independent games:
+  `13958:12`, `13959:7`, `13957:14`, and `13960:15`.
+- Current teacher dataset: `website_information_set_teacher_dataset_v2.pth`.
+- Current total: 11 labels from 11 independent games.
 - State/action representation: 513/54.
+- Teacher v2 SHA-256:
+  `620b378675ef1964f16043c7c2cdd4d75dc8db3bb7377cab773c3bbe8aec250f`.
 
 Rejected or exhausted evidence:
 
@@ -57,8 +62,9 @@ Rejected or exhausted evidence:
 
 Decision:
 
-- Do not train from the 7-label teacher dataset as a capability candidate.
-- Screen only the new extension v1 train/development states next.
+- Do not train from the 11-label teacher dataset as a capability candidate.
+- Collect more independent baseline-only train games before another teacher
+  expansion; at least 9 additional strong-label games are still required.
 
 ## Website Shadow Supplement v1
 
@@ -116,6 +122,56 @@ Decision:
 - Keep the complete bundle and locked-test partition out of candidate design,
   rollout selection, and threshold tuning.
 
+## Extension v1 Teacher Candidate Expansion
+
+Status: completed; four new labels accepted and training gate remains closed.
+
+Evidence:
+
+- The physical train/development partition SHA-256 is
+  `9fb93a87f625230638ee0beeac32a1edfb2ca3d9718aa514a972c683a189d6b0`.
+- Of 119 decisions in new train games 13956-13960, 103 had nonzero public
+  hand counts for every player and were eligible for information-set rollout;
+  all 103 were screened. The 60 new development decisions were held out from
+  teacher-label creation.
+- Greedy-only screening evaluated 339 candidates with 2,712/2,712 completed
+  rollouts. It was used only to select confirmation cases and could not emit a
+  strong label.
+- Ensemble confirmation evaluated 12 cases and 47 candidates with 752/752
+  completed paired rollouts: 376 greedy and 376 frozen-tempo continuations.
+- Every evaluation recorded uniform physical information-set sampling, the
+  stable game/turn/determinization seed scheme, mean and variance, paired
+  advantage and 95% lower bound, completion, and per-profile advantages.
+- Locked-test loads, hidden/future information use, timeouts, integrity
+  failures, incomplete accepted files, and remap errors were all zero.
+- Accepted new cases and key statistics:
+  - `13958:12`: advantage 0.875, lower bound 0.373, candidate variance
+    0.467, greedy/tempo advantages 1.0/0.75.
+  - `13959:7`: advantage 0.875, lower bound 0.258, candidate variance 0.25,
+    greedy/tempo advantages 1.5/0.25.
+  - `13957:14`: advantage 0.875, lower bound 0.373, candidate variance
+    0.467, greedy/tempo advantages 1.0/0.75.
+  - `13960:15`: advantage 0.625, lower bound 0.156, candidate variance
+    0.467, greedy/tempo advantages 0.75/0.5.
+- Several apparently strong greedy signals were rejected because frozen-tempo
+  advantage was zero or negative, confidence was not positive, or candidate
+  variance exceeded 0.50. Game 13956 produced no confirmation-worthy strong
+  signal.
+- Rebuilding from the frozen v1 base preserved all seven old samples exactly
+  after deserialization and appended only the four accepted train labels.
+  Source state identity, behavior action, legal teacher action, physical remap,
+  and 513/54 dimensions all passed.
+
+Decision:
+
+- Freeze `website_information_set_teacher_dataset_v2.pth` as the current
+  11-game teacher dataset.
+- Keep the training gate closed because 11 is below the required 20
+  independent high-confidence teacher games.
+- Treat the eligible extension v1 train pool as exhausted and collect a new
+  baseline-only train supplement rather than weaken thresholds or repeatedly
+  expand low-evidence candidates.
+
 ## Model A / Shared Self-Play / BC / PPO / DMC
 
 Status: not eligible for website control.
@@ -151,23 +207,24 @@ Decision:
 
 ## Current Next Experiment
 
-Name: Extension v1 information-set teacher candidate expansion.
+Name: Website Shadow Supplement v2 collection.
 
 Purpose:
 
-- Screen only newly collected train/development states for robust
-  counterfactual teacher labels.
-- Use legal information-set determinization and both greedy and frozen-tempo
-  continuation checks.
-- Determine whether the teacher dataset reaches 20 independent
-  high-confidence games.
+- Collect 12 new independent verified bot-table games in one explicitly
+  assigned train session.
+- Preserve `tempo_baseline` as the only website submission policy while
+  recording exhaustive Shadow evidence for a later dataset/teacher stage.
 
 Acceptance:
 
-- No website play and no locked-test access.
-- No hidden or future information is used.
-- Every accepted label records rollout count, sampling method, return mean and
-  variance, advantage, confidence, and continuation-profile robustness.
-- Teacher label remap errors: 0.
-- If fewer than 20 independent high-confidence teacher games exist, do not
-  train a model.
+- Exactly 12 completed bot-only games; non-bot tables stop before the first
+  action.
+- Model-controlled website actions: 0; all submitted actions come from frozen
+  `tempo_baseline`.
+- Every game records `leaderboard_elo` before and after, exhaustive Shadow
+  candidates, and a complete terminal result.
+- All communication, legality, materialization, hand-subset, duplicate-submit,
+  information-set, and unrecoverable-desync counters remain zero.
+- Do not rebuild datasets, run teacher screening, train a model, or begin any
+  model-controlled website play in the collection stage.

@@ -1,10 +1,13 @@
 from __future__ import annotations
 
+import itertools
+import json
+import random
 import sys
+import tempfile
 import unittest
 from pathlib import Path
-import itertools
-import random
+from types import SimpleNamespace
 
 
 ROOT = Path(__file__).resolve().parents[1]
@@ -16,6 +19,134 @@ import play_research_adaptive
 
 
 class WebsiteInformationSetTests(unittest.TestCase):
+    def test_teacher_builder_appends_to_validated_frozen_base(self) -> None:
+        import torch
+
+        behavior_action = [0.0] * 54
+        teacher_action = [0.0] * 54
+        teacher_action[3] = 1.0
+
+        def source_sample(game_id: str) -> dict:
+            return {
+                "game_id": game_id,
+                "turn_index": 2,
+                "split": "train",
+                "information_set_consistent": True,
+                "state": [0.0] * 513,
+                "hand_before": ["S3", "H3"],
+                "chosen_cards": [],
+                "chosen_action": behavior_action,
+                "legal_actions": [behavior_action, teacher_action],
+                "legal_action_metadata": [
+                    {"cards": [], "action_type": "None"},
+                    {"cards": ["S3"], "action_type": "single"},
+                ],
+            }
+
+        def strong_label(game_id: str) -> dict:
+            return {
+                "game_id": game_id,
+                "turn_index": 2,
+                "state": [0.0] * 513,
+                "teacher_action": {
+                    "physical_cards_website": ["S3"],
+                    "action_type": "single",
+                },
+                "behavior_action": {
+                    "physical_cards_website": [],
+                    "action_type": "None",
+                    "mean_return": -0.5,
+                },
+                "rollout_count": 16,
+                "hidden_card_sampling_method": "uniform_physical_assignment_given_public_counts_v1",
+                "mean_return": 0.5,
+                "return_variance": 0.0,
+                "candidate_return_variance": 0.0,
+                "paired_return_variance": 0.0,
+                "candidate_advantage": 1.0,
+                "advantage_95_lower_bound": 0.2,
+                "label_confidence": 0.6,
+                "continuation_policy_advantages": {
+                    "greedy_bot": {"paired_count": 8, "mean_advantage": 1.0},
+                    "tempo_baseline": {"paired_count": 8, "mean_advantage": 1.0},
+                },
+                "robust_across_continuation_profiles": True,
+                "strong_teacher_label": True,
+            }
+
+        old_source = source_sample("old-game")
+        new_source = source_sample("new-game")
+        old_teacher, reason = website_information_set._teacher_sample_from_label(
+            old_source,
+            strong_label("old-game"),
+            "old-rollout.json",
+        )
+        self.assertIsNone(reason)
+        with tempfile.TemporaryDirectory() as temp_dir:
+            temp = Path(temp_dir)
+            source_path = temp / "source.pth"
+            frozen_base_path = temp / "teacher-v1.pth"
+            rollout_path = temp / "new-rollout.json"
+            output_path = temp / "teacher-v2.pth"
+            torch.save(
+                {
+                    "format": website_information_set.website_data.DATASET_FORMAT,
+                    "summary": {
+                        "partition_role": "train_development",
+                        "contains_locked_test_samples": False,
+                    },
+                    "samples": [old_source, new_source],
+                },
+                source_path,
+            )
+            torch.save(
+                {
+                    "format": website_information_set.TEACHER_DATASET_SCHEMA_VERSION,
+                    "summary": {
+                        "accepted_teacher_label_count": 1,
+                        "independent_teacher_games": 1,
+                        "state_dim": 513,
+                        "action_dim": 54,
+                        "locked_test_loaded": False,
+                        "threshold_passed": True,
+                    },
+                    "samples": [old_teacher],
+                },
+                frozen_base_path,
+            )
+            rollout_path.write_text(
+                json.dumps(
+                    {
+                        "dataset_partition_role": "train_development",
+                        "locked_test_loaded": False,
+                        "all_cases_completed": True,
+                        "threshold_passed": True,
+                        "determinization_seed_scheme": "sha256_game_id_turn_index_determinization_index_v1",
+                        "common_determinizations_across_continuation_profiles": True,
+                        "future_information_used": False,
+                        "opponent_or_teammate_true_hands_used": False,
+                        "continuation_profiles": ["greedy_bot", "tempo_baseline"],
+                        "strong_teacher_labels": [strong_label("new-game")],
+                    }
+                ),
+                encoding="utf-8",
+            )
+            summary = website_information_set.build_teacher_dataset(
+                SimpleNamespace(
+                    website_information_set_teacher_base_dataset=str(source_path),
+                    website_information_set_teacher_frozen_base=str(frozen_base_path),
+                    build_website_information_set_teacher_dataset=str(rollout_path),
+                    website_information_set_teacher_out=str(output_path),
+                )
+            )
+            rebuilt = torch.load(output_path, map_location="cpu", weights_only=False)
+        self.assertEqual(rebuilt["samples"][0], old_teacher)
+        self.assertEqual(summary["frozen_teacher_base_label_count"], 1)
+        self.assertEqual(summary["accepted_new_teacher_label_count"], 1)
+        self.assertEqual(summary["accepted_teacher_label_count"], 2)
+        self.assertEqual(summary["independent_teacher_games"], 2)
+        self.assertEqual(summary["reject_reason_counts"], {})
+
     def test_legacy_rollout_completion_requires_exact_counts(self) -> None:
         payload = {
             "candidate_count": 4,

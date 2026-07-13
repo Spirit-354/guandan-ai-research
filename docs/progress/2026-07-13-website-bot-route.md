@@ -302,3 +302,52 @@ games, with no rejection during source remapping, no locked-test access, and the
 expected 513-state/54-action representation. Its training gate remains false
 until at least 20 independent high-confidence teacher games exist, so no model
 training follows.
+
+## Extension v1 Teacher Expansion
+
+The extension v1 physical train/development partition was the only dataset
+loaded for candidate selection and rollout. Its SHA-256 is
+`9fb93a87f625230638ee0beeac32a1edfb2ca3d9718aa514a972c683a189d6b0`, it
+reports `partition_role=train_development`, and it contains no locked-test
+samples. The complete bundle and isolated locked-test partition were not read.
+
+New train games 13956-13960 contain 119 decisions. Sixteen decisions were
+ineligible because at least one public hand count was zero; all remaining 103
+were screened. New development games 13961-13963 remained held out from teacher
+label creation. Greedy-only screening covered 339 candidates with 2,712/2,712
+completed rollouts. Those results were used only to select confirmation cases
+and were never permitted to emit strong labels.
+
+The confirmation sweep evaluated 12 cases and 47 candidates with 752/752
+completed paired rollouts, evenly divided between greedy and frozen-tempo
+continuations. Every run used uniform physical assignment conditioned on public
+counts and the stable game/turn/determinization seed scheme. There were no
+timeouts, integrity failures, hidden-hand or future-information accesses, or
+accepted incomplete files.
+
+Four new cases passed every frozen gate. Games 13958 turn 12, 13959 turn 7,
+13957 turn 14, and 13960 turn 15 had paired advantages of 0.875, 0.875, 0.875,
+and 0.625. Their 95% lower bounds were 0.373, 0.258, 0.373, and 0.156; candidate
+return variances were 0.467, 0.25, 0.467, and 0.467. Greedy/frozen-tempo
+advantages were respectively 1.0/0.75, 1.5/0.25, 1.0/0.75, and 0.75/0.5.
+Other high greedy signals were rejected when frozen-tempo advantage was zero or
+negative, confidence was not positive, or candidate variance exceeded 0.50.
+Game 13956 produced no confirmation-worthy strong signal.
+
+The teacher builder now supports appending to a validated frozen teacher base.
+It verifies that every frozen sample still maps to an unchanged train source
+state before preserving it, and it applies the existing source, legality,
+physical-card, completeness, stable-seed, variance, advantage, confidence, and
+continuation robustness checks to every new label. An end-to-end test covers a
+frozen old label plus a newly accepted label.
+
+`website_information_set_teacher_dataset_v2.pth` preserves the seven v1 samples
+exactly after deserialization and appends only the four accepted extension
+labels. The artifact audit found zero state, behavior-action, legal-action, or
+physical remap errors. It contains 11 labels from 11 independent train games,
+uses the expected 513/54 representation, and has SHA-256
+`620b378675ef1964f16043c7c2cdd4d75dc8db3bb7377cab773c3bbe8aec250f`.
+The 20-game training gate therefore remains closed, no model was trained, and
+the next stage is baseline-only collection of 12 new explicitly assigned train
+games rather than threshold relaxation or further search over exhausted
+low-evidence states.

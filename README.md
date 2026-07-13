@@ -92,7 +92,7 @@ Completed stable-seed information-set confirmations can be converted into a
 train-only 513+54 preference dataset without reading locked test data:
 
 ```powershell
-python -u -B .\play_research_adaptive.py --build-website-information-set-teacher-dataset rollout_a.json,rollout_b.json --website-information-set-teacher-base-dataset website_danzero_shadow_050_frozen.train_dev.pth --website-information-set-teacher-out website_information_set_teacher_dataset.pth
+python -u -B .\play_research_adaptive.py --build-website-information-set-teacher-dataset rollout_a.json,rollout_b.json --website-information-set-teacher-base-dataset website_danzero_shadow_050_frozen.train_dev.pth --website-information-set-teacher-frozen-base website_information_set_teacher_dataset_v1.pth --website-information-set-teacher-out website_information_set_teacher_dataset_v2.pth
 ```
 
 The builder requires complete greedy-plus-tempo rollouts with at least 16 paired

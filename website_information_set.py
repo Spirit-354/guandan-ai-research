@@ -1036,6 +1036,79 @@ def _write_teacher_dataset(path: Path, samples: list[dict], summary: dict) -> No
     torch.save({"format": TEACHER_DATASET_SCHEMA_VERSION, "summary": summary, "samples": samples}, path)
 
 
+def _load_frozen_teacher_base(
+    path: Path,
+    source_index: dict[tuple[str, str], dict],
+) -> tuple[list[dict], set[tuple[str, str, tuple[tuple[str, int], ...]]], dict]:
+    if path.suffix.lower() not in {".pt", ".pth"}:
+        raise RuntimeError("frozen website teacher base must be a .pt or .pth dataset")
+    try:
+        import torch
+    except ImportError as exc:
+        raise RuntimeError("PyTorch is required to read a frozen website teacher base") from exc
+    try:
+        payload = torch.load(path, map_location="cpu", weights_only=False)
+    except TypeError:
+        payload = torch.load(path, map_location="cpu")
+    if payload.get("format") != TEACHER_DATASET_SCHEMA_VERSION:
+        raise RuntimeError(f"unexpected frozen website teacher format: {payload.get('format')!r}")
+    summary = dict(payload.get("summary") or {})
+    samples = list(payload.get("samples") or [])
+    if not summary.get("threshold_passed") or summary.get("locked_test_loaded"):
+        raise RuntimeError("frozen website teacher base did not pass its safety gate")
+    if int(summary.get("state_dim") or 0) != website_data.STATE_DIM or int(
+        summary.get("action_dim") or 0
+    ) != website_data.ACTION_DIM:
+        raise RuntimeError("frozen website teacher base dimensions do not match")
+    if int(summary.get("accepted_teacher_label_count") or 0) != len(samples):
+        raise RuntimeError("frozen website teacher base summary count does not match samples")
+    seen: set[tuple[str, str, tuple[tuple[str, int], ...]]] = set()
+    for sample in samples:
+        if sample.get("schema_version") != TEACHER_DATASET_SCHEMA_VERSION:
+            raise RuntimeError("frozen website teacher sample schema does not match")
+        if sample.get("split") != "train" or sample.get("locked_test_used"):
+            raise RuntimeError("frozen website teacher base contains a non-train or locked-test sample")
+        source_key = (str(sample.get("game_id")), str(sample.get("turn_index")))
+        source = source_index.get(source_key)
+        if (
+            source is None
+            or source.get("split") != "train"
+            or not source.get("information_set_consistent")
+        ):
+            raise RuntimeError("frozen website teacher source state is missing or invalid")
+        if list(sample.get("state") or []) != list(source.get("state") or []):
+            raise RuntimeError("frozen website teacher source state changed")
+        teacher_action = [float(value) for value in sample.get("teacher_action") or []]
+        behavior_action = [float(value) for value in sample.get("behavior_action") or []]
+        legal_actions = [
+            [float(value) for value in action] for action in source.get("legal_actions") or []
+        ]
+        if (
+            len(teacher_action) != website_data.ACTION_DIM
+            or len(behavior_action) != website_data.ACTION_DIM
+            or teacher_action not in legal_actions
+            or behavior_action not in legal_actions
+        ):
+            raise RuntimeError("frozen website teacher action is not legal in its source state")
+        teacher_cards = list(sample.get("teacher_physical_cards") or [])
+        behavior_cards = list(sample.get("behavior_physical_cards") or [])
+        if not _cards_are_subset(teacher_cards, list(source.get("hand_before") or [])):
+            raise RuntimeError("frozen website teacher cards are not in the source hand")
+        if (
+            _website_action_vector_for_cards(source, teacher_cards) != teacher_action
+            or behavior_action
+            != [float(value) for value in source.get("chosen_action") or []]
+            or _candidate_key(behavior_cards)
+            != _candidate_key(list(source.get("chosen_cards") or []))
+        ):
+            raise RuntimeError("frozen website teacher physical-action remap changed")
+        dedupe_key = (*source_key, _candidate_key(teacher_cards))
+        if dedupe_key in seen:
+            raise RuntimeError("frozen website teacher base contains duplicate labels")
+        seen.add(dedupe_key)
+    return samples, seen, summary
+
+
 def _rollout_payload_is_complete(payload: dict) -> bool:
     if "all_cases_completed" in payload:
         return bool(payload.get("all_cases_completed"))
@@ -1065,6 +1138,16 @@ def build_teacher_dataset(args: Any) -> dict:
         (str(sample.get("game_id")), str(sample.get("turn_index"))): sample
         for sample in source_samples
     }
+    frozen_base_path_value = getattr(args, "website_information_set_teacher_frozen_base", None)
+    frozen_base_path = Path(frozen_base_path_value) if frozen_base_path_value else None
+    if frozen_base_path is not None:
+        accepted, seen, frozen_base_summary = _load_frozen_teacher_base(
+            frozen_base_path,
+            source_index,
+        )
+    else:
+        accepted, seen, frozen_base_summary = [], set(), {}
+    frozen_base_label_count = len(accepted)
     paths = [
         Path(item.strip())
         for item in str(args.build_website_information_set_teacher_dataset).split(",")
@@ -1075,8 +1158,6 @@ def build_teacher_dataset(args: Any) -> dict:
     reject_reasons: Counter[str] = Counter()
     raw_label_count = 0
     legacy_completion_inferred_file_count = 0
-    accepted: list[dict] = []
-    seen: set[tuple[str, str, tuple[tuple[str, int], ...]]] = set()
     for path in paths:
         payload = json.loads(path.read_text(encoding="utf-8"))
         if payload.get("dataset_partition_role") != "train_development":
@@ -1158,14 +1239,21 @@ def build_teacher_dataset(args: Any) -> dict:
                 continue
             seen.add(dedupe_key)
             accepted.append(sample)
+    accepted_new_label_count = len(accepted) - frozen_base_label_count
     independent_games = len({sample["game_id"] for sample in accepted})
     summary = {
         "schema_version": TEACHER_DATASET_SCHEMA_VERSION,
         "source_base_dataset": str(args.website_information_set_teacher_base_dataset),
         "source_base_partition_role": source_summary.get("partition_role"),
+        "frozen_teacher_base_dataset": str(frozen_base_path) if frozen_base_path else None,
+        "frozen_teacher_base_label_count": frozen_base_label_count,
+        "frozen_teacher_base_independent_games": frozen_base_summary.get(
+            "independent_teacher_games"
+        ),
         "rollout_eval_file_count": len(paths),
         "raw_strong_label_count": raw_label_count,
         "legacy_completion_inferred_file_count": legacy_completion_inferred_file_count,
+        "accepted_new_teacher_label_count": accepted_new_label_count,
         "accepted_teacher_label_count": len(accepted),
         "independent_teacher_games": independent_games,
         "minimum_strong_teacher_rollouts": MIN_STRONG_TEACHER_ROLLOUTS,
