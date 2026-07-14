@@ -936,3 +936,36 @@ promotion, and capability claims were all zero. The next stage is limited to a
 20-game paired, seat-swapped offline Arena integrity smoke against frozen
 `tempo_baseline`; it cannot continue to the 100/200-game screen or any website
 stage in the same Goal.
+
+## Stage 6.1 Teacher-Preference Offline Arena Smoke
+
+All frozen checkpoint, teacher, split, training-report, and baseline-manifest
+hashes passed before execution. Baseline freeze verification reported 500
+equivalence samples and zero mismatches. The DanZero checkpoint loader was
+extended only to accept the frozen teacher-preference schema when its 513/54
+dimensions, teacher hash, training mode, capability flag, and promotion flag
+match; the legacy distributed-DMC loader remains supported.
+
+The only formal run used CPU, Arena seed `20260714`, frozen
+`tempo_baseline`, and 20 games arranged as ten adjacent pairs. Within every
+pair, deal, first-player, and Arena RNG seeds matched, while the model played
+team 0 once and team 1 once. The compact trace records every seed, first
+player, model team, winner, game length, and per-game safety count.
+
+All 20 games completed with zero illegal action, fallback, materialization,
+hand-card mismatch, fatal candidate, or baseline-equivalence mismatch. The
+engineering integrity gate therefore passed. The model nevertheless lost all
+20 games. Model/baseline decisions were 964/873, average game length was 91.85,
+model pass rate was 0.6629, and model bomb rate was 0.0239.
+
+The frozen early-screen rule requires integrity plus model win rate at least
+0.30. With win rate 0.0, continuation is false. The checkpoint is rejected
+from the 100/200-game screen and remains unpromoted; no capability claim is
+allowed. Training, tuning, checkpoint selection, website-dataset or locked-test
+loads, larger Arena runs, website Shadow/play, and model-controlled website
+actions were all zero.
+
+The curated Arena output SHA-256 is
+`aa45da9de202194102fe8d11e612ad3eb4b51177fd910b9a7948836afd2a1fe6`.
+The next stage is limited to static full-legal-set Q-ranking diagnosis on the
+22 frozen teacher states. It cannot retrain or run additional games.

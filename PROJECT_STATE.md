@@ -8,7 +8,7 @@ Branch: `agent/stage5-website-bot-adaptation`
 
 Latest completed stage:
 
-- Frozen Teacher-Preference Training Smoke.
+- Stage 6.1 Teacher-Preference Offline Arena Smoke.
 
 Primary program:
 
@@ -99,12 +99,20 @@ Teacher dataset:
   SHA-256
   `c54801a9db05100c2fe5a9bf610a64fc7c94dc2cd947dfaab115ff827bd90919`.
   It is pipeline evidence only and is not promoted.
+- The Stage 6.1 paired offline Arena output is
+  `website_teacher_preference_arena_smoke20_v1.json`, SHA-256
+  `aa45da9de202194102fe8d11e612ad3eb4b51177fd910b9a7948836afd2a1fe6`.
+  It completed 20/20 integrity games but the model lost all 20, so offline
+  continuation is not allowed.
 
 Current blocker:
 
-- The label-count and training-pipeline gates are no longer blockers. The
-  checkpoint has not yet passed the Stage 6.1 paired, seat-swapped 20-game
-  offline Arena integrity smoke against frozen `tempo_baseline`.
+- The Stage 6.1 integrity gate passed, but the early-screen performance gate
+  failed at 0 wins and 20 losses. The checkpoint is rejected from the
+  100/200-game screen.
+- Before changing any objective or training again, Stage 6.2 must statically
+  diagnose full-legal-set Q rankings on the 22 frozen teacher states. The
+  observed Arena model pass rate was 66.3%, but no causal claim is yet allowed.
 - The eligible extension v5 pool is exhausted: all 277 rollout-eligible states
   were screened, all permitted positive-screen game signals were confirmed or
   exhausted, and three labels passed.
@@ -603,7 +611,7 @@ Acceptance:
 
 Goal: compare candidates against frozen `tempo_baseline`.
 
-Status: next stage begins with a 20-game integrity smoke only.
+Status: Stage 6.1 completed; continuation rejected, diagnosis required.
 
 Constraints:
 
@@ -615,6 +623,22 @@ Constraints:
   Treat the result as offline integrity/screening evidence only.
 - Do not proceed to the 100/200-game screen, locked test, website Shadow, or
   website control in the same stage.
+
+Stage 6.1 acceptance:
+
+- The frozen teacher-preference and legacy distributed-DMC checkpoint loaders
+  both passed focused tests; incompatible preference metadata is rejected.
+- Exactly 20 games completed as ten adjacent paired seeds. Each pair used the
+  same deal, first-player, and Arena RNG seeds with model teams `{0,1}`.
+- Model/baseline results were 0/20 and 20/20. The integrity gate passed, but
+  the frozen 0.30 early-screen continuation gate failed and remains false.
+- Model/baseline decisions were 964/873; average game length was 91.85. The
+  model pass rate was 0.6629 and bomb rate was 0.0239.
+- Illegal, fallback, materialization, hand-card mismatch,
+  fatal-no-candidate, and baseline-equivalence mismatch counts were zero.
+- Training, tuning, checkpoint selection, website-dataset or locked-test loads,
+  later Arena screens, website Shadow/play, checkpoint promotion, and
+  capability claims were zero.
 
 Acceptance:
 

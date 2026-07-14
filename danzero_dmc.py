@@ -1,5 +1,6 @@
 from __future__ import annotations
 
+import hashlib
 import io
 import json
 import multiprocessing as mp
@@ -18,6 +19,9 @@ import danzero_oracle
 
 DANZERO_DMC_SCHEMA_VERSION = "danzero_distributed_dmc_v1"
 DANZERO_DMC_INPUT_DIM = features.DANZERO_COMPACT_STATE_DIM + features.DANZERO_PHYSICAL_ACTION_DIM
+TEACHER_PREFERENCE_CHECKPOINT_SCHEMA_VERSION = "website_teacher_preference_checkpoint_v1"
+TEACHER_PREFERENCE_SHA256 = "a74416e6facb28a1bc64563eba90cb33d460dc9e59cc2109518da142465e15f8"
+TEACHER_PREFERENCE_TRAINING_MODE = "teacher_over_behavior_pairwise_softplus"
 
 
 def build_q_model(device: Any) -> Any:
@@ -339,6 +343,23 @@ def validate_resume_payload(payload: dict) -> list[str]:
         "oracle_version": danzero_oracle.ORACLE_VERSION,
         "oracle_exhaustive": danzero_oracle.ORACLE_EXHAUSTIVE,
         "reward_version": "terminal_team_win_loss_v1",
+    }
+    return [
+        f"{key}: expected={value!r} actual={payload.get(key)!r}"
+        for key, value in expected.items()
+        if payload.get(key) != value
+    ]
+
+
+def validate_teacher_preference_checkpoint(payload: dict) -> list[str]:
+    expected = {
+        "schema_version": TEACHER_PREFERENCE_CHECKPOINT_SCHEMA_VERSION,
+        "state_dim": features.DANZERO_COMPACT_STATE_DIM,
+        "action_dim": features.DANZERO_PHYSICAL_ACTION_DIM,
+        "teacher_sha256": TEACHER_PREFERENCE_SHA256,
+        "training_mode": TEACHER_PREFERENCE_TRAINING_MODE,
+        "capability_claim_allowed": False,
+        "checkpoint_promotion_allowed": False,
     }
     return [
         f"{key}: expected={value!r} actual={payload.get(key)!r}"
@@ -864,13 +885,29 @@ def load_q_checkpoint(path: Path, device: Any) -> tuple[Any, dict]:
         payload = torch.load(path, map_location=device, weights_only=False)
     except TypeError:
         payload = torch.load(path, map_location=device)
-    mismatches = validate_resume_payload(payload)
+    if payload.get("schema_version") == TEACHER_PREFERENCE_CHECKPOINT_SCHEMA_VERSION:
+        mismatches = validate_teacher_preference_checkpoint(payload)
+    else:
+        mismatches = validate_resume_payload(payload)
     if mismatches:
         raise RuntimeError("incompatible DanZero checkpoint: " + "; ".join(mismatches))
     model = build_q_model(device)
     model.load_state_dict(payload["model_state_dict"])
     model.eval()
     return model, payload
+
+
+def arena_game_plan(game_index: int, arena_seed: int, swap_seats: bool) -> dict:
+    pair_index = int(game_index) // 2 if swap_seats else int(game_index)
+    game_seed = int(arena_seed) + pair_index
+    return {
+        "game_index": int(game_index),
+        "pair_index": pair_index,
+        "game_seed": game_seed,
+        "first_player_seed": game_seed + 50_000_003,
+        "arena_rng_seed": game_seed + 100_000_007,
+        "model_team": int(game_index) % 2 if swap_seats else 0,
+    }
 
 
 def arena_model_action_info(
@@ -933,6 +970,8 @@ def frozen_baseline_evidence() -> dict:
     freeze = verify_manifest()
     return {
         **freeze,
+        "baseline_manifest": str(MANIFEST_PATH),
+        "baseline_manifest_sha256": hashlib.sha256(MANIFEST_PATH.read_bytes()).hexdigest(),
         "baseline_equivalence_checked": True,
         "baseline_equivalence_samples": int(validation.get("baseline_equivalence_samples") or 0),
         "baseline_equivalence_mismatch_count": int(
@@ -967,10 +1006,12 @@ def run_offline_arena(args: Any) -> dict:
     ):
         raise RuntimeError("frozen baseline evidence gate failed")
     restore_baseline = adaptive.offline_install_arena_baseline_optimizations()
-    rng = random.Random(int(args.danzero_arena_seed))
+    checkpoint_sha256 = hashlib.sha256(checkpoint.read_bytes()).hexdigest()
     result = {
         "schema_version": "danzero_offline_arena_v1",
         "checkpoint": str(checkpoint),
+        "checkpoint_sha256": checkpoint_sha256,
+        "checkpoint_schema_version": checkpoint_payload_data.get("schema_version"),
         "checkpoint_learner_version": int(checkpoint_payload_data.get("learner_version") or 0),
         "baseline_profile": "tempo_baseline",
         "requested_games": int(args.danzero_arena_games),
@@ -982,7 +1023,7 @@ def run_offline_arena(args: Any) -> dict:
         "seat_swap_enabled": bool(args.danzero_arena_swap_seats),
         "paired_seed_enabled": bool(args.danzero_arena_swap_seats),
         "model_team_distribution": {"0": 0, "1": 0},
-        "first_player_policy": "random_each_game",
+        "first_player_policy": "paired_seed_same_within_pair",
         "first_player_distribution": {"0": 0, "1": 0, "2": 0, "3": 0},
         "level_distribution": {},
         "average_game_length": 0.0,
@@ -1002,6 +1043,20 @@ def run_offline_arena(args: Any) -> dict:
         "allowed_for_stage4_continuation": False,
         "threshold_passed": False,
         "failure_samples": [],
+        "game_trace": [],
+        "screening_evidence_only": True,
+        "early_screen_min_win_rate": 0.30,
+        "early_screen_continuation_allowed": False,
+        "training_run_count": 0,
+        "hyperparameter_search_count": 0,
+        "checkpoint_selection_count": 0,
+        "locked_test_load_count": 0,
+        "website_dataset_load_count": 0,
+        "website_shadow_count": 0,
+        "website_game_count": 0,
+        "model_controlled_website_action_count": 0,
+        "checkpoint_promotion_allowed": False,
+        "capability_claim_allowed": False,
     }
     action_types = Counter()
     levels = Counter()
@@ -1027,20 +1082,30 @@ def run_offline_arena(args: Any) -> dict:
     try:
         for game_index in range(int(args.danzero_arena_games)):
             current_game_index = game_index
-            pair_index = game_index // 2 if bool(args.danzero_arena_swap_seats) else game_index
-            game_seed = int(args.danzero_arena_seed) + pair_index
-            random.seed(game_seed)
+            plan = arena_game_plan(
+                game_index,
+                int(args.danzero_arena_seed),
+                bool(args.danzero_arena_swap_seats),
+            )
+            random.seed(plan["game_seed"])
             game = GuandanGame(verbose=False, print_history=False)
-            first_player_rng = random.Random(game_seed + 50_000_003)
+            first_player_rng = random.Random(plan["first_player_seed"])
             first_player = adaptive.offline_set_random_first_player(game, first_player_rng)
             result["first_player_distribution"][str(first_player)] += 1
             levels[str(game.active_level)] += 1
-            model_team = (
-                game_index % 2
-                if bool(args.danzero_arena_swap_seats)
-                else 0
-            )
+            model_team = int(plan["model_team"])
             result["model_team_distribution"][str(model_team)] += 1
+            rng = random.Random(plan["arena_rng_seed"])
+            game_counter_start = {
+                field: int(result[field])
+                for field in (
+                    "illegal_action_count",
+                    "fallback_count",
+                    "materialization_fail_count",
+                    "hand_card_mismatch_count",
+                    "fatal_no_candidate_count",
+                )
+            }
             steps = 0
             while not game.is_game_over and steps < adaptive.OFFLINE_MAX_GAME_STEPS:
                 adaptive.offline_prepare_turn(game)
@@ -1098,6 +1163,20 @@ def run_offline_arena(args: Any) -> dict:
                 steps += 1
             if not game.is_game_over or not game.ranking:
                 result["fatal_no_candidate_count"] += 1
+                result["game_trace"].append(
+                    {
+                        **plan,
+                        "first_player": first_player,
+                        "completed": False,
+                        "winner_team": None,
+                        "model_won": None,
+                        "game_length": steps,
+                        "safety_counts": {
+                            field: int(result[field]) - game_counter_start[field]
+                            for field in game_counter_start
+                        },
+                    }
+                )
                 write_arena_snapshot("running", game_index)
                 continue
             winner_team = int(game.ranking[0]) % 2
@@ -1105,6 +1184,20 @@ def run_offline_arena(args: Any) -> dict:
             result["baseline_wins"] += int(winner_team != model_team)
             result["completed_games"] += 1
             total_steps += steps
+            result["game_trace"].append(
+                {
+                    **plan,
+                    "first_player": first_player,
+                    "completed": True,
+                    "winner_team": winner_team,
+                    "model_won": winner_team == model_team,
+                    "game_length": steps,
+                    "safety_counts": {
+                        field: int(result[field]) - game_counter_start[field]
+                        for field in game_counter_start
+                    },
+                }
+            )
             write_arena_snapshot("running", game_index)
             if int(args.report_every) > 0 and result["completed_games"] % int(args.report_every) == 0:
                 print(
@@ -1138,11 +1231,12 @@ def run_offline_arena(args: Any) -> dict:
         result["completed_games"] == int(args.danzero_arena_games)
         and all(int(result[field]) == 0 for field in integrity_fields)
     )
-    result["allowed_for_stage4_continuation"] = bool(
+    result["early_screen_continuation_allowed"] = bool(
         result["threshold_passed"]
         and result["completed_games"] >= 20
         and result["model_team_win_rate"] >= 0.30
     )
+    result["allowed_for_stage4_continuation"] = result["early_screen_continuation_allowed"]
     arena_out.write_text(
         json.dumps(result, ensure_ascii=False, indent=2) + "\n", encoding="utf-8"
     )

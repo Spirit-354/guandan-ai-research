@@ -41,7 +41,7 @@ Decision:
 
 ## Website Information-Set Teacher Labels
 
-Status: 20-game gate passed; frozen pipeline smoke trained but unvalidated.
+Status: pipeline smoke trained; Stage 6.1 continuation rejected at 0-20.
 
 Accepted strong labels:
 
@@ -71,11 +71,11 @@ Rejected or exhausted evidence:
 
 Decision:
 
-- Freeze teacher v6. The 20-game label-count gate is satisfied. A deterministic
-  pipeline-only checkpoint now exists, but it is not promoted and no capability
-  claim is allowed.
-- Proceed only to the paired, seat-swapped 20-game offline integrity smoke
-  before considering a larger offline screen.
+- Freeze teacher v6 and the teacher-preference checkpoint. The checkpoint
+  passed engineering integrity but lost 0-20 against `tempo_baseline`; it is
+  rejected from larger offline screens and remains unpromoted.
+- Diagnose full-legal-set Q rankings on the 22 frozen teacher states before
+  changing labels, loss, or training. No capability claim is allowed.
 
 ## Website Shadow Supplement v1
 
@@ -756,6 +756,46 @@ Decision:
   against frozen `tempo_baseline`. Do not run the 100/200-game screen in the
   same stage regardless of result.
 
+## Stage 6.1 Teacher-Preference Offline Arena Smoke
+
+Status: integrity passed; early-screen continuation rejected.
+
+Evidence:
+
+- The candidate checkpoint, teacher v6, split, training report, and baseline
+  manifest hashes all matched their frozen values before execution. Frozen
+  baseline verification passed with 500 equivalence samples and zero
+  mismatches.
+- `danzero_dmc.load_q_checkpoint` now accepts the frozen
+  `website_teacher_preference_checkpoint_v1` only when schema, 513/54
+  dimensions, teacher hash, training mode, capability flag, and promotion flag
+  match. Legacy distributed-DMC checkpoint loading remains unchanged.
+- The only formal Arena run completed exactly 20 games as ten adjacent paired
+  seeds. Each pair shared deal, first-player, and per-game Arena RNG seeds and
+  assigned the model once to team 0 and once to team 1.
+- All 20 games completed. The model lost every game: model/baseline wins 0/20,
+  model win rate 0.0, so the frozen 0.30 continuation rule evaluates false.
+- The model made 964 decisions with pass rate 0.6629 and bomb rate 0.0239;
+  `tempo_baseline` made 873 decisions. Average game length was 91.85.
+- Illegal-action, fallback, materialization, hand-card-mismatch,
+  fatal-no-candidate, per-game safety, and baseline-equivalence mismatch counts
+  were all zero. The engineering integrity gate passed.
+- Training, hyperparameter search, checkpoint selection, locked-test or
+  website-dataset loading, larger Arena runs, website Shadow/play,
+  model-controlled website actions, checkpoint promotion, and capability
+  claims were all zero.
+- Curated Arena evidence:
+  `website_teacher_preference_arena_smoke20_v1.json`, SHA-256
+  `aa45da9de202194102fe8d11e612ad3eb4b51177fd910b9a7948836afd2a1fe6`.
+
+Decision:
+
+- Reject this checkpoint from the 100/200-game offline screen. Do not promote,
+  deploy, or use it as evidence of website capability.
+- Run only a static full-legal-set Q-ranking diagnosis on the 22 frozen teacher
+  states before proposing a corrective objective. Do not retrain in that
+  diagnosis stage.
+
 ## Model A / Shared Self-Play / BC / PPO / DMC
 
 Status: not eligible for website control.
@@ -791,22 +831,20 @@ Decision:
 
 ## Current Next Experiment
 
-Name: Stage 6.1 Teacher-Preference Offline Arena Smoke.
+Name: Stage 6.2 Frozen Teacher-Preference Failure Diagnosis.
 
 Purpose:
 
-- Add only the compatibility needed for the existing 513+54 DanZero offline
-  Arena to load the frozen teacher-preference checkpoint.
-- Run exactly 20 paired, seat-swapped games against frozen `tempo_baseline` as
-  an integrity and early-screening smoke.
+- Evaluate the frozen checkpoint on every recorded legal action of all 22
+  teacher states without training or gameplay.
+- Quantify teacher/behavior rank, top-1 source, unpaired-action domination, and
+  pass-top1 behavior by frozen pipeline partition.
 
 Acceptance:
 
-- Checkpoint, teacher v6, split, report, and frozen baseline hashes pass before
-  Arena execution; no training occurs.
-- Twenty games complete as ten paired seeds with model team 0/1 swapped once
-  per pair and identical first-player initialization within each pair.
-- Illegal, fallback, materialization, hand-subset, fatal-candidate, and baseline
-  equivalence errors are zero.
-- The result is screening evidence only. The 100/200-game screen, locked test,
-  website Shadow, website play, promotion, and capability claims remain zero.
+- All 22 states and all recorded legal actions are scored exactly once with
+  finite Q values and stable tie handling.
+- Teacher/behavior pairwise ordering reproduces the frozen training report,
+  while full-set ranks and top-1 categories are reported separately.
+- No dataset, locked test, Arena, training, tuning, website access, promotion,
+  or capability claim occurs.
