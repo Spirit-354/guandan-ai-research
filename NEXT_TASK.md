@@ -2,100 +2,94 @@
 
 ## Single Next Stage
 
-Run Stage 6.2: a static full-legal-set Q-ranking diagnosis for the rejected
-teacher-preference checkpoint on all 22 frozen teacher states.
+Run Stage 6.3: a frozen unpaired-action evidence audit for the 12 teacher
+states where Stage 6.2 found an unpaired recorded action strictly above the
+teacher.
 
-Do not retrain, tune, select or modify a checkpoint, run Arena, load a website
-dataset or locked test, access the website, or begin any later offline or
-website stage. The checkpoint remains rejected from the 100/200-game screen
-regardless of the diagnostic result.
+Do not run a new rollout, train, tune, select or modify a checkpoint, run Arena,
+load a website dataset or locked test, access the website, or begin any later
+offline or website stage. The rejected checkpoint remains ineligible for the
+100/200-game screen regardless of the audit result.
 
 ## Frozen Inputs
 
-- Rejected candidate checkpoint:
-  `models_website_teacher_preference_v1/website_teacher_preference_final.pth`,
-  SHA-256
-  `c54801a9db05100c2fe5a9bf610a64fc7c94dc2cd947dfaab115ff827bd90919`.
+- Stage 6.2 diagnosis:
+  `website_teacher_preference_failure_diagnosis_v1.json`, SHA-256
+  `da08516c39986a01349533e160ba0e97a566d7fad6e42b0b7b3ce41df835b0b2`.
 - Frozen teacher dataset:
   `website_information_set_teacher_dataset_v6.pth`, SHA-256
   `a74416e6facb28a1bc64563eba90cb33d460dc9e59cc2109518da142465e15f8`.
-- Frozen 18/4 pipeline split:
+- Frozen 18/4 split:
   `website_teacher_preference_split_v1.json`, SHA-256
   `5a15e514dc9bc51d77d300837151d9f1a49250f42885cc7940725bcbe4d35107`.
 - Frozen training report:
   `website_teacher_preference_training_v1.json`, SHA-256
   `896192b1d0b4de2caabe20ac17d6a20766fc7f89d6e82a981d834b777932ddd3`.
-- Frozen Stage 6.1 Arena evidence:
+- Rejected checkpoint, unchanged:
+  `models_website_teacher_preference_v1/website_teacher_preference_final.pth`,
+  SHA-256
+  `c54801a9db05100c2fe5a9bf610a64fc7c94dc2cd947dfaab115ff827bd90919`.
+- Stage 6.1 Arena evidence, unchanged:
   `website_teacher_preference_arena_smoke20_v1.json`, SHA-256
   `aa45da9de202194102fe8d11e612ad3eb4b51177fd910b9a7948836afd2a1fe6`.
-- Required Arena conclusion: 20/20 complete, model/baseline wins 0/20,
-  integrity gate true, early-screen continuation false, and every safety count
-  zero.
-- Diagnostic output must be unused before execution and named
-  `website_teacher_preference_failure_diagnosis_v1.json`.
+- The only additional readable artifacts are existing frozen rollout-evidence
+  files referenced directly by the 12 target teacher samples. Hash every such
+  file before interpreting it.
+- The audit output must be unused before execution and named
+  `website_teacher_preference_unpaired_evidence_audit_v1.json`.
 
-## Diagnostic Contract
+## Audit Contract
 
-- Load only the frozen teacher dataset, split manifest, training report,
-  checkpoint, and Stage 6.1 Arena JSON listed above. Do not load any website
-  bundle, train/development dataset, locked-test partition, logs, or outcomes.
-- Use each teacher sample's recorded 513-dimensional state and exhaustive
-  recorded 54-dimensional `legal_actions`. Do not reconstruct or add actions.
-- Score every recorded legal action exactly once with the existing frozen
-  `danzero_dmc.build_q_model`; all Q values must be finite.
-- Preserve recorded legal-action order. Top-1 uses the first maximum exactly as
-  `torch.argmax`; teacher and behavior ranks use
-  `1 + count(Q_action > Q_target)`. Report tie counts separately.
-- For every state, report game/turn, frozen pipeline partition, legal-action
-  count, teacher rank/Q, behavior rank/Q, teacher-minus-behavior margin,
-  top-1 index/Q, whether top-1 is teacher, behavior, or another legal action,
-  whether top-1 is pass, number of actions strictly above teacher, and number
-  tied with teacher.
-- Aggregate separately for the 18 pipeline-train and four
-  pipeline-development games, then overall. Report teacher-over-behavior rate,
-  teacher top-1 rate, behavior top-1 rate, other-action top-1 rate,
-  pass-top1 rate, mean/median teacher rank, and the count of states where an
-  unpaired legal action strictly outranks teacher.
-- Recompute the frozen teacher-versus-behavior metrics and prediction digests;
-  they must exactly match the training report before full-set conclusions are
-  accepted.
-- This stage may identify an objective-coverage failure pattern but must not
-  claim causality, capability, or a corrective model result.
+- Reproduce the 12 target state keys, teacher/action indices, Q ordering, and
+  action-order hashes from Stage 6.2 before reading source rollout evidence.
+- For each target state, map the first-maximum unpaired action exactly to its
+  recorded 54-dimensional action and physical-card identity. Do not reconstruct,
+  canonicalize, add, or drop an action.
+- Read only the existing frozen rollout-evidence path recorded by that teacher
+  sample. Record its path, SHA-256, schema, completeness, hidden-card sampling
+  method, continuation profiles, rollout counts, candidate identity, mean,
+  variance, advantage, confidence, and integrity fields when present.
+- Classify the model top-1 action as exactly one of: dual-continuation confirmed,
+  greedy-only screened, present without qualifying comparison, absent from
+  prior evidence, or ambiguous mapping. Do not infer an ordering from missing
+  fields or a different candidate.
+- Report separately by pipeline train/development and overall. Include exact
+  counts for each evidence class and a future counterfactual-manifest section
+  for absent or insufficient cases, but do not execute that manifest.
+- This stage may decide whether a teacher-versus-all objective is supported by
+  existing evidence. It must not claim causality, train a corrective model, or
+  claim capability.
 
 ## Required Work
 
-1. Re-read the canonical handoffs; verify Git state, all frozen hashes and
-   flags, the rejected Arena conclusion, and output nonexistence.
-2. Add the smallest static diagnostic implementation and focused tests for
-   stable first-max tie handling, rank calculation, partition mapping, finite
-   Q enforcement, exhaustive action accounting, and aggregate arithmetic.
-3. Run the diagnostic once on all 22 teacher states and write the single
-   curated JSON output.
-4. Independently audit exact state/action coverage, partition counts, per-state
-   and aggregate arithmetic, frozen pairwise metric/digest reproduction, and
-   zero forbidden operations.
-5. Keep the checkpoint and teacher dataset unchanged. Do not train, run Arena,
-   load website datasets, or execute any later gate.
+1. Re-read the canonical handoffs; verify Git state, all six frozen hashes,
+   the 0-20 rejection, the Stage 6.2 arithmetic, and output nonexistence.
+2. Add the smallest static evidence-audit implementation and focused tests for
+   exact action identity, evidence-path restriction, evidence classification,
+   missing-field conservatism, partition mapping, and aggregate arithmetic.
+3. Run the audit once for exactly the 12 target states and write the single
+   curated JSON output. Do not launch any rollout worker.
+4. Independently audit target coverage, action/evidence hashes, classifications,
+   partition counts, aggregate arithmetic, and zero forbidden operations.
+5. Keep every frozen input and referenced rollout-evidence file unchanged.
 6. Update `PROJECT_STATE.md`, `EXPERIMENTS.md`, `NEXT_TASK.md`, and the durable
    progress document; run narrow regression tests, credential and diff checks,
    commit, and push.
 
 ## Acceptance Criteria
 
-- All five frozen hashes remain unchanged and Stage 6.1 remains a 0-20 rejected
-  candidate with continuation false.
-- Exactly 22 unique teacher states and every recorded legal action are scored;
-  dropped, duplicated, reconstructed, nonfinite, dimension-invalid, or illegal
-  actions are zero.
-- Partition mapping is exactly 18 pipeline train and four pipeline development,
-  with zero overlap or unknown games.
-- Teacher-versus-behavior metrics and prediction digests exactly reproduce the
-  frozen training report for both partitions.
-- Per-state ranks/top-1 classifications and aggregate rates/counts recompute
-  exactly in an independent audit.
-- Training, hyperparameter search, checkpoint selection/modification, website
-  dataset or locked-test loads, Arena games, website Shadow/play,
-  model-controlled website actions, checkpoint promotion, and capability
+- All six primary frozen hashes and every referenced source-evidence hash remain
+  unchanged; Stage 6.1 remains 0-20 with continuation false.
+- Exactly the 12 Stage 6.2 target states are audited with zero missing,
+  duplicate, extra, reconstructed, or ambiguous state/action mappings.
+- Every evidence classification is traceable to the exact frozen action and
+  source fields. Unsupported or incomplete evidence is never promoted to a
+  teacher-versus-all ordering.
+- Pipeline partition counts, evidence-class counts, and all aggregate values
+  recompute exactly in an independent audit.
+- New rollouts, training, hyperparameter search, checkpoint selection or
+  modification, website dataset or locked-test loads, Arena games, website
+  Shadow/play, model-controlled website actions, promotion, and capability
   claims are all zero.
 - Credential occurrences in new tracked/curated files are zero.
 - Handoff updates, focused tests, independent audit, conventional commit, and
@@ -103,13 +97,10 @@ regardless of the diagnostic result.
 
 ## Ready-to-Use Goal Prompt
 
-请创建一个阶段 Goal：完成 Stage 6.2 冻结 teacher-preference checkpoint 的
-full-legal-set Q-ranking 静态失败诊断。只加载冻结 checkpoint、teacher v6、
-18/4 split、training report 和 0-20 Arena 证据；对 22 个 teacher 状态的全部
-已记录 legal actions 各评分一次，按冻结顺序和 first-maximum 规则报告 teacher/
-behavior rank、top-1 来源、pass-top1、未配对动作超过 teacher 的情况，并分别按
-pipeline train/development 和 overall 汇总。必须精确复现冻结的 teacher-vs-
-behavior metrics 与 prediction digests。严禁训练、调参、checkpoint 选择或修改、
-网站 dataset/locked-test 加载、Arena、网站 Shadow/对局、checkpoint 提升或能力
-结论；该 checkpoint 无论诊断结果如何都保持 100/200-game screen rejected。
-更新交接、验证、凭据零命中、commit 和 push 全部成功后才能完成 Goal。
+请创建一个阶段 Goal：完成 Stage 6.3 冻结 unpaired-action evidence audit。只对
+Stage 6.2 中 12 个被未配对动作压过 teacher 的状态，读取 teacher 样本直接引用的
+既有冻结 rollout 证据，精确映射模型 top-1 动作并保守分类其证据覆盖；不得运行新
+rollout、训练、调参、checkpoint 选择或修改、网站 dataset/locked-test 加载、Arena、
+网站 Shadow/对局、模型控制、提升或能力结论。缺失或不足证据只能写入未来 manifest，
+不能执行。checkpoint 无论结果如何都保持 100/200-game screen rejected。更新交接、
+验证、凭据零命中、commit 和 push 全部成功后才能完成 Goal。

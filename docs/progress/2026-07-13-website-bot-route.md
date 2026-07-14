@@ -969,3 +969,46 @@ The curated Arena output SHA-256 is
 `aa45da9de202194102fe8d11e612ad3eb4b51177fd910b9a7948836afd2a1fe6`.
 The next stage is limited to static full-legal-set Q-ranking diagnosis on the
 22 frozen teacher states. It cannot retrain or run additional games.
+
+## Stage 6.2 Frozen Teacher-Preference Failure Diagnosis
+
+The static diagnosis loaded only the five frozen checkpoint, teacher v6,
+18/4 split, training report, and Stage 6.1 Arena artifacts. Their hashes all
+matched before and after execution. No website dataset, locked test, Arena,
+training, tuning, website access, promotion, or capability path ran.
+
+All 22 unique teacher states and every one of their 934 recorded legal-action
+entries were scored exactly once with the frozen 513+54 Q model. Pipeline
+train contained 18 states and 889 actions; pipeline development contained four
+states and 45 actions. Eight source entries duplicate another recorded action
+vector, so they were preserved and scored separately. Dropped, duplicate-score,
+reconstructed, invalid-dimension, illegal-recorded, and nonfinite-Q counts were
+zero.
+
+The diagnostic reused the original pairwise batching order for teacher and
+behavior, then scored only the remaining legal-action entries. Pipeline-train
+pairwise loss, accuracy, mean margin, and prediction digest reproduced exactly
+at `0.0000722892`, `1.00`, `20.7220`, and
+`951b51bc3000686ecc35260813b8f191246e0df25cd66c2b2b80cbd78b5810cc`.
+Pipeline-development values reproduced exactly at `3.3015`, `0.75`, `12.3318`,
+and `2a453f34104e5e052e469127ae473fb4cf89c8d71ee35e6bebe12b08cc377fe7`.
+
+Full-set ranking reveals the gap hidden by pairwise metrics. Teacher beat
+behavior in 21/22 states but was top-1 in only 10/22. Behavior was never top-1;
+another recorded legal action was top-1 in 12/22 states. Those 12 states contain
+161 unpaired action entries strictly above teacher. Overall mean teacher rank
+was 8.36 and median rank was 2.0. Pass was top-1 in 0/22 states, so this frozen
+teacher-state analysis does not directly explain the Arena pass rate of 66.3%.
+
+An independent audit recomputed all per-state ranks, ties, first-maximum
+sources, action-order hashes, partition and overall aggregates, pairwise
+metrics, and prediction digests with zero errors. The curated output is
+`website_teacher_preference_failure_diagnosis_v1.json`, SHA-256
+`da08516c39986a01349533e160ba0e97a566d7fad6e42b0b7b3ce41df835b0b2`.
+
+This supports an objective-coverage pattern, not causality: pairwise training
+constrains teacher only against behavior and does not establish that teacher is
+better than unpaired legal actions. The checkpoint remains rejected from the
+100/200-game screen. The next stage may only audit already-frozen source
+counterfactual evidence for the 12 unpaired top actions; it cannot run new
+rollouts, train, or play games.

@@ -41,7 +41,8 @@ Decision:
 
 ## Website Information-Set Teacher Labels
 
-Status: pipeline smoke trained; Stage 6.1 continuation rejected at 0-20.
+Status: pipeline smoke trained; Stage 6.1 continuation rejected at 0-20 and
+Stage 6.2 static failure diagnosis completed.
 
 Accepted strong labels:
 
@@ -796,6 +797,55 @@ Decision:
   states before proposing a corrective objective. Do not retrain in that
   diagnosis stage.
 
+## Stage 6.2 Frozen Teacher-Preference Failure Diagnosis
+
+Status: completed; objective-coverage pattern identified without causal or
+capability claims.
+
+Evidence:
+
+- All five frozen checkpoint, teacher, split, training-report, and 0-20 Arena
+  hashes matched before and after the run. The checkpoint remained rejected
+  from the 100/200-game screen.
+- All 22 unique teacher states and all 934 recorded legal-action entries were
+  scored exactly once. Pipeline train/development contained 18/4 states and
+  889/45 actions, with zero overlap or unknown games.
+- Eight source entries duplicate another recorded action vector; they were
+  preserved in recorded order and scored separately. Dropped, repeated-score,
+  reconstructed, dimension-invalid, illegal-recorded, and nonfinite-Q counts
+  were zero.
+- Pipeline-train pairwise loss, accuracy, mean margin, and prediction digest
+  exactly reproduced at `0.0000722892`, `1.00`, `20.7220`, and
+  `951b51bc3000686ecc35260813b8f191246e0df25cd66c2b2b80cbd78b5810cc`.
+- Pipeline-development values exactly reproduced at `3.3015`, `0.75`,
+  `12.3318`, and
+  `2a453f34104e5e052e469127ae473fb4cf89c8d71ee35e6bebe12b08cc377fe7`.
+- Overall teacher-over-behavior ordering was 21/22, while teacher was full-set
+  top-1 in only 10/22 states. Behavior was top-1 in 0/22 and another recorded
+  action was top-1 in 12/22.
+- An unpaired action strictly outranked teacher in those same 12 states, with
+  161 such action entries overall. Mean teacher rank was 8.36 and median rank
+  was 2.0.
+- Pass was top-1 in 0/22 teacher states. This diagnostic therefore does not
+  directly explain the Stage 6.1 model pass rate of 66.3%.
+- Independent audit recomputed every per-state rank, tie, first-maximum source,
+  action-order digest, aggregate, pairwise metric, and prediction digest with
+  zero errors. All forbidden operation counts were zero.
+- Curated diagnostic evidence:
+  `website_teacher_preference_failure_diagnosis_v1.json`, SHA-256
+  `da08516c39986a01349533e160ba0e97a566d7fad6e42b0b7b3ce41df835b0b2`.
+
+Decision:
+
+- Treat pairwise supervision coverage as a supported failure pattern, not a
+  causal proof: the frozen objective constrains teacher versus behavior but
+  supplies no automatic ordering for the remaining recorded legal actions.
+- Do not assume the teacher is superior to the 12 unpaired top actions. Audit
+  their existing frozen counterfactual evidence before defining a corrective
+  loss or running any new rollout.
+- Keep the checkpoint rejected and unpromoted. Do not run another Arena,
+  training job, website Shadow, or website game in the next audit stage.
+
 ## Model A / Shared Self-Play / BC / PPO / DMC
 
 Status: not eligible for website control.
@@ -831,20 +881,21 @@ Decision:
 
 ## Current Next Experiment
 
-Name: Stage 6.2 Frozen Teacher-Preference Failure Diagnosis.
+Name: Stage 6.3 Frozen Unpaired-Action Evidence Audit.
 
 Purpose:
 
-- Evaluate the frozen checkpoint on every recorded legal action of all 22
-  teacher states without training or gameplay.
-- Quantify teacher/behavior rank, top-1 source, unpaired-action domination, and
-  pass-top1 behavior by frozen pipeline partition.
+- For the 12 states where an unpaired action outranked teacher, inspect only
+  already-frozen source rollout evidence and determine whether each model
+  top-1 action was previously screened or dual-continuation confirmed.
+- Separate supported comparisons from greedy-only, absent, or ambiguous
+  evidence before any corrective objective is proposed.
 
 Acceptance:
 
-- All 22 states and all recorded legal actions are scored exactly once with
-  finite Q values and stable tie handling.
-- Teacher/behavior pairwise ordering reproduces the frozen training report,
-  while full-set ranks and top-1 categories are reported separately.
-- No dataset, locked test, Arena, training, tuning, website access, promotion,
-  or capability claim occurs.
+- All 12 target state/action mappings are exact and every referenced source
+  evidence file is hashed and audited without new rollout.
+- No unpaired action is treated as inferior without qualifying frozen
+  counterfactual evidence; missing coverage becomes a future manifest only.
+- No dataset, locked test, new rollout, Arena, training, tuning, website
+  access, promotion, or capability claim occurs.

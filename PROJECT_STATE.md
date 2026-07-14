@@ -8,7 +8,7 @@ Branch: `agent/stage5-website-bot-adaptation`
 
 Latest completed stage:
 
-- Stage 6.1 Teacher-Preference Offline Arena Smoke.
+- Stage 6.2 Frozen Teacher-Preference Failure Diagnosis.
 
 Primary program:
 
@@ -104,15 +104,25 @@ Teacher dataset:
   `aa45da9de202194102fe8d11e612ad3eb4b51177fd910b9a7948836afd2a1fe6`.
   It completed 20/20 integrity games but the model lost all 20, so offline
   continuation is not allowed.
+- The Stage 6.2 static full-legal-set diagnosis is
+  `website_teacher_preference_failure_diagnosis_v1.json`, SHA-256
+  `da08516c39986a01349533e160ba0e97a566d7fad6e42b0b7b3ce41df835b0b2`.
+  It scored all 934 recorded actions from all 22 frozen teacher states and
+  exactly reproduced both frozen pairwise metrics and prediction digests.
 
 Current blocker:
 
 - The Stage 6.1 integrity gate passed, but the early-screen performance gate
-  failed at 0 wins and 20 losses. The checkpoint is rejected from the
+  failed at 0 wins and 20 losses. The checkpoint remains rejected from the
   100/200-game screen.
-- Before changing any objective or training again, Stage 6.2 must statically
-  diagnose full-legal-set Q rankings on the 22 frozen teacher states. The
-  observed Arena model pass rate was 66.3%, but no causal claim is yet allowed.
+- Stage 6.2 found pairwise teacher-over-behavior accuracy of 21/22 while the
+  teacher was full-set top-1 in only 10/22 states. An unpaired recorded action
+  strictly outranked teacher in 12/22 states, across 161 action entries. This
+  is an objective-coverage pattern, not a causal finding.
+- Pass was top-1 in 0/22 teacher states, so the 66.3% Arena pass rate is not
+  explained by this frozen diagnostic. Before defining a corrective objective,
+  Stage 6.3 must audit whether the 12 unpaired top actions have prior frozen
+  counterfactual evidence; it must not run new rollouts or train.
 - The eligible extension v5 pool is exhausted: all 277 rollout-eligible states
   were screened, all permitted positive-screen game signals were confirmed or
   exhausted, and three labels passed.
@@ -611,7 +621,8 @@ Acceptance:
 
 Goal: compare candidates against frozen `tempo_baseline`.
 
-Status: Stage 6.1 completed; continuation rejected, diagnosis required.
+Status: Stage 6.2 completed; continuation rejected, unpaired-action evidence
+audit required.
 
 Constraints:
 
@@ -638,6 +649,24 @@ Stage 6.1 acceptance:
   fatal-no-candidate, and baseline-equivalence mismatch counts were zero.
 - Training, tuning, checkpoint selection, website-dataset or locked-test loads,
   later Arena screens, website Shadow/play, checkpoint promotion, and
+  capability claims were zero.
+
+Stage 6.2 acceptance:
+
+- All five frozen input hashes remained unchanged and the Stage 6.1 conclusion
+  remained 0-20 with continuation false.
+- Exactly 22 unique states and all 934 recorded legal-action entries were
+  scored once. Dropped, repeated-scoring, reconstructed, dimension-invalid,
+  illegal-recorded, and nonfinite-Q counts were zero.
+- Pipeline partitions remained exactly 18 train and four development games
+  with zero overlap or unknown games. Frozen pairwise metrics and both
+  prediction digests reproduced exactly.
+- Overall teacher-over-behavior rate was 21/22, but teacher/behavior/other
+  top-1 counts were 10/0/12. Pass top-1 was 0/22; mean/median teacher rank was
+  8.36/2.0. Twelve states contained 161 unpaired action entries strictly above
+  teacher.
+- Training, tuning, checkpoint selection or modification, website-dataset or
+  locked-test loads, Arena, website Shadow/play, model control, promotion, and
   capability claims were zero.
 
 Acceptance:
