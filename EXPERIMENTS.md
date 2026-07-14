@@ -572,6 +572,37 @@ Decision:
   explicitly preassigned baseline-only train supplement without weakening any
   teacher threshold.
 
+## Website Shadow Supplement v5
+
+Status: completed; baseline-only collection gate passed.
+
+Evidence:
+
+- The cumulative v5 assignment preserves all five prior assignments and adds
+  only `logs_website_shadow_supplement_train_005: train`; no locked-test
+  assignment changed.
+- Exactly 12 verified bot-table games completed: 9 wins and 3 losses across
+  game IDs `14058`, `14059`, `14061`, `14063`, `14064`, `14066`, `14068`,
+  `14070`, `14072`, `14074`, `14077`, and `14081`.
+- Frozen `tempo_baseline` submitted all 345 actions successfully. All decisions
+  retained exhaustive website-oracle candidate sets containing 11,587 total
+  candidates and consistent decision-time information sets.
+- Model-controlled and suggestion-different actions were zero. State encoding,
+  team mapping, hand subset, local legality, oracle agreement,
+  materialization, website-rule, wildcard, information-set, communication,
+  duplicate-submit, and unrecoverable-desync errors were zero.
+- All 12 games used `leaderboard_elo`; the continuous series moved from 2121
+  to 2168, a net change of +47. Final-state scores were not used as Elo.
+- Frozen extension v4 and teacher v5 remained unchanged. No dataset build,
+  teacher rollout or label creation, model training, offline evaluation, or
+  model-controlled website play occurred.
+
+Decision:
+
+- Freeze Supplement v5 as the sole new source session for extension v5.
+- Build the next dataset from the frozen extension v4 manifest and cumulative
+  v5 assignment before screening any of the new decisions.
+
 ## Model A / Shared Self-Play / BC / PPO / DMC
 
 Status: not eligible for website control.
@@ -607,24 +638,22 @@ Decision:
 
 ## Current Next Experiment
 
-Name: Website Shadow Supplement v5.
+Name: Frozen Dataset Extension v5.
 
 Purpose:
 
-- Collect the next explicitly preassigned baseline-only train session for new
-  independent information-set teacher candidates.
-- Preserve frozen extension v4, teacher v5, `tempo_baseline`, and every prior
-  session assignment.
+- Add only the 12 completed Supplement v5 games to a new extension v5 dataset.
+- Preserve frozen extension v4, teacher v5, all old samples and assignments,
+  and the isolated locked-test partition.
 
 Acceptance:
 
-- Exactly 12 completed verified bot-only games are collected in one new session
-  preassigned to train; old assignments and locked-test membership do not
-  change.
-- Frozen `tempo_baseline` submits every action, all submissions succeed, and
-  every decision has exhaustive website-oracle candidates plus a consistent
-  decision-time information set.
-- Elo is recorded only from `leaderboard_elo`; model-controlled actions and all
-  safety/integrity counters remain zero.
-- No dataset rebuild, teacher rollout, teacher-label creation, model training,
-  offline evaluation, or model-controlled website play occurs.
+- The v4 manifest is the sole base and the cumulative v5 assignment is the sole
+  session-split authority.
+- Exactly the 12 new games and 345 decisions enter train; old source hashes,
+  assignments, splits, serialized samples, and locked-test membership remain
+  unchanged.
+- Coverage, information-set consistency, physical isolation, candidate counts,
+  and duplicate-state audits pass for the new v5 outputs.
+- No website play, teacher rollout or label creation, model training, offline
+  evaluation, or model-controlled website play occurs.

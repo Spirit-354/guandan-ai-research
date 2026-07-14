@@ -8,7 +8,7 @@ Branch: `agent/stage5-website-bot-adaptation`
 
 Latest completed stage:
 
-- Extension v4 Teacher Candidate Expansion.
+- Website Shadow Supplement v5.
 
 Primary program:
 
@@ -94,6 +94,9 @@ Current blocker:
   states were screened. The strongest signal from each of six games was
   confirmed; three passed, and none of the three failed games retained another
   permitted positive-screen alternative.
+- Supplement v5 has added 12 explicitly preassigned train-session games, but
+  they are not part of a dataset yet. The next stage must build extension v5
+  before any new teacher screening can occur.
 
 ## Active Stage Plan
 
@@ -441,7 +444,7 @@ Acceptance:
 Goal: collect the next explicitly assigned baseline-only train session for new
 independent information-set teacher candidates.
 
-Status: next stage; not started.
+Status: completed.
 
 Constraints:
 
@@ -453,6 +456,43 @@ Constraints:
   candidates and decision-time-consistent information sets.
 - Record Elo only from `leaderboard_elo`. Do not rebuild a dataset, run teacher
   rollout, train, evaluate, or allow model-controlled website play.
+
+Acceptance:
+
+- `website_dataset_extension_session_splits_v5.json` preserves all five prior
+  assignments exactly and adds only
+  `logs_website_shadow_supplement_train_005: train`; locked-test membership did
+  not change.
+- Exactly 12 verified bot-table games were completed: 9 wins and 3 losses,
+  game IDs `14058`, `14059`, `14061`, `14063`, `14064`, `14066`, `14068`,
+  `14070`, `14072`, `14074`, `14077`, and `14081`.
+- Frozen `tempo_baseline` submitted all 345 decisions successfully. The logs
+  retain 11,587 exhaustive website-oracle candidates and consistent
+  decision-time information sets; model-controlled actions were zero.
+- Elo came only from `leaderboard_elo`, remained continuous between games, and
+  moved from 2121 to 2168 for a net change of +47.
+- All reported communication, encoding, team-mapping, hand-subset, legality,
+  oracle, materialization, website-rule, wildcard, information-set,
+  duplicate-submit, and unrecoverable-desync errors were zero.
+- No dataset build, teacher rollout or label creation, training, offline
+  evaluation, or model-controlled website play occurred.
+
+### Stage 4.15: Frozen Dataset Extension v5
+
+Goal: extend the frozen v4 dataset with only the preassigned Supplement v5
+train session.
+
+Status: next stage; not started.
+
+Constraints:
+
+- Use `website_dataset_split_manifest_extension_v4.json` as the sole frozen
+  manifest base and `website_dataset_extension_session_splits_v5.json` as the
+  cumulative assignment authority.
+- Add only the 12 Supplement v5 games; preserve all old source hashes, session
+  assignments, splits, samples, and locked-test membership.
+- Rebuild new v5 outputs and run coverage/integrity audits without teacher
+  rollout, label creation, training, offline evaluation, or website play.
 
 ### Stage 5: Training Gate
 

@@ -766,3 +766,28 @@ Teacher v5 contains 19 labels from 19 independent games, so the 20-game gate
 remains closed. This stage ran no website games, model training, offline
 evaluation, or model-controlled website play. The next stage is limited to a
 new explicitly preassigned baseline-only 12-game train supplement.
+
+## Website Shadow Supplement v5
+
+Before website play, the cumulative assignment was extended without modifying
+any prior entry: `logs_website_shadow_supplement_train_005` was the only new
+session and was assigned to train. No session was added to locked test.
+
+Frozen `tempo_baseline` then completed exactly 12 verified bot-table games:
+`14058`, `14059`, `14061`, `14063`, `14064`, `14066`, `14068`, `14070`,
+`14072`, `14074`, `14077`, and `14081`. The result was 9 wins and 3 losses.
+All 345 submissions succeeded, all 345 decisions retained exhaustive
+website-oracle candidate sets with 11,587 candidates in total, and every
+decision-time information set was consistent.
+
+Model-controlled actions, suggestion differences, non-bot actions, failed
+games, and all reported encoding, team-mapping, hand-subset, legality, oracle,
+materialization, website-rule, wildcard, information-set, communication,
+duplicate-submit, and unrecoverable-desync errors were zero. Elo came only from
+the continuous `leaderboard_elo` sequence, moving from 2121 to 2168 for +47;
+final-state scores were not treated as Elo.
+
+Extension v4 and teacher v5 remained frozen. No dataset build, teacher rollout
+or label creation, training, offline evaluation, or model-controlled website
+play occurred. The next stage is limited to building extension v5 from the
+frozen v4 manifest and cumulative v5 assignment.
