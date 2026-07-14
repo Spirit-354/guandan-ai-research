@@ -791,3 +791,49 @@ Extension v4 and teacher v5 remained frozen. No dataset build, teacher rollout
 or label creation, training, offline evaluation, or model-controlled website
 play occurred. The next stage is limited to building extension v5 from the
 frozen v4 manifest and cumulative v5 assignment.
+
+## Website Dataset Extension v5
+
+Extension v5 was built using only the frozen v4 manifest and cumulative v5
+session assignment. It accepted all 106 source games and rejected none. The
+bundle contains 64 wins, 42 losses, 2,685 decisions, and 82,417 legal
+candidates.
+
+Independent manifest and sample comparison found zero removed old games, old
+source-hash changes, old session changes, old split changes, or locked-test
+membership changes. All 2,340 old samples are unchanged after excluding only
+the expected v5 split-manifest reference. The 12 new game IDs are exactly
+`14058`, `14059`, `14061`, `14063`, `14064`, `14066`, `14068`, `14070`,
+`14072`, `14074`, `14077`, and `14081`; all entered train and contributed 345
+consistent samples and 11,587 candidates.
+
+The physical train/development partition contains 1,814 consistent decisions
+across 97 games: 1,650 train and 164 development, with 70,320 candidates. It
+contains 306 lead, 1,508 follow, 1,118 level-card, 467 wildcard, 1,371 endgame,
+and 872 bomb-candidate decisions. All levels and first-player seats remain
+covered across the 1900-1999, 2000-2099, and 2100-2199 Elo bands; duplicate
+state count is zero. The isolated locked-test partition remains the same nine
+games and 90 samples.
+
+Coverage, information-set rollout, physical-isolation, and threshold gates all
+pass. This stage ran no website play, teacher rollout or label creation,
+training, offline evaluation, or model-controlled website play. The extension
+v5 manifest content hash is
+`a2931c6078487662d25f115896034311354eade265bec8b72f94ea2d5a7bdaf7`.
+
+The frozen v5 artifact SHA-256 audit is:
+
+- bundle: `c013fe4cc89ef872c246a81ee37f8f6711da85bcf724238c570e703b942f9ee2`;
+- train/development:
+  `e5e220c3c770116ca9d01478e98e610dd6309a0f3d6c17088a8328f62b47174b`;
+- locked-test:
+  `3b2e7f1386fc73449178a01631c866a5045f19f9fa3de267794b53a9b9a8fe6c`;
+- manifest file:
+  `aa417661b7363b13e4a11c34970559339f6a717cb3eb9404c56b1163cc83dc0b`;
+- data card:
+  `9160f0b1889d8a85899fb3f706da6df78f0ab28c4644c5e2049ad5720346d739`.
+
+The next stage may read only the v5 physical train/development partition and
+screen the 345 new train decisions for robust teacher candidates. Teacher v5
+remains the frozen 19-label base; training stays prohibited even if the next
+stage reaches the 20-game gate.

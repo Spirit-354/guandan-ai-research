@@ -8,7 +8,7 @@ Branch: `agent/stage5-website-bot-adaptation`
 
 Latest completed stage:
 
-- Website Shadow Supplement v5.
+- Frozen Dataset Extension v5.
 
 Primary program:
 
@@ -30,8 +30,9 @@ Current website dataset:
 - Extension v1 remains frozen and unchanged at 58 games.
 - Extension v2 remains frozen and unchanged at 70 games.
 - Extension v3 remains frozen and unchanged at 82 games.
-- Current extension v4 contains 94 baseline-only website bot games: 55 wins and
-  39 losses, 2,340 decisions, and 70,830 legal candidates.
+- Extension v4 remains frozen and unchanged at 94 games.
+- Current extension v5 contains 106 baseline-only website bot games: 64 wins
+  and 42 losses, 2,685 decisions, and 82,417 legal candidates.
 - Frozen base manifest hash:
   `83a58a43ea91f5662e2588494d7bad1b3d9d18de51c30216e5be0e589e0437e4`.
 - Extension v1 manifest hash:
@@ -42,28 +43,30 @@ Current website dataset:
   `51fe0244407d67e8267ea11b7146ff214f73823c29db92062189a58d033e5af9`.
 - Extension v4 manifest hash:
   `368771a6a647d34d0d6fcd0490d7cdd1e57991a4c4188e3c127780a5323acbec`.
-- Curated evidence: `website_dataset_split_manifest_extension_v4.json` and
-  `website_dataset_card_extension_v4.json`.
-- All 12 Supplement v4 games, 279 decisions, and 12,959 candidates entered
+- Extension v5 manifest hash:
+  `a2931c6078487662d25f115896034311354eade265bec8b72f94ea2d5a7bdaf7`.
+- Curated evidence: `website_dataset_split_manifest_extension_v5.json` and
+  `website_dataset_card_extension_v5.json`.
+- All 12 Supplement v5 games, 345 decisions, and 11,587 candidates entered
   train; rejected new games or decisions: 0.
 
 Information-set-consistent train/development subset:
 
-- 1,469 decisions across 85 independent games.
-- 1,305 train decisions and 164 development decisions.
-- 58,733 legal candidates.
-- 245 lead decisions and 1,224 follow decisions.
-- 944 level-card states, including 406 wildcard states.
-- 1,100 endgame states and 727 bomb-candidate states.
+- 1,814 decisions across 97 independent games.
+- 1,650 train decisions and 164 development decisions.
+- 70,320 legal candidates.
+- 306 lead decisions and 1,508 follow decisions.
+- 1,118 level-card states, including 467 wildcard states.
+- 1,371 endgame states and 872 bomb-candidate states.
 - All 13 level values and all four first-player seats are represented; the
   website account itself remains in seat 0.
-- Elo bands: 174 decisions in `1900-1999`, 744 in `2000-2099`, and 551 in
+- Elo bands: 174 decisions in `1900-1999`, 744 in `2000-2099`, and 896 in
   `2100-2199`.
 - Duplicate state count: 0.
 
 Locked test:
 
-- The original nine-game locked-test set is exactly unchanged in extension v4.
+- The original nine-game locked-test set is exactly unchanged in extension v5.
 - No new session or game was assigned to locked test.
 - The isolated physical locked-test partition remains 90 consistent decisions.
 - The locked-test partition remains prohibited for training, candidate design,
@@ -91,12 +94,9 @@ Current blocker:
   teacher games exist; the current count is 19 and at least 1 more independent
   strong-label game is required.
 - The eligible extension v4 train pool is exhausted: all 252 rollout-eligible
-  states were screened. The strongest signal from each of six games was
-  confirmed; three passed, and none of the three failed games retained another
-  permitted positive-screen alternative.
-- Supplement v5 has added 12 explicitly preassigned train-session games, but
-  they are not part of a dataset yet. The next stage must build extension v5
-  before any new teacher screening can occur.
+  states were screened. Extension v5 now exposes 345 new consistent train
+  decisions from 12 independent games for the next frozen-gate teacher
+  candidate expansion.
 
 ## Active Stage Plan
 
@@ -482,7 +482,7 @@ Acceptance:
 Goal: extend the frozen v4 dataset with only the preassigned Supplement v5
 train session.
 
-Status: next stage; not started.
+Status: completed.
 
 Constraints:
 
@@ -493,6 +493,42 @@ Constraints:
   assignments, splits, samples, and locked-test membership.
 - Rebuild new v5 outputs and run coverage/integrity audits without teacher
   rollout, label creation, training, offline evaluation, or website play.
+
+Acceptance:
+
+- Extension v5 contains 106 accepted games, 64 wins and 42 losses, 2,685
+  decisions, and 82,417 legal candidates; rejected files or games: 0.
+- All 94 v4 games, source hashes, session assignments, splits, and all 2,340
+  old samples are unchanged except for the expected v5 manifest-reference
+  field. Locked-test membership changes: 0.
+- The 12 Supplement v5 games all entered train and contributed exactly 345
+  information-set-consistent decisions and 11,587 candidates; new development
+  or locked-test games: 0.
+- The physical train/development partition contains 1,814 consistent samples:
+  1,650 train and 164 development, with 70,320 candidates and zero duplicate
+  states. Coverage, information-set, physical-isolation, and threshold gates
+  pass.
+- The physical locked-test partition remains the same nine games and 90
+  samples. Frozen extension v4 and teacher v5 hashes remain unchanged.
+- Website play, teacher rollout or label creation, training, offline
+  evaluation, and model-controlled website play were all zero.
+
+### Stage 4.16: Extension v5 Teacher Candidate Expansion
+
+Goal: screen every eligible new train state from the 12 Supplement v5 games and
+append only robust information-set labels to frozen teacher v5.
+
+Status: next stage; not started.
+
+Constraints:
+
+- Load only `website_danzero_shadow_extension_v5.train_dev.pth`; do not load
+  the complete bundle or locked-test partition.
+- Restrict enumeration and screening to the 12 Supplement v5 game IDs and keep
+  all frozen completeness, variance, advantage, confidence, and dual-
+  continuation robustness gates unchanged.
+- Preserve all 19 teacher v5 labels exactly and write only teacher v6. Do not
+  train or evaluate even if the 20-game teacher gate is reached.
 
 ### Stage 5: Training Gate
 

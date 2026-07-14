@@ -603,6 +603,54 @@ Decision:
 - Build the next dataset from the frozen extension v4 manifest and cumulative
   v5 assignment before screening any of the new decisions.
 
+## Website Dataset Extension v5
+
+Status: frozen; coverage gate passed.
+
+Evidence:
+
+- The extension v4 manifest content hash and all five v4 artifact hashes were
+  verified before construction. Teacher v5 also remained unchanged.
+- Extension v5 contains 106 accepted bot-only games, 64 wins, 42 losses, 2,685
+  decisions, and 82,417 legal candidates; rejected files or games: 0.
+- All 94 extension v4 games, all prior source hashes, 15 old session
+  assignments, old split memberships, and the exact nine-game locked-test set
+  are unchanged.
+- Games `14058`, `14059`, `14061`, `14063`, `14064`, `14066`, `14068`,
+  `14070`, `14072`, `14074`, `14077`, and `14081` all entered train. New
+  development and locked-test games: 0.
+- All 2,340 old samples are unchanged after excluding the expected new split
+  manifest hash field. All 345 new samples are train, bot-verified,
+  `leaderboard_elo`, physically valid, and information-set consistent, with
+  11,587 legal candidates.
+- The physical train/development partition contains 1,814 decisions across 97
+  games: 1,650 train and 164 development, with 70,320 candidates.
+- Physical coverage includes 306 lead, 1,508 follow, 1,118 level-card, 467
+  wildcard, 1,371 endgame, and 872 bomb-candidate decisions. All 13 levels and
+  all four first-player seats remain represented across three Elo bands.
+- Duplicate state count is zero. Coverage, information-set rollout,
+  physical-isolation, and threshold gates pass; capability evidence remains
+  ineligible.
+- The physical locked-test partition remains exactly nine games and 90
+  consistent samples, with zero training samples.
+- Extension v5 manifest content hash:
+  `a2931c6078487662d25f115896034311354eade265bec8b72f94ea2d5a7bdaf7`.
+- Extension v5 artifact SHA-256 values:
+  - bundle: `c013fe4cc89ef872c246a81ee37f8f6711da85bcf724238c570e703b942f9ee2`;
+  - train/development: `e5e220c3c770116ca9d01478e98e610dd6309a0f3d6c17088a8328f62b47174b`;
+  - locked-test: `3b2e7f1386fc73449178a01631c866a5045f19f9fa3de267794b53a9b9a8fe6c`;
+  - manifest file: `aa417661b7363b13e4a11c34970559339f6a717cb3eb9404c56b1163cc83dc0b`;
+  - data card: `9160f0b1889d8a85899fb3f706da6df78f0ab28c4644c5e2049ad5720346d739`.
+
+Decision:
+
+- Freeze extension v5 and permit the next stage to load only its physical
+  train/development partition for new-game teacher screening.
+- Keep the complete bundle and locked-test partition out of screening,
+  threshold selection, and label construction.
+- Preserve teacher v5 as the frozen 19-label base and do not train during the
+  next teacher expansion even if the 20-game gate is reached.
+
 ## Model A / Shared Self-Play / BC / PPO / DMC
 
 Status: not eligible for website control.
@@ -638,22 +686,23 @@ Decision:
 
 ## Current Next Experiment
 
-Name: Frozen Dataset Extension v5.
+Name: Extension v5 Teacher Candidate Expansion.
 
 Purpose:
 
-- Add only the 12 completed Supplement v5 games to a new extension v5 dataset.
-- Preserve frozen extension v4, teacher v5, all old samples and assignments,
-  and the isolated locked-test partition.
+- Screen every eligible decision from the 12 new train games using only the
+  frozen physical extension v5 train/development partition.
+- Preserve teacher v5 and append only labels that pass every frozen
+  information-set and dual-continuation gate.
 
 Acceptance:
 
-- The v4 manifest is the sole base and the cumulative v5 assignment is the sole
-  session-split authority.
-- Exactly the 12 new games and 345 decisions enter train; old source hashes,
-  assignments, splits, serialized samples, and locked-test membership remain
-  unchanged.
-- Coverage, information-set consistency, physical isolation, candidate counts,
-  and duplicate-state audits pass for the new v5 outputs.
-- No website play, teacher rollout or label creation, model training, offline
-  evaluation, or model-controlled website play occurs.
+- Complete bundle and locked-test loads are zero; only the 345 new train
+  decisions are enumerated and every eligible state is screened.
+- Greedy-only screening creates no labels. Every accepted label passes the
+  frozen 16-rollout completeness, variance, advantage, positive-confidence,
+  and greedy/frozen-tempo robustness gates.
+- All 19 teacher v5 samples remain unchanged, and source state, behavior
+  action, legal action, physical remap, and 513/54 dimensions pass.
+- No website play, model training, offline capability evaluation, or
+  model-controlled website play occurs, even if the 20-game gate is reached.
