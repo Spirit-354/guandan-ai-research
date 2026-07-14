@@ -657,3 +657,56 @@ This stage did not rebuild a dataset, run teacher rollout, create teacher
 labels, train a model, run offline evaluation, or allow model-controlled
 website play. The next stage is limited to constructing extension v4 artifacts
 from frozen extension v3 plus this preassigned train session.
+
+## Frozen Dataset Extension v4
+
+The extension v3 manifest content hash and all five v3 artifact hashes were
+verified before construction. Its 82 game IDs, split lists, 14 session
+assignments, 82 source paths and hashes, and nine-game locked-test set were
+recorded. None of the five v4 outputs existed before the build. Frozen teacher
+v4 also retained its expected SHA-256.
+
+The builder used extension v3 as its frozen manifest base and added only
+`logs_website_shadow_supplement_train_004` through the cumulative v4 assignment
+file. It accepted all 94 source games and rejected none. The new bundle contains
+55 wins, 39 losses, 2,340 decisions, and 70,830 legal candidates. Every game is
+bot verified, every metric source is `leaderboard_elo`, and the
+model-controlled action count is zero.
+
+Independent manifest comparison found zero removed old games, source-hash
+changes, old session changes, old split changes, or locked-test membership
+changes. The 12 added game IDs are exactly 14035 through 14046 and all entered
+train; none entered development or locked test. Comparing serialized samples
+found all 2,061 old samples unchanged except for the expected v4 split manifest
+hash field. All 279 new samples are consistent train samples.
+
+The physical train/development partition contains 1,469 consistent decisions
+across 85 games: 1,305 train and 164 development, with 58,733 legal candidates.
+It includes 245 lead, 1,224 follow, 944 level-card, 406 wildcard, 1,100 endgame,
+and 727 bomb-candidate decisions. All 13 levels and all four first-player seats
+are covered across the 1900-1999, 2000-2099, and 2100-2199 Elo bands, and
+duplicate state count remains zero. The isolated locked-test partition remains
+the same nine games and 90 consistent decisions.
+
+Coverage, information-set, physical-isolation, and threshold gates all pass.
+Capability evidence remains ineligible. This stage ran no website play, teacher
+rollout, teacher-label creation, model training, offline evaluation, or
+model-controlled website play. The extension v4 manifest content hash is
+`368771a6a647d34d0d6fcd0490d7cdd1e57991a4c4188e3c127780a5323acbec`.
+
+The frozen v4 artifact SHA-256 audit is:
+
+- bundle: `c8c05785defe37e589b99b3071b58c43d20ed1f1cf87fdb3c031a196151dcf87`;
+- train/development partition:
+  `ad4da83e2af29c580a1b1d8fe70a06f88fc645525ab025945a7be48fd349fde1`;
+- locked-test partition:
+  `cec1aba85cfbc388345d5ac17fd1ec48ec02642fb5743bed76513f872b7a512d`;
+- manifest file:
+  `30d8103a156b84b3f1b26a78512b29757a3a603e925e15522752266f426bda04`;
+- data card:
+  `fdfbe98a17e27e6c6cb20f5d85e6d17c6e775ee758b999aba5294b5a3f3fedee`.
+
+The next stage may read only the v4 physical train/development partition and
+screen the 279 new train decisions for robust teacher candidates. Teacher v4
+remains the frozen 16-label base, and training remains prohibited even if the
+next stage reaches the 20-game gate.

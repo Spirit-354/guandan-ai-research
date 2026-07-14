@@ -473,6 +473,52 @@ Decision:
 - Do not screen these states or train from them before the v4 physical
   partitions, manifest, and coverage gates pass.
 
+## Website Dataset Extension v4
+
+Status: frozen; coverage gate passed.
+
+Evidence:
+
+- The extension v3 manifest content hash was verified as
+  `51fe0244407d67e8267ea11b7146ff214f73823c29db92062189a58d033e5af9`
+  before construction, and all five v3 artifact hashes remained unchanged.
+- Extension v4 contains 94 accepted bot-only games, 55 wins, 39 losses, 2,340
+  decisions, and 70,830 legal candidates; rejected files or games: 0.
+- All 82 extension v3 games, their split assignments, all 14 old sessions, and
+  every old source-file hash are unchanged. The nine-game locked-test set is
+  exactly identical.
+- New games 14035 through 14046 all entered train. New development and
+  locked-test games: 0.
+- All 2,061 old samples are unchanged after excluding the expected new split
+  manifest hash field. All 279 new samples are train, bot-verified,
+  `leaderboard_elo`, and information-set consistent.
+- The physical train/development partition contains 1,469 decisions across 85
+  games: 1,305 train and 164 development, with 58,733 legal candidates.
+- Physical coverage includes 245 lead, 1,224 follow, 944 level-card, 406
+  wildcard, 1,100 endgame, and 727 bomb-candidate decisions; all levels and
+  first-player seats are represented across three Elo bands.
+- Duplicate state count is zero. Coverage, information-set, physical-isolation,
+  and threshold gates pass; capability evidence remains ineligible.
+- The isolated locked-test partition contains the same nine games and 90
+  consistent decisions, with zero training samples.
+- Extension v4 manifest content hash:
+  `368771a6a647d34d0d6fcd0490d7cdd1e57991a4c4188e3c127780a5323acbec`.
+- Extension v4 artifact SHA-256 values:
+  - bundle: `c8c05785defe37e589b99b3071b58c43d20ed1f1cf87fdb3c031a196151dcf87`;
+  - train/development: `ad4da83e2af29c580a1b1d8fe70a06f88fc645525ab025945a7be48fd349fde1`;
+  - locked-test: `cec1aba85cfbc388345d5ac17fd1ec48ec02642fb5743bed76513f872b7a512d`;
+  - manifest file: `30d8103a156b84b3f1b26a78512b29757a3a603e925e15522752266f426bda04`;
+  - data card: `fdfbe98a17e27e6c6cb20f5d85e6d17c6e775ee758b999aba5294b5a3f3fedee`.
+
+Decision:
+
+- Freeze extension v4 and use only its physical train/development partition in
+  the next teacher-candidate stage.
+- Keep the complete bundle and isolated locked-test partition out of screening,
+  threshold selection, and label construction.
+- Preserve teacher v4 as the frozen 16-label base; do not train during the next
+  teacher expansion.
+
 ## Model A / Shared Self-Play / BC / PPO / DMC
 
 Status: not eligible for website control.
@@ -508,22 +554,25 @@ Decision:
 
 ## Current Next Experiment
 
-Name: Frozen Website Dataset Extension v4.
+Name: Extension v4 Teacher Candidate Expansion.
 
 Purpose:
 
-- Add only the completed, preassigned Supplement v4 train session to frozen
-  extension v3 and write separate v4 artifacts.
-- Preserve every old game, source hash, assignment, split, and locked-test
-  membership exactly.
+- Screen every eligible state from the 279 new train decisions using only the
+  frozen extension v4 physical train/development partition.
+- Confirm only robust positive signals and append accepted labels to frozen
+  teacher v4 without weakening any gate.
 
 Acceptance:
 
-- All 12 new games and 279 decisions enter train; new development and
-  locked-test games remain zero.
-- All 82 extension v3 games, source hashes, assignments, splits, and the
-  nine-game locked-test set remain unchanged.
-- Coverage, physical isolation, information-set, duplicate-state, bot-table,
-  Elo-source, and threshold gates pass.
-- Teacher v4 remains frozen; website play, teacher rollout, training, offline
-  evaluation, and model-controlled website play remain zero.
+- All 279 new decisions are enumerated, all eligible states are screened, and
+  every ineligible state has a reported frozen reason.
+- Complete-bundle and locked-test loads remain zero; hidden/future information
+  use remains zero.
+- Greedy-only screening emits zero strong labels; every accepted label passes
+  the frozen 16-rollout completeness, variance, advantage, confidence, and
+  greedy-plus-frozen-tempo robustness gates.
+- All 16 teacher v4 samples are preserved exactly; source-state, behavior-action,
+  legal-action, dimension, and physical-card remap checks pass.
+- Website play, model training, offline evaluation, and model-controlled website
+  play remain zero even if the 20-game teacher gate is reached.
