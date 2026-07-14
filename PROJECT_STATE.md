@@ -8,7 +8,7 @@ Branch: `agent/stage5-website-bot-adaptation`
 
 Latest completed stage:
 
-- Frozen Website Dataset Extension v4.
+- Extension v4 Teacher Candidate Expansion.
 
 Primary program:
 
@@ -73,26 +73,27 @@ Teacher dataset:
 
 - Frozen base: `website_information_set_teacher_dataset_v3.pth`, unchanged at
   13 labels from 13 independent games.
-- Current dataset: `website_information_set_teacher_dataset_v4.pth`.
-- 16 accepted high-confidence teacher labels from 16 independent games: 13
-  frozen labels plus 3 extension v3 labels.
-- New accepted cases: `14022:16`, `14025:20`, and `14031:4`.
+- Frozen base: `website_information_set_teacher_dataset_v4.pth`, unchanged at
+  16 labels from 16 independent games.
+- Current dataset: `website_information_set_teacher_dataset_v5.pth`.
+- 19 accepted high-confidence teacher labels from 19 independent games: 16
+  frozen labels plus 3 extension v4 labels.
+- New accepted cases: `14038:12`, `14044:9`, and `14045:5`.
 - Representation: 513 state dimensions, 54 website action dimensions.
-- Teacher v4 SHA-256:
-  `fa193705777987d0bad91f9a45f5aa956a02e22ffa077a04bc2c81892aeb5f99`.
+- Teacher v5 SHA-256:
+  `155fc348e939490bc036b2b5e3e0993be732b259250cac3d0244e888910fb9da`.
 - Training gate is closed until at least 20 independent high-confidence teacher
   games exist.
 
 Current blocker:
 
 - Training remains blocked until at least 20 independent high-confidence
-  teacher games exist; the current count is 16 and at least 4 more independent
-  strong-label games are required.
-- The eligible extension v3 train pool is exhausted: all 247 rollout-eligible
-  states were screened and every permitted positive-lower-bound alternative
-  for a failed game was confirmed or rejected by the frozen strong-label gates.
-- Extension v4 now provides 12 new baseline-only train games and 279 new
-  consistent decisions for a separate teacher-candidate stage.
+  teacher games exist; the current count is 19 and at least 1 more independent
+  strong-label game is required.
+- The eligible extension v4 train pool is exhausted: all 252 rollout-eligible
+  states were screened. The strongest signal from each of six games was
+  confirmed; three passed, and none of the three failed games retained another
+  permitted positive-screen alternative.
 
 ## Active Stage Plan
 
@@ -403,7 +404,7 @@ Acceptance:
 Goal: screen every eligible new train state from the 12 Supplement v4 games and
 append only robust information-set labels to frozen teacher v4.
 
-Status: next stage; not started.
+Status: completed.
 
 Constraints:
 
@@ -415,6 +416,43 @@ Constraints:
   produce strong labels.
 - Preserve all 16 teacher v4 labels and verify 54-dimensional physical-action
   remapping. Do not train, even if the 20-game gate is reached.
+
+Acceptance:
+
+- Only the v4 physical train/development partition was loaded; complete-bundle
+  and locked-test loads were zero.
+- All 279 new train decisions were enumerated: 252 eligible states completed
+  greedy-only screening and 27 were ineligible because a public hand count was
+  nonpositive.
+- Greedy-only screening completed 6,256/6,256 rollouts across 782 candidates
+  and accepted zero strong labels. Dual-continuation confirmation completed
+  384/384 rollouts across six cases and 24 candidates.
+- `14038:12`, `14044:9`, and `14045:5` passed every frozen strong-label gate;
+  no failed game retained a permitted positive-screen alternative.
+- All 16 teacher v4 samples were preserved exactly after deserialization;
+  state, behavior-action, legality, 513/54 dimensions, and physical-card remap
+  errors were zero.
+- Teacher v5 contains 19 labels from 19 games. The 20-game gate remains closed,
+  and website play, model training, offline evaluation, and model-controlled
+  website actions were all zero in this stage.
+
+### Stage 4.14: Website Shadow Supplement v5
+
+Goal: collect the next explicitly assigned baseline-only train session for new
+independent information-set teacher candidates.
+
+Status: next stage; not started.
+
+Constraints:
+
+- Preserve all cumulative session assignments and preassign only the unused v5
+  supplement session to train before collection.
+- Only frozen `tempo_baseline` may submit website actions; stop non-bot tables
+  before the first action.
+- Collect exactly 12 completed verified bot-table games with exhaustive oracle
+  candidates and decision-time-consistent information sets.
+- Record Elo only from `leaderboard_elo`. Do not rebuild a dataset, run teacher
+  rollout, train, evaluate, or allow model-controlled website play.
 
 ### Stage 5: Training Gate
 
