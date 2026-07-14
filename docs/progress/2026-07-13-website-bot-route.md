@@ -1055,3 +1055,43 @@ Any next counterfactual stage must use only the nine pipeline-train manifest
 cases for objective-design evidence. The three pipeline-development cases must
 remain held out, and no training, Arena, or website activity may occur in that
 same stage.
+
+## Stage 6.4 Frozen Pipeline-Train Unpaired Counterfactual Confirmation
+
+The confirmation retained all seven primary frozen hashes and the physical
+train/development source dataset hash. It reproduced exactly the nine
+pipeline-train manifest cases and evaluated only the frozen teacher and model
+top1 actions. The three pipeline-development manifest cases remained held out
+with zero executions and zero rollouts.
+
+Each action received 16 complete rollouts: eight greedy and eight frozen-tempo
+continuations over eight determinizations shared across both actions and both
+profiles. All 288 requested rollouts completed, split 144/144 by continuation
+profile. Timeouts, candidate failures, hidden/future information use,
+locked-test loads, and integrity failures were zero.
+
+Six teacher-over-top1 comparisons passed the unchanged strong-teacher gates:
+`13879:6`, `13861:10`, `13957:14`, `13960:15`, `13959:7`, and `14022:16`.
+Their teacher-minus-top1 advantages ranged from 0.50 to 1.25, all 95% lower
+bounds were positive, teacher return variance was at most 0.50, and both
+continuation-profile advantages were at least 0.15.
+
+Three comparisons remained inconclusive. `14077:10` and `13882:10` had
+non-positive confidence lower bounds and failed frozen-tempo robustness;
+`14025:20` had zero advantage. No case passed the symmetric top1-over-teacher
+gates. These three train comparisons and all three pipeline-development
+unpaired comparisons remain ineligible as corrective labels.
+
+An independent audit reproduced all input and action hashes, determinization
+seeds, paired returns, means, variances, lower bounds, confidence values,
+per-profile advantages, classifications, and aggregate counts. The curated
+artifact is `website_teacher_preference_unpaired_train_confirmation_v1.json`,
+SHA-256
+`8e17377b5a1523d9f0a47af7218d687e062a3ade671c57f387eb4c1a0888cfae`.
+
+No training, tuning, checkpoint selection or modification, Arena, website
+Shadow/play, model control, promotion, or capability claim occurred. The
+checkpoint remains rejected from the 100/200-game screen. The next stage may
+only construct a frozen corrective preference dataset by preserving all 22
+original teacher-versus-behavior pairs and adding the six supported train-only
+pairs; it cannot run rollout or training.

@@ -42,7 +42,7 @@ Decision:
 ## Website Information-Set Teacher Labels
 
 Status: pipeline smoke trained; Stage 6.1 continuation rejected at 0-20 and
-Stage 6.2 static failure diagnosis completed.
+Stage 6.4 confirmed six train-only teacher-versus-top1 constraints.
 
 Accepted strong labels:
 
@@ -892,6 +892,56 @@ Decision:
 - Keep the checkpoint rejected and unpromoted. Do not run Arena or access the
   website in the next confirmation stage.
 
+## Stage 6.4 Frozen Pipeline-Train Unpaired Counterfactual Confirmation
+
+Status: completed; six train-only corrective comparisons passed the frozen
+strong-teacher gates, without training or capability claims.
+
+Evidence:
+
+- All seven primary frozen hashes and the physical train/development source
+  dataset hash remained unchanged. The source partition contained no
+  locked-test samples, and every evaluated source sample had `split=train`.
+- Exactly the nine Stage 6.3 pipeline-train manifest states reproduced by
+  game/turn key, original action order, teacher/top1 index, 54D action hash,
+  and physical-card identity. Missing, duplicate, extra, reconstructed,
+  substituted, and ambiguous mappings were zero.
+- Each case evaluated exactly teacher and model top1 with 16 rollouts per
+  action: eight greedy and eight frozen-tempo continuations over eight shared
+  information-set determinizations. Total completion was 288/288, with 144
+  rollouts per profile.
+- Six comparisons passed every unchanged gate:
+  `13879:6` (advantage 0.875, lower bound 0.3729),
+  `13861:10` (0.50, 0.0617), `13957:14` (0.625, 0.1559),
+  `13960:15` (1.00, 0.4939), `13959:7` (1.00, 0.3802), and
+  `14022:16` (1.25, 0.76). Both continuation-profile advantages were at
+  least 0.15 in every accepted comparison.
+- Three comparisons were inconclusive: `14077:10` failed the positive lower
+  bound and frozen-tempo advantage gates; `13882:10` failed the positive lower
+  bound and frozen-tempo advantage gates; `14025:20` had zero advantage and
+  failed advantage, lower-bound, and both-profile robustness. No comparison
+  supported top1 over teacher under the symmetric frozen gates.
+- Pipeline-development targets `13992:16`, `14074:9`, and `13871:9` had zero
+  case executions and zero rollouts. Locked-test loads, timeouts, candidate
+  failures, hidden/future information use, and integrity failures were zero.
+- Independent audit recomputed every input/action hash, determinization seed,
+  paired return, mean, variance, 95% lower bound, confidence, per-profile
+  advantage, direction, and aggregate exactly.
+- Curated output:
+  `website_teacher_preference_unpaired_train_confirmation_v1.json`, SHA-256
+  `8e17377b5a1523d9f0a47af7218d687e062a3ade671c57f387eb4c1a0888cfae`.
+
+Decision:
+
+- Permit only the six supported pipeline-train comparisons to become new
+  corrective preference pairs. Exclude all three inconclusive train cases and
+  all pipeline-development unpaired cases.
+- Preserve the original 22 teacher-versus-behavior pairs and frozen 18/4 game
+  split. Construct and audit a state-balanced corrective dataset before any
+  training.
+- Keep the checkpoint rejected and unpromoted. Do not run another rollout,
+  train, run Arena, or access the website in the next dataset stage.
+
 ## Model A / Shared Self-Play / BC / PPO / DMC
 
 Status: not eligible for website control.
@@ -927,23 +977,22 @@ Decision:
 
 ## Current Next Experiment
 
-Name: Stage 6.4 Frozen Pipeline-Train Unpaired Counterfactual Confirmation.
+Name: Stage 6.5 Frozen Corrective Preference Dataset Construction.
 
 Purpose:
 
-- Execute new counterfactual comparisons only for the nine pipeline-train
-  manifest cases, comparing the frozen teacher action directly with the frozen
-  Stage 6.2 model top-1 action under shared determinizations and the established
-  greedy/tempo continuation ensemble.
-- Keep all three pipeline-development manifest cases read-only and exclude
-  them from objective, threshold, candidate-rule, or checkpoint design.
+- Preserve the original 22 teacher-versus-behavior pairs and append only the
+  six Stage 6.4 pipeline-train teacher-versus-top1 comparisons that passed all
+  frozen gates.
+- Freeze a state-balanced pairwise objective manifest without running training
+  or selecting a checkpoint.
 
 Acceptance:
 
-- Exactly nine pipeline-train cases complete direct teacher-versus-top1 paired
-  comparisons with 16 rollouts per action, evenly split across greedy and
-  frozen-tempo continuations with common determinizations.
-- The three pipeline-development cases remain unexecuted and all frozen inputs
-  remain unchanged. No locked test is loaded.
-- No training, tuning, checkpoint selection or modification, Arena, website
-  access, promotion, or capability claim occurs.
+- The constructed dataset contains 24 pipeline-train pairs across 18 games and
+  four unchanged pipeline-development pairs across four games: 28 total.
+- All 22 original pairs remain exact; only six supported corrective pairs are
+  added. Three inconclusive train pairs and all development unpaired pairs are
+  excluded.
+- No rollout, training, tuning, checkpoint selection or modification, Arena,
+  locked-test load, website access, promotion, or capability claim occurs.

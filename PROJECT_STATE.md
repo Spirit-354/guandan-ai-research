@@ -8,7 +8,7 @@ Branch: `agent/stage5-website-bot-adaptation`
 
 Latest completed stage:
 
-- Stage 6.3 Frozen Unpaired-Action Evidence Audit.
+- Stage 6.4 Frozen Pipeline-Train Unpaired Counterfactual Confirmation.
 
 Primary program:
 
@@ -109,6 +109,12 @@ Teacher dataset:
   `da08516c39986a01349533e160ba0e97a566d7fad6e42b0b7b3ce41df835b0b2`.
   It scored all 934 recorded actions from all 22 frozen teacher states and
   exactly reproduced both frozen pairwise metrics and prediction digests.
+- The Stage 6.4 pipeline-train counterfactual confirmation is
+  `website_teacher_preference_unpaired_train_confirmation_v1.json`, SHA-256
+  `8e17377b5a1523d9f0a47af7218d687e062a3ade671c57f387eb4c1a0888cfae`.
+  Six of nine train-only teacher-versus-top1 comparisons passed every frozen
+  strong-teacher gate; three were inconclusive and none supported top1 over
+  teacher. All three pipeline-development targets remained unexecuted.
 
 Current blocker:
 
@@ -120,9 +126,9 @@ Current blocker:
   strictly outranked teacher in 12/22 states, across 161 action entries. This
   is an objective-coverage pattern, not a causal finding.
 - Pass was top-1 in 0/22 teacher states, so the 66.3% Arena pass rate is not
-  explained by this frozen diagnostic. Before defining a corrective objective,
-  Stage 6.3 must audit whether the 12 unpaired top actions have prior frozen
-  counterfactual evidence; it must not run new rollouts or train.
+  explained by this frozen diagnostic. Stage 6.4 now supplies six qualifying
+  train-only teacher-versus-top1 constraints, but the rejected checkpoint has
+  not been retrained and no improved offline performance has been shown.
 - The eligible extension v5 pool is exhausted: all 277 rollout-eligible states
   were screened, all permitted positive-screen game signals were confirmed or
   exhausted, and three labels passed.
@@ -621,8 +627,8 @@ Acceptance:
 
 Goal: compare candidates against frozen `tempo_baseline`.
 
-Status: Stage 6.3 completed; continuation rejected, existing evidence does not
-support a teacher-versus-all objective.
+Status: Stage 6.4 completed; continuation rejected, six train-only corrective
+constraints confirmed but not yet converted into a frozen dataset or model.
 
 Constraints:
 
@@ -690,6 +696,30 @@ Stage 6.3 acceptance:
 - Curated audit evidence:
   `website_teacher_preference_unpaired_evidence_audit_v1.json`, SHA-256
   `09f52df90d095ab6b3777a046c50901f96fbeb15e6ef5f613343a13be1249383`.
+
+Stage 6.4 acceptance:
+
+- All seven frozen primary hashes and the physical train/development source
+  hash remained unchanged. Only nine pipeline-train manifest cases ran; the
+  three pipeline-development cases remained held out with zero executions and
+  rollouts.
+- Exactly 288/288 rollouts completed: nine cases, two exact actions per case,
+  and 16 rollouts per action. Greedy and frozen-tempo continuation counts were
+  144 each, using eight shared determinizations per case across both actions
+  and both profiles.
+- Six teacher-over-top1 comparisons passed the unchanged advantage, variance,
+  positive-95%-lower-bound, and dual-continuation gates. Three were
+  inconclusive; top1-over-teacher supported comparisons were zero.
+- Exact target, action-order, 54D action, physical-card, return, variance,
+  confidence, profile, and aggregate arithmetic independently reproduced.
+  Timeouts, candidate failures, hidden/future information use, integrity
+  failures, and locked-test loads were zero.
+- Training, tuning, checkpoint selection or modification, Arena, website
+  Shadow/play, model control, promotion, and capability claims were zero. The
+  existing checkpoint remains rejected from the 100/200-game screen.
+- Curated confirmation evidence:
+  `website_teacher_preference_unpaired_train_confirmation_v1.json`, SHA-256
+  `8e17377b5a1523d9f0a47af7218d687e062a3ade671c57f387eb4c1a0888cfae`.
 
 Acceptance:
 
