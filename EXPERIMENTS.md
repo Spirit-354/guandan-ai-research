@@ -846,6 +846,52 @@ Decision:
 - Keep the checkpoint rejected and unpromoted. Do not run another Arena,
   training job, website Shadow, or website game in the next audit stage.
 
+## Stage 6.3 Frozen Unpaired-Action Evidence Audit
+
+Status: completed; existing frozen evidence does not support a
+teacher-versus-all objective.
+
+Evidence:
+
+- The Stage 6.2 diagnosis, teacher v6, frozen 18/4 split, training report,
+  rejected checkpoint, and Stage 6.1 0-20 Arena evidence all retained their
+  frozen hashes. The audit read only the ten rollout-evidence files referenced
+  directly by the 12 target teacher samples and recorded every file hash.
+- All 12 first-maximum unpaired targets reproduced in original action order:
+  nine pipeline-train and three pipeline-development states. Missing,
+  duplicate, extra, reconstructed, and ambiguous state/action mappings were
+  zero.
+- Pipeline train contained two dual-continuation-confirmed actions and seven
+  actions present without a qualifying comparison. Pipeline development
+  contained two and one respectively; overall counts were 4/12 and 8/12.
+  Greedy-only, absent, and ambiguous classifications were all zero.
+- The four dual-continuation cases had complete 16-rollout results for both the
+  teacher and model top-1 under the frozen greedy/tempo ensemble, but the
+  source labels recorded confidence for teacher versus behavior, not teacher
+  versus model top-1. None contained top1-specific lower-bound, confidence, and
+  continuation-profile advantage fields.
+- The other eight top-1 actions were exactly present in the frozen 54D legal
+  action list and physical-card metadata but were not evaluated as candidates
+  in their source rollout case.
+- Teacher-versus-top1 ordering is therefore supported for 0/12 states. A
+  12-case future counterfactual manifest records eight missing-candidate and
+  four missing-paired-confidence reasons; it was not executed.
+- Independent recomputation matched all state/action hashes, ten source-file
+  hashes, mappings, classifications, 9/3 partition counts, aggregates, and
+  zero forbidden operations.
+- Curated output:
+  `website_teacher_preference_unpaired_evidence_audit_v1.json`, SHA-256
+  `09f52df90d095ab6b3777a046c50901f96fbeb15e6ef5f613343a13be1249383`.
+
+Decision:
+
+- Do not define or train a teacher-versus-all objective from this evidence.
+- If counterfactual confirmation proceeds, restrict objective-design evidence
+  to the nine pipeline-train cases. Keep the three pipeline-development cases
+  held out from candidate-rule, threshold, and objective design.
+- Keep the checkpoint rejected and unpromoted. Do not run Arena or access the
+  website in the next confirmation stage.
+
 ## Model A / Shared Self-Play / BC / PPO / DMC
 
 Status: not eligible for website control.
@@ -881,21 +927,23 @@ Decision:
 
 ## Current Next Experiment
 
-Name: Stage 6.3 Frozen Unpaired-Action Evidence Audit.
+Name: Stage 6.4 Frozen Pipeline-Train Unpaired Counterfactual Confirmation.
 
 Purpose:
 
-- For the 12 states where an unpaired action outranked teacher, inspect only
-  already-frozen source rollout evidence and determine whether each model
-  top-1 action was previously screened or dual-continuation confirmed.
-- Separate supported comparisons from greedy-only, absent, or ambiguous
-  evidence before any corrective objective is proposed.
+- Execute new counterfactual comparisons only for the nine pipeline-train
+  manifest cases, comparing the frozen teacher action directly with the frozen
+  Stage 6.2 model top-1 action under shared determinizations and the established
+  greedy/tempo continuation ensemble.
+- Keep all three pipeline-development manifest cases read-only and exclude
+  them from objective, threshold, candidate-rule, or checkpoint design.
 
 Acceptance:
 
-- All 12 target state/action mappings are exact and every referenced source
-  evidence file is hashed and audited without new rollout.
-- No unpaired action is treated as inferior without qualifying frozen
-  counterfactual evidence; missing coverage becomes a future manifest only.
-- No dataset, locked test, new rollout, Arena, training, tuning, website
+- Exactly nine pipeline-train cases complete direct teacher-versus-top1 paired
+  comparisons with 16 rollouts per action, evenly split across greedy and
+  frozen-tempo continuations with common determinizations.
+- The three pipeline-development cases remain unexecuted and all frozen inputs
+  remain unchanged. No locked test is loaded.
+- No training, tuning, checkpoint selection or modification, Arena, website
   access, promotion, or capability claim occurs.

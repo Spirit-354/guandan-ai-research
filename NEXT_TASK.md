@@ -2,17 +2,24 @@
 
 ## Single Next Stage
 
-Run Stage 6.3: a frozen unpaired-action evidence audit for the 12 teacher
-states where Stage 6.2 found an unpaired recorded action strictly above the
-teacher.
+Run Stage 6.4: frozen pipeline-train unpaired counterfactual confirmation.
 
-Do not run a new rollout, train, tune, select or modify a checkpoint, run Arena,
-load a website dataset or locked test, access the website, or begin any later
-offline or website stage. The rejected checkpoint remains ineligible for the
-100/200-game screen regardless of the audit result.
+Execute the Stage 6.3 future manifest only for its nine `pipeline_train`
+cases. Compare each frozen teacher action directly with the frozen Stage 6.2
+model top-1 action. The three `pipeline_development` cases are held out and
+must not be executed, interpreted for objective design, or used to tune any
+rule or threshold.
+
+Do not train, tune, select or modify a checkpoint, run Arena, load locked test,
+access the website, begin Shadow or model-controlled play, promote a model, or
+claim capability. The rejected checkpoint remains ineligible for the
+100/200-game screen regardless of the confirmation result.
 
 ## Frozen Inputs
 
+- Stage 6.3 audit:
+  `website_teacher_preference_unpaired_evidence_audit_v1.json`, SHA-256
+  `09f52df90d095ab6b3777a046c50901f96fbeb15e6ef5f613343a13be1249383`.
 - Stage 6.2 diagnosis:
   `website_teacher_preference_failure_diagnosis_v1.json`, SHA-256
   `da08516c39986a01349533e160ba0e97a566d7fad6e42b0b7b3ce41df835b0b2`.
@@ -32,63 +39,66 @@ offline or website stage. The rejected checkpoint remains ineligible for the
 - Stage 6.1 Arena evidence, unchanged:
   `website_teacher_preference_arena_smoke20_v1.json`, SHA-256
   `aa45da9de202194102fe8d11e612ad3eb4b51177fd910b9a7948836afd2a1fe6`.
-- The only additional readable artifacts are existing frozen rollout-evidence
-  files referenced directly by the 12 target teacher samples. Hash every such
-  file before interpreting it.
-- The audit output must be unused before execution and named
-  `website_teacher_preference_unpaired_evidence_audit_v1.json`.
+- Use only the existing train/development website source data required to
+  replay the nine pipeline-train state keys. Do not load or execute any
+  pipeline-development case or locked-test data.
+- The output must be unused before execution and named
+  `website_teacher_preference_unpaired_train_confirmation_v1.json`.
 
-## Audit Contract
+## Confirmation Contract
 
-- Reproduce the 12 target state keys, teacher/action indices, Q ordering, and
-  action-order hashes from Stage 6.2 before reading source rollout evidence.
-- For each target state, map the first-maximum unpaired action exactly to its
-  recorded 54-dimensional action and physical-card identity. Do not reconstruct,
-  canonicalize, add, or drop an action.
-- Read only the existing frozen rollout-evidence path recorded by that teacher
-  sample. Record its path, SHA-256, schema, completeness, hidden-card sampling
-  method, continuation profiles, rollout counts, candidate identity, mean,
-  variance, advantage, confidence, and integrity fields when present.
-- Classify the model top-1 action as exactly one of: dual-continuation confirmed,
-  greedy-only screened, present without qualifying comparison, absent from
-  prior evidence, or ambiguous mapping. Do not infer an ordering from missing
-  fields or a different candidate.
-- Report separately by pipeline train/development and overall. Include exact
-  counts for each evidence class and a future counterfactual-manifest section
-  for absent or insufficient cases, but do not execute that manifest.
-- This stage may decide whether a teacher-versus-all objective is supported by
-  existing evidence. It must not claim causality, train a corrective model, or
-  claim capability.
+- Reproduce the nine pipeline-train manifest entries exactly before launching
+  any rollout: game/turn key, action-order hash, teacher index, top-1 index,
+  54D action hashes, and physical-card identities must match Stage 6.3.
+- For each state, evaluate exactly the frozen teacher and frozen model top-1
+  actions. Do not reconstruct, canonicalize, add, drop, or substitute an
+  action. Behavior may be retained only as immutable provenance, not as a
+  third evaluated candidate.
+- Use 16 completed rollouts per action: eight `greedy_bot` and eight frozen
+  `tempo_baseline` continuations, with the same legal information-set physical
+  determinizations shared across both actions and both continuation profiles.
+- Record rollout count, hidden-card sampling method, mean return, return and
+  paired-return variance, teacher-minus-top1 advantage, 95% lower bound,
+  confidence, per-profile paired advantages, completion, timeout, failure, and
+  integrity fields for every case.
+- Apply the existing strong-teacher gates without tuning them. Report supported
+  and unsupported teacher-versus-top1 comparisons by exact reason. Do not
+  convert the results into training labels or a corrective loss in this stage.
+- The three pipeline-development manifest cases remain read-only and appear
+  only in an explicit held-out accounting section. Their rollout count must be
+  zero.
 
 ## Required Work
 
-1. Re-read the canonical handoffs; verify Git state, all six frozen hashes,
-   the 0-20 rejection, the Stage 6.2 arithmetic, and output nonexistence.
-2. Add the smallest static evidence-audit implementation and focused tests for
-   exact action identity, evidence-path restriction, evidence classification,
-   missing-field conservatism, partition mapping, and aggregate arithmetic.
-3. Run the audit once for exactly the 12 target states and write the single
-   curated JSON output. Do not launch any rollout worker.
-4. Independently audit target coverage, action/evidence hashes, classifications,
-   partition counts, aggregate arithmetic, and zero forbidden operations.
-5. Keep every frozen input and referenced rollout-evidence file unchanged.
+1. Re-read the canonical handoffs; verify Git state, all seven frozen hashes,
+   the 0-20 rejection, Stage 6.3 arithmetic, and output nonexistence.
+2. Add the smallest train-only confirmation implementation and focused tests
+   for manifest partition restriction, exact action identity, shared
+   determinization, fixed rollout accounting, confidence arithmetic, held-out
+   exclusion, and interruption-safe failure handling.
+3. Run exactly one confirmation job for the nine pipeline-train cases and
+   write the single curated JSON output.
+4. Independently audit case coverage, hashes, action identities, rollout and
+   profile counts, confidence arithmetic, held-out zero execution, and all
+   integrity/forbidden counters.
+5. Keep every frozen input unchanged. Do not update teacher data or checkpoint.
 6. Update `PROJECT_STATE.md`, `EXPERIMENTS.md`, `NEXT_TASK.md`, and the durable
-   progress document; run narrow regression tests, credential and diff checks,
+   progress document; run narrow regressions, credential and diff checks,
    commit, and push.
 
 ## Acceptance Criteria
 
-- All six primary frozen hashes and every referenced source-evidence hash remain
-  unchanged; Stage 6.1 remains 0-20 with continuation false.
-- Exactly the 12 Stage 6.2 target states are audited with zero missing,
-  duplicate, extra, reconstructed, or ambiguous state/action mappings.
-- Every evidence classification is traceable to the exact frozen action and
-  source fields. Unsupported or incomplete evidence is never promoted to a
-  teacher-versus-all ordering.
-- Pipeline partition counts, evidence-class counts, and all aggregate values
-  recompute exactly in an independent audit.
-- New rollouts, training, hyperparameter search, checkpoint selection or
-  modification, website dataset or locked-test loads, Arena games, website
+- All seven frozen hashes remain unchanged; Stage 6.1 remains 0-20 with
+  continuation false and the checkpoint remains rejected.
+- Exactly nine pipeline-train cases run with zero missing, duplicate, extra,
+  reconstructed, substituted, or ambiguous action mappings.
+- Exactly 288 rollouts complete: 9 cases x 2 actions x 16 rollouts. Each action
+  has eight greedy and eight frozen-tempo continuations using common legal
+  information-set determinizations.
+- Pipeline-development case executions, locked-test loads, hidden/future
+  information use, timeouts, candidate failures, and integrity failures are
+  zero.
+- Training, tuning, checkpoint selection or modification, Arena, website
   Shadow/play, model-controlled website actions, promotion, and capability
   claims are all zero.
 - Credential occurrences in new tracked/curated files are zero.
@@ -97,10 +107,12 @@ offline or website stage. The rejected checkpoint remains ineligible for the
 
 ## Ready-to-Use Goal Prompt
 
-请创建一个阶段 Goal：完成 Stage 6.3 冻结 unpaired-action evidence audit。只对
-Stage 6.2 中 12 个被未配对动作压过 teacher 的状态，读取 teacher 样本直接引用的
-既有冻结 rollout 证据，精确映射模型 top-1 动作并保守分类其证据覆盖；不得运行新
-rollout、训练、调参、checkpoint 选择或修改、网站 dataset/locked-test 加载、Arena、
-网站 Shadow/对局、模型控制、提升或能力结论。缺失或不足证据只能写入未来 manifest，
-不能执行。checkpoint 无论结果如何都保持 100/200-game screen rejected。更新交接、
-验证、凭据零命中、commit 和 push 全部成功后才能完成 Goal。
+请创建一个阶段 Goal：完成 Stage 6.4 frozen pipeline-train unpaired
+counterfactual confirmation。只执行 Stage 6.3 manifest 中九个
+`pipeline_train` 状态，按原始 54D 动作与 physical-card identity 直接比较
+teacher 和模型 top-1；每动作固定 16 次 rollout，greedy/冻结 tempo 各八次，
+所有动作与 continuation profile 共享合法 information-set determinization。
+三个 `pipeline_development` 状态必须保持 held-out 且执行数为零。不得训练、
+调参、选择或修改 checkpoint、运行 Arena、加载 locked test、访问网站、运行
+Shadow/对局、模型控制、提升或能力结论。更新交接、验证、凭据零命中、commit
+和 push 全部成功后才能完成 Goal。

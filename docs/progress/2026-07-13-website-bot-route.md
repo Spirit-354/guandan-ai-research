@@ -1012,3 +1012,46 @@ better than unpaired legal actions. The checkpoint remains rejected from the
 100/200-game screen. The next stage may only audit already-frozen source
 counterfactual evidence for the 12 unpaired top actions; it cannot run new
 rollouts, train, or play games.
+
+## Stage 6.3 Frozen Unpaired-Action Evidence Audit
+
+The static audit retained the six frozen primary hashes and read only the ten
+rollout-evidence files referenced directly by the 12 Stage 6.2 target teacher
+samples. Every source file was hashed before interpretation. Stage 6.1 remained
+0-20 with continuation false, and the checkpoint remained rejected from the
+100/200-game screen.
+
+All 12 target state keys, original legal-action orders, teacher/behavior
+indices, first-maximum top-1 indices, 54D vectors, and physical-card identities
+reproduced exactly. There were nine pipeline-train and three
+pipeline-development targets, with zero missing, duplicate, extra,
+reconstructed, or ambiguous mappings.
+
+Four model top-1 actions were candidates in complete dual-continuation source
+cases: two in pipeline train and two in pipeline development. The remaining
+eight actions were present in the exact source legal-action set but had no
+qualifying candidate comparison. No case was greedy-only, absent, or
+ambiguously mapped.
+
+The four dual-continuation cases do not establish teacher-versus-top1 ordering.
+Their source teacher labels compare teacher with behavior; the top-1 candidate
+records contain no top1-specific 95% lower bound, confidence, or per-profile
+paired advantages. Thus existing evidence supports zero of 12 direct
+teacher-versus-top1 orderings and cannot support a teacher-versus-all training
+objective.
+
+The output contains a non-executed 12-case future manifest: eight cases require
+the top-1 action to be evaluated as a candidate, and four require direct paired
+teacher-versus-top1 confidence. Independent recomputation matched all target
+and evidence hashes, classifications, 9/3 partition counts, aggregate
+arithmetic, and forbidden-operation counters. New rollouts, training, tuning,
+checkpoint changes, website-dataset or locked-test loads, Arena, website
+access, promotion, and capability claims were all zero.
+
+The curated artifact is
+`website_teacher_preference_unpaired_evidence_audit_v1.json`, SHA-256
+`09f52df90d095ab6b3777a046c50901f96fbeb15e6ef5f613343a13be1249383`.
+Any next counterfactual stage must use only the nine pipeline-train manifest
+cases for objective-design evidence. The three pipeline-development cases must
+remain held out, and no training, Arena, or website activity may occur in that
+same stage.

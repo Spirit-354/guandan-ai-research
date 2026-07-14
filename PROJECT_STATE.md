@@ -8,7 +8,7 @@ Branch: `agent/stage5-website-bot-adaptation`
 
 Latest completed stage:
 
-- Stage 6.2 Frozen Teacher-Preference Failure Diagnosis.
+- Stage 6.3 Frozen Unpaired-Action Evidence Audit.
 
 Primary program:
 
@@ -621,8 +621,8 @@ Acceptance:
 
 Goal: compare candidates against frozen `tempo_baseline`.
 
-Status: Stage 6.2 completed; continuation rejected, unpaired-action evidence
-audit required.
+Status: Stage 6.3 completed; continuation rejected, existing evidence does not
+support a teacher-versus-all objective.
 
 Constraints:
 
@@ -668,6 +668,28 @@ Stage 6.2 acceptance:
 - Training, tuning, checkpoint selection or modification, website-dataset or
   locked-test loads, Arena, website Shadow/play, model control, promotion, and
   capability claims were zero.
+
+Stage 6.3 acceptance:
+
+- All six primary frozen inputs and ten directly referenced rollout-evidence
+  files retained their expected SHA-256 hashes. Stage 6.1 remained 0-20 with
+  continuation false and the checkpoint remained rejected.
+- Exactly the 12 Stage 6.2 unpaired top-1 targets reproduced: nine pipeline
+  train and three pipeline development, with zero missing, duplicate, extra,
+  reconstructed, or ambiguous state/action mappings.
+- Four top-1 actions had complete dual-continuation candidate results, but none
+  recorded teacher-versus-top1-specific paired confidence. The other eight
+  were present in the frozen legal-action set without a qualifying candidate
+  comparison. Greedy-only, absent, and ambiguous classifications were zero.
+- Existing evidence therefore supports zero teacher-versus-top1 orderings and
+  does not support a teacher-versus-all objective. All 12 insufficient cases
+  were written to a future manifest that was not executed.
+- New rollout, training, tuning, checkpoint selection or modification,
+  website-dataset or locked-test loads, Arena, website Shadow/play, model
+  control, promotion, and capability claims were zero.
+- Curated audit evidence:
+  `website_teacher_preference_unpaired_evidence_audit_v1.json`, SHA-256
+  `09f52df90d095ab6b3777a046c50901f96fbeb15e6ef5f613343a13be1249383`.
 
 Acceptance:
 
