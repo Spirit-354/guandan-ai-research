@@ -893,3 +893,46 @@ offline capability evaluation, or model-controlled website play. The next
 stage is limited to a deterministic, complete-game-grouped teacher-preference
 training-pipeline smoke; it cannot run Arena or website play, promote a
 checkpoint, or make a capability claim.
+
+## Frozen Teacher-Preference Training Smoke
+
+The training-label input was limited to
+`website_information_set_teacher_dataset_v6.pth`, whose SHA-256 remained
+`a74416e6facb28a1bc64563eba90cb33d460dc9e59cc2109518da142465e15f8`.
+All 22 labels from 22 independent games passed the frozen schema, train-only,
+513-state, 54-action, legal-action, differing-pair, preference-target,
+source-partition, and locked-test checks.
+
+The internal pipeline split sorts complete games by
+`sha256("website_teacher_v6_split_v1:" + game_id)`. Games `13992`, `14074`,
+`13868`, and `13871` are the four internal pipeline-development games; the
+remaining 18 games are pipeline train. Overlap, dropped games, and locked-test
+games are zero. The curated split manifest SHA-256 is
+`5a15e514dc9bc51d77d300837151d9f1a49250f42885cc7940725bcbe4d35107`.
+The curated training report SHA-256 is
+`896192b1d0b4de2caabe20ac17d6a20766fc7f89d6e82a981d834b777932ddd3`.
+
+The smoke reused `danzero_dmc.build_q_model` without changing the 513+54 model
+or website action semantics. Its fixed recipe was CPU, seed `20260714`, 20
+epochs, batch size 6, learning rate 0.001, no initialization checkpoint, and
+the sole loss `softplus(Q_behavior-Q_teacher)`. Hyperparameter searches and
+checkpoint selections were zero.
+
+Final pipeline-train ranking accuracy was 1.00 with mean
+teacher-minus-behavior margin 20.7220. Internal pipeline-development ranking
+accuracy was 0.75 with mean margin 12.3318 and pairwise loss 3.3015. These are
+pipeline diagnostics from only four internal development pairs and are not
+capability evidence.
+
+The final ignored checkpoint SHA-256 is
+`c54801a9db05100c2fe5a9bf610a64fc7c94dc2cd947dfaab115ff827bd90919`.
+An independent process reloaded it and reproduced both partition metrics and
+prediction digests exactly. A temporary full rerun reproduced the split,
+recipe, history, metrics, and prediction digests exactly.
+
+Complete-bundle and locked-test loads, extra training targets, Arena games,
+website Shadow, website games, model-controlled website actions, checkpoint
+promotion, and capability claims were all zero. The next stage is limited to a
+20-game paired, seat-swapped offline Arena integrity smoke against frozen
+`tempo_baseline`; it cannot continue to the 100/200-game screen or any website
+stage in the same Goal.

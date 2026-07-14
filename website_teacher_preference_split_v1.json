@@ -1,0 +1,43 @@
+{
+  "schema_version": "website_teacher_preference_split_v1",
+  "teacher_dataset": "website_information_set_teacher_dataset_v6.pth",
+  "teacher_sha256": "a74416e6facb28a1bc64563eba90cb33d460dc9e59cc2109518da142465e15f8",
+  "split_namespace": "website_teacher_v6_split_v1:",
+  "split_method": "sha256_namespace_game_id_ascending_first_4_development",
+  "seed": 20260714,
+  "source_sample_split": "train",
+  "pipeline_train_game_ids": [
+    "13879",
+    "13861",
+    "13957",
+    "14077",
+    "14044",
+    "13960",
+    "14038",
+    "14045",
+    "13882",
+    "14031",
+    "13959",
+    "14058",
+    "14000",
+    "14025",
+    "14022",
+    "13958",
+    "13872",
+    "13865"
+  ],
+  "pipeline_development_game_ids": [
+    "13992",
+    "14074",
+    "13868",
+    "13871"
+  ],
+  "pipeline_train_game_count": 18,
+  "pipeline_development_game_count": 4,
+  "total_game_count": 22,
+  "overlap_game_ids": [],
+  "dropped_game_ids": [],
+  "locked_test_loaded": false,
+  "capability_claim_allowed": false,
+  "threshold_passed": true
+}

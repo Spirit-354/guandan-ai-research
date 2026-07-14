@@ -8,7 +8,7 @@ Branch: `agent/stage5-website-bot-adaptation`
 
 Latest completed stage:
 
-- Extension v5 Teacher Candidate Expansion.
+- Frozen Teacher-Preference Training Smoke.
 
 Primary program:
 
@@ -88,13 +88,23 @@ Teacher dataset:
 - Teacher v6 SHA-256:
   `a74416e6facb28a1bc64563eba90cb33d460dc9e59cc2109518da142465e15f8`.
 - The 20-game teacher gate is satisfied at 22 independent games. No model has
-  yet been trained from teacher v6, and capability claims remain prohibited.
+  been promoted from teacher v6, and capability claims remain prohibited.
+- The frozen teacher-preference pipeline split contains 18 train games and four
+  internal development games with zero overlap. Split manifest SHA-256:
+  `5a15e514dc9bc51d77d300837151d9f1a49250f42885cc7940725bcbe4d35107`.
+- Curated training report SHA-256:
+  `896192b1d0b4de2caabe20ac17d6a20766fc7f89d6e82a981d834b777932ddd3`.
+- The deterministic CPU smoke produced the ignored checkpoint
+  `models_website_teacher_preference_v1/website_teacher_preference_final.pth`,
+  SHA-256
+  `c54801a9db05100c2fe5a9bf610a64fc7c94dc2cd947dfaab115ff827bd90919`.
+  It is pipeline evidence only and is not promoted.
 
 Current blocker:
 
-- The label-count gate is no longer the blocker. Stage 5 still requires a
-  frozen, game-grouped teacher-preference training recipe and a pipeline smoke
-  before any offline capability comparison.
+- The label-count and training-pipeline gates are no longer blockers. The
+  checkpoint has not yet passed the Stage 6.1 paired, seat-swapped 20-game
+  offline Arena integrity smoke against frozen `tempo_baseline`.
 - The eligible extension v5 pool is exhausted: all 277 rollout-eligible states
   were screened, all permitted positive-screen game signals were confirmed or
   exhausted, and three labels passed.
@@ -555,7 +565,7 @@ Acceptance:
 
 Goal: train only after enough teacher labels and coverage exist.
 
-Status: next stage; not started.
+Status: completed; pipeline-only smoke passed.
 
 Constraints:
 
@@ -573,10 +583,38 @@ Acceptance:
 - Coverage audit passes.
 - Train/development split is frozen.
 - Capability claims remain limited until offline and website-domain gates pass.
+- Teacher v6 validation found zero schema, dimension, legality, identity,
+  provenance, split, or locked-test errors across 22 preference pairs.
+- SHA-256 grouping assigned 18 complete games to pipeline train and four to
+  internal pipeline development with zero overlap or dropped games.
+- The existing `danzero_dmc.build_q_model` completed a fixed CPU recipe using
+  only `softplus(Q_behavior-Q_teacher)`. Hyperparameter searches and checkpoint
+  selections were zero.
+- Final train/development ranking accuracies were 1.00/0.75, but all metrics
+  are explicitly pipeline-only and ineligible for capability evidence.
+- Independent checkpoint reload exactly reproduced the report. A temporary
+  full rerun exactly reproduced the split, recipe, history, metrics, and
+  prediction digests.
+- Complete-bundle and locked-test loads, extra targets, Arena games, website
+  Shadow, website games, model-controlled website actions, checkpoint
+  promotion, and capability claims were all zero.
 
 ### Stage 6: Offline Gate
 
 Goal: compare candidates against frozen `tempo_baseline`.
+
+Status: next stage begins with a 20-game integrity smoke only.
+
+Constraints:
+
+- Use only the frozen teacher-preference checkpoint with SHA-256
+  `c54801a9db05100c2fe5a9bf610a64fc7c94dc2cd947dfaab115ff827bd90919`.
+- Add only the compatibility needed for the existing 513+54 Arena path to load
+  the teacher-preference checkpoint. Do not retrain or change action semantics.
+- Run exactly 20 paired, seat-swapped games against frozen `tempo_baseline`.
+  Treat the result as offline integrity/screening evidence only.
+- Do not proceed to the 100/200-game screen, locked test, website Shadow, or
+  website control in the same stage.
 
 Acceptance:
 

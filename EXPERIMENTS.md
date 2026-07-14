@@ -41,7 +41,7 @@ Decision:
 
 ## Website Information-Set Teacher Labels
 
-Status: 20-game gate passed; frozen but untrained.
+Status: 20-game gate passed; frozen pipeline smoke trained but unvalidated.
 
 Accepted strong labels:
 
@@ -71,10 +71,11 @@ Rejected or exhausted evidence:
 
 Decision:
 
-- Freeze teacher v6. The 20-game label-count gate is satisfied, but no model
-  has been trained and no capability claim is allowed.
-- Proceed only to a deterministic, game-grouped teacher-preference training
-  smoke before any offline capability comparison.
+- Freeze teacher v6. The 20-game label-count gate is satisfied. A deterministic
+  pipeline-only checkpoint now exists, but it is not promoted and no capability
+  claim is allowed.
+- Proceed only to the paired, seat-swapped 20-game offline integrity smoke
+  before considering a larger offline screen.
 
 ## Website Shadow Supplement v1
 
@@ -708,6 +709,53 @@ Decision:
   frozen, deterministic teacher-preference training-pipeline smoke with
   complete-game grouping; Arena and website play remain out of scope.
 
+## Frozen Teacher-Preference Training Smoke
+
+Status: completed; deterministic pipeline gate passed without capability
+validation.
+
+Evidence:
+
+- The only training-label input was frozen
+  `website_information_set_teacher_dataset_v6.pth`, SHA-256
+  `a74416e6facb28a1bc64563eba90cb33d460dc9e59cc2109518da142465e15f8`.
+  All 22 labels from 22 independent games passed train-only, 513-state,
+  54-action, finite-vector, legal-action, differing-pair, preference-target,
+  source-partition, and locked-test checks.
+- Games were sorted by
+  `sha256("website_teacher_v6_split_v1:" + game_id)`. The first four games
+  (`13992`, `14074`, `13868`, and `13871`) form the internal pipeline
+  development split; the remaining 18 form pipeline train. Overlap and dropped
+  games are zero.
+- The split manifest is `website_teacher_preference_split_v1.json`, SHA-256
+  `5a15e514dc9bc51d77d300837151d9f1a49250f42885cc7940725bcbe4d35107`.
+- The curated training report SHA-256 is
+  `896192b1d0b4de2caabe20ac17d6a20766fc7f89d6e82a981d834b777932ddd3`.
+- The existing `danzero_dmc.build_q_model` ran on CPU with seed `20260714`, 20
+  epochs, batch size 6, learning rate 0.001, no initialization checkpoint, and
+  only `softplus(Q_behavior-Q_teacher)`. Hyperparameter searches and checkpoint
+  selections were zero.
+- Final pipeline-train ranking accuracy was 1.00 with mean margin 20.7220.
+  Internal pipeline-development ranking accuracy was 0.75 with mean margin
+  12.3318 and pairwise loss 3.3015. These values are pipeline diagnostics only,
+  not capability evidence.
+- The ignored final checkpoint SHA-256 is
+  `c54801a9db05100c2fe5a9bf610a64fc7c94dc2cd947dfaab115ff827bd90919`.
+  A new-process reload exactly reproduced both partition metrics and prediction
+  digests. A temporary full rerun exactly reproduced the split, recipe,
+  history, metrics, and prediction digests.
+- Complete-bundle and locked-test loads, extra targets, Arena evaluations,
+  website Shadow, website games, model-controlled website actions, checkpoint
+  promotion, and capability claims were all zero.
+
+Decision:
+
+- Freeze the split, report, and checkpoint hashes. Keep
+  `capability_claim_allowed=false` and `checkpoint_promotion_allowed=false`.
+- Permit only a 20-game paired, seat-swapped offline Arena integrity smoke
+  against frozen `tempo_baseline`. Do not run the 100/200-game screen in the
+  same stage regardless of result.
+
 ## Model A / Shared Self-Play / BC / PPO / DMC
 
 Status: not eligible for website control.
@@ -743,21 +791,22 @@ Decision:
 
 ## Current Next Experiment
 
-Name: Frozen Teacher-Preference Training Smoke.
+Name: Stage 6.1 Teacher-Preference Offline Arena Smoke.
 
 Purpose:
 
-- Add the smallest deterministic training path that can consume frozen teacher
-  v6 as 513-state/54-action teacher-over-behavior preferences.
-- Freeze a complete-game-grouped internal train/development split and verify
-  the pipeline without using locked test or making a capability claim.
+- Add only the compatibility needed for the existing 513+54 DanZero offline
+  Arena to load the frozen teacher-preference checkpoint.
+- Run exactly 20 paired, seat-swapped games against frozen `tempo_baseline` as
+  an integrity and early-screening smoke.
 
 Acceptance:
 
-- Teacher v6 hash and its 22-game frozen contents are verified before use.
-- Every sample has 513 state dimensions, legal 54-dimensional teacher and
-  behavior actions, and no game appears in both internal partitions.
-- A deterministic CPU smoke produces reproducible split/training metadata and
-  a loadable checkpoint; metrics are explicitly pipeline-only.
-- Locked-test loads, Arena evaluation, website play, checkpoint promotion,
-  model-controlled website play, and capability claims are zero.
+- Checkpoint, teacher v6, split, report, and frozen baseline hashes pass before
+  Arena execution; no training occurs.
+- Twenty games complete as ten paired seeds with model team 0/1 swapped once
+  per pair and identical first-player initialization within each pair.
+- Illegal, fallback, materialization, hand-subset, fatal-candidate, and baseline
+  equivalence errors are zero.
+- The result is screening evidence only. The 100/200-game screen, locked test,
+  website Shadow, website play, promotion, and capability claims remain zero.

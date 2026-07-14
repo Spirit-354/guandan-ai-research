@@ -1,0 +1,164 @@
+{
+  "schema_version": "website_teacher_preference_training_v1",
+  "teacher_dataset": "website_information_set_teacher_dataset_v6.pth",
+  "teacher_sha256": "a74416e6facb28a1bc64563eba90cb33d460dc9e59cc2109518da142465e15f8",
+  "teacher_label_count": 22,
+  "preference_pair_count": 22,
+  "independent_teacher_games": 22,
+  "training_gate_passed": true,
+  "teacher_validation_error_count": 0,
+  "train_only_sample_count": 22,
+  "state_action_dimension_error_count": 0,
+  "illegal_preference_action_count": 0,
+  "identical_preference_action_count": 0,
+  "split_manifest": "website_teacher_preference_split_v1.json",
+  "pipeline_train_game_count": 18,
+  "pipeline_development_game_count": 4,
+  "split_overlap_game_count": 0,
+  "device": "cpu",
+  "seed": 20260714,
+  "epochs": 20,
+  "batch_size": 6,
+  "learning_rate": 0.001,
+  "initial_checkpoint": null,
+  "model_architecture": "danzero_dmc.build_q_model",
+  "state_dim": 513,
+  "action_dim": 54,
+  "loss": "softplus(Q_behavior-Q_teacher)",
+  "training_target": "teacher_action_beats_behavior_action",
+  "hyperparameter_search_count": 0,
+  "checkpoint_selection_count": 0,
+  "history": [
+    {
+      "epoch": 1,
+      "mean_batch_loss": 0.6914313832918803
+    },
+    {
+      "epoch": 2,
+      "mean_batch_loss": 0.5502374768257141
+    },
+    {
+      "epoch": 3,
+      "mean_batch_loss": 0.20946006601055464
+    },
+    {
+      "epoch": 4,
+      "mean_batch_loss": 0.0774863672753175
+    },
+    {
+      "epoch": 5,
+      "mean_batch_loss": 0.09851458420356114
+    },
+    {
+      "epoch": 6,
+      "mean_batch_loss": 0.1362562502423922
+    },
+    {
+      "epoch": 7,
+      "mean_batch_loss": 0.14077174166838327
+    },
+    {
+      "epoch": 8,
+      "mean_batch_loss": 0.16552823036909103
+    },
+    {
+      "epoch": 9,
+      "mean_batch_loss": 0.08644376508891582
+    },
+    {
+      "epoch": 10,
+      "mean_batch_loss": 0.07668750896118581
+    },
+    {
+      "epoch": 11,
+      "mean_batch_loss": 0.07339276373386383
+    },
+    {
+      "epoch": 12,
+      "mean_batch_loss": 0.03156524213651816
+    },
+    {
+      "epoch": 13,
+      "mean_batch_loss": 0.013685484261562427
+    },
+    {
+      "epoch": 14,
+      "mean_batch_loss": 0.008743621699977666
+    },
+    {
+      "epoch": 15,
+      "mean_batch_loss": 0.0020587421746919667
+    },
+    {
+      "epoch": 16,
+      "mean_batch_loss": 0.0004741535522043705
+    },
+    {
+      "epoch": 17,
+      "mean_batch_loss": 0.00023353464795642745
+    },
+    {
+      "epoch": 18,
+      "mean_batch_loss": 0.00017662032714345818
+    },
+    {
+      "epoch": 19,
+      "mean_batch_loss": 0.00015562132163419543
+    },
+    {
+      "epoch": 20,
+      "mean_batch_loss": 0.00011541204880582967
+    }
+  ],
+  "initial_metrics": {
+    "pipeline_train": {
+      "sample_count": 18,
+      "pairwise_loss": 0.6926243305206299,
+      "ranking_accuracy": 0.5555555820465088,
+      "mean_teacher_minus_behavior_margin": 0.0010517543414607644,
+      "prediction_sha256": "ca4c45a5615850b0daff7a354b77a4e2630d09a5705fdbe6bfa70f3b2dc91377",
+      "metric_eligibility": "pipeline_only_not_capability_evidence"
+    },
+    "pipeline_development": {
+      "sample_count": 4,
+      "pairwise_loss": 0.6942839026451111,
+      "ranking_accuracy": 0.25,
+      "mean_teacher_minus_behavior_margin": -0.002267443574965,
+      "prediction_sha256": "36c9ae6c5babc2344f3a6940fb2a4d1454b311363125a9422acb55ac04dcfd47",
+      "metric_eligibility": "pipeline_only_not_capability_evidence"
+    }
+  },
+  "final_metrics": {
+    "pipeline_train": {
+      "sample_count": 18,
+      "pairwise_loss": 7.228915637824684e-05,
+      "ranking_accuracy": 1.0,
+      "mean_teacher_minus_behavior_margin": 20.722023010253906,
+      "prediction_sha256": "951b51bc3000686ecc35260813b8f191246e0df25cd66c2b2b80cbd78b5810cc",
+      "metric_eligibility": "pipeline_only_not_capability_evidence"
+    },
+    "pipeline_development": {
+      "sample_count": 4,
+      "pairwise_loss": 3.3015336990356445,
+      "ranking_accuracy": 0.75,
+      "mean_teacher_minus_behavior_margin": 12.331807136535645,
+      "prediction_sha256": "2a453f34104e5e052e469127ae473fb4cf89c8d71ee35e6bebe12b08cc377fe7",
+      "metric_eligibility": "pipeline_only_not_capability_evidence"
+    }
+  },
+  "checkpoint": "models_website_teacher_preference_v1\\website_teacher_preference_final.pth",
+  "checkpoint_sha256": "c54801a9db05100c2fe5a9bf610a64fc7c94dc2cd947dfaab115ff827bd90919",
+  "checkpoint_schema_version": "website_teacher_preference_checkpoint_v1",
+  "checkpoint_reload_verified": true,
+  "locked_test_loaded": false,
+  "complete_bundle_loaded": false,
+  "extra_training_target_count": 0,
+  "arena_evaluation_count": 0,
+  "website_shadow_count": 0,
+  "website_game_count": 0,
+  "model_controlled_website_action_count": 0,
+  "capability_claim_allowed": false,
+  "checkpoint_promotion_allowed": false,
+  "metric_eligibility": "pipeline_only_not_capability_evidence",
+  "threshold_passed": true
+}

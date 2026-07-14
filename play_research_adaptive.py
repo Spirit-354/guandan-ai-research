@@ -17761,6 +17761,22 @@ def parse_args() -> argparse.Namespace:
     parser.add_argument("--website-danzero-learning-rate", type=float, default=0.00003)
     parser.add_argument("--website-danzero-validation-split", type=float, default=0.2)
     parser.add_argument("--website-danzero-allow-provisional-smoke", action="store_true")
+    parser.add_argument(
+        "--train-website-teacher-preference",
+        help="Run the frozen teacher-over-behavior pairwise training smoke.",
+    )
+    parser.add_argument(
+        "--website-teacher-preference-split-out",
+        default="website_teacher_preference_split_v1.json",
+    )
+    parser.add_argument(
+        "--website-teacher-preference-log-out",
+        default="website_teacher_preference_training_v1.json",
+    )
+    parser.add_argument(
+        "--website-teacher-preference-out-dir",
+        default="models_website_teacher_preference_v1",
+    )
     parser.add_argument("--website-information-set-sanity")
     parser.add_argument("--information-set-sanity-out", default="website_information_set_sanity.json")
     parser.add_argument("--information-set-sanity-samples", type=int, default=20)
@@ -18106,6 +18122,11 @@ def main() -> None:
         import website_danzero_dataset
 
         website_danzero_dataset.train_action_value(args)
+        return
+    if args.train_website_teacher_preference:
+        import website_teacher_preference
+
+        website_teacher_preference.run(args)
         return
     if args.website_information_set_sanity:
         import website_information_set
