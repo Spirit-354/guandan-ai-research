@@ -434,6 +434,45 @@ Decision:
   explicitly preassigned baseline-only train supplement without weakening any
   teacher threshold.
 
+## Website Shadow Supplement v4
+
+Status: completed; baseline-only collection gate passed.
+
+Evidence:
+
+- `website_dataset_extension_session_splits_v4.json` preserves all four prior
+  assignments and adds only `logs_website_shadow_supplement_train_004` as
+  train; no session is assigned to locked test.
+- Exactly 12 verified bot-table games completed: 6 wins and 6 losses. Game IDs
+  are 14035, 14036, 14037, 14038, 14039, 14040, 14041, 14042, 14043, 14044,
+  14045, and 14046.
+- Leaderboard Elo moved continuously from 2158 to 2121, a net change of -37.
+  Per-game deltas were -19, +12, +12, -18, +12, +11, -18, -18, +12, -18,
+  -18, and +13; all 12 games use `leaderboard_elo` and none infer Elo from
+  final-state scores.
+- The session contains 279 Shadow decisions and 12,959 legal candidates. All
+  279 submissions succeeded, all candidate sets are website-oracle exhaustive,
+  and all decision-time information sets are consistent.
+- Every submitted action came from frozen `tempo_baseline`; model-controlled
+  actions and suggestion differences are zero.
+- Failed games, non-bot actions, state encoding, team mapping, hand subset,
+  local legality, oracle disagreement, materialization, website-rule, inferred
+  acceptance, wildcard, information-set, duplicate-submit, extra error-log,
+  and unrecoverable-desync counts are all zero.
+- Runtime credential occurrences in the new logs, Shadow summary, cumulative
+  assignment, global research results, and tracked files are zero.
+- Frozen extension v3 and teacher v4 hashes are unchanged. No dataset rebuild,
+  teacher rollout, teacher label, model training, offline evaluation, or
+  model-controlled website play occurred in this stage.
+
+Decision:
+
+- Accept all 12 games as the next explicitly preassigned train supplement.
+- Keep extension v3 and teacher v4 frozen until a separate dataset-extension
+  stage builds and validates new v4 artifacts.
+- Do not screen these states or train from them before the v4 physical
+  partitions, manifest, and coverage gates pass.
+
 ## Model A / Shared Self-Play / BC / PPO / DMC
 
 Status: not eligible for website control.
@@ -469,24 +508,22 @@ Decision:
 
 ## Current Next Experiment
 
-Name: Website Shadow Supplement v4.
+Name: Frozen Website Dataset Extension v4.
 
 Purpose:
 
-- Collect another explicitly preassigned baseline-only train session to expose
-  new independent website-domain information-set teacher candidates.
-- Preserve all frozen dataset and teacher artifacts while keeping model control
-  disabled.
+- Add only the completed, preassigned Supplement v4 train session to frozen
+  extension v3 and write separate v4 artifacts.
+- Preserve every old game, source hash, assignment, split, and locked-test
+  membership exactly.
 
 Acceptance:
 
-- Preassign one unused v4 supplement session to train without changing any
-  existing assignment or locked-test membership.
-- Complete exactly 12 verified bot-only games with frozen `tempo_baseline` as
-  the only website submitter.
-- Every retained decision has exhaustive website-oracle candidates and a
-  decision-time-consistent information set; all safety counters remain zero.
-- Elo evidence comes only from `leaderboard_elo`; credential occurrences are
-  zero.
-- Dataset rebuilds, teacher rollout, training, offline evaluation, and
-  model-controlled website play remain zero.
+- All 12 new games and 279 decisions enter train; new development and
+  locked-test games remain zero.
+- All 82 extension v3 games, source hashes, assignments, splits, and the
+  nine-game locked-test set remain unchanged.
+- Coverage, physical isolation, information-set, duplicate-state, bot-table,
+  Elo-source, and threshold gates pass.
+- Teacher v4 remains frozen; website play, teacher rollout, training, offline
+  evaluation, and model-controlled website play remain zero.

@@ -623,3 +623,37 @@ Teacher v4 contains 16 labels from 16 independent games, so the 20-game gate
 remains closed. This stage ran no website games, model training, offline
 evaluation, or model-controlled website play. The next stage is limited to a
 new explicitly preassigned baseline-only 12-game train supplement.
+
+## Website Shadow Supplement v4
+
+Before collection, a cumulative v4 assignment file preserved all four prior
+session assignments and added only `logs_website_shadow_supplement_train_004`
+as train. The new directory and assignment output were unused before this
+preassignment, and no session was assigned to locked test. Frozen extension v3,
+teacher v4, and `tempo_baseline` passed their preflight hash or freeze checks.
+
+Frozen `tempo_baseline` then completed exactly 12 verified bot-table games:
+games 14035 through 14046. Results were 6 wins and 6 losses. Leaderboard Elo
+was continuous across every boundary, moving from 2158 to 2121 for a net change
+of -37. Per-game deltas were -19, +12, +12, -18, +12, +11, -18, -18, +12,
+-18, -18, and +13. Every before/after value came from `leaderboard_elo`;
+final-state scores remained proxy-only.
+
+The session contains 279 submitted decisions and 12,959 legal candidates. All
+279 submissions succeeded, all 279 candidate sets were generated through
+exhaustive website-oracle validation, and all 279 decision-time information
+sets and public histories were consistent. Every table had the verified
+four-bot signature, every action came from `tempo_baseline`, and
+model-controlled actions and suggestion differences were zero.
+
+The online Shadow gate passed. Failed games, non-bot actions, state encoding,
+team mapping, hand subset, local legality, oracle disagreement,
+materialization, website-rule, inferred acceptance, wildcard, information-set,
+duplicate-submit, extra error-log, and unrecoverable-desync counts were zero. A
+targeted scan of the new logs, summary, assignment, global research results,
+and tracked files found zero runtime credential occurrences.
+
+This stage did not rebuild a dataset, run teacher rollout, create teacher
+labels, train a model, run offline evaluation, or allow model-controlled
+website play. The next stage is limited to constructing extension v4 artifacts
+from frozen extension v3 plus this preassigned train session.
