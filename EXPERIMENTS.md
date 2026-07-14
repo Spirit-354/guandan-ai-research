@@ -942,6 +942,52 @@ Decision:
 - Keep the checkpoint rejected and unpromoted. Do not run another rollout,
   train, run Arena, or access the website in the next dataset stage.
 
+## Stage 6.5 Frozen Corrective Preference Dataset Construction
+
+Status: completed; state-balanced 28-pair pipeline dataset frozen without
+training.
+
+Evidence:
+
+- All seven frozen input hashes remained unchanged. The formal builder ran
+  once and invoked no rollout, training, tuning, checkpoint, Arena, or website
+  path.
+- The new `.pth` embeds all 22 teacher v6 samples unchanged. Independent reload
+  matched the complete sample list, all 22 per-sample canonical hashes, and the
+  aggregate canonical hash exactly.
+- All 22 original teacher-versus-behavior pairs remain. Exactly six
+  `teacher_action_beats_model_top1` pairs were added for `13879:6`,
+  `13861:10`, `13957:14`, `13960:15`, `13959:7`, and `14022:16`, with exact
+  Stage 6.4 action indices, 54D hashes, physical identities, and metrics.
+- Final counts are 28 pairs: 24 pipeline train across 18 games and four
+  pipeline development across four games. Split overlap and dropped base
+  samples are zero.
+- Inconclusive train cases `14077:10`, `13882:10`, and `14025:20` were
+  recorded as exclusions and added zero pairs. The three development unpaired
+  cases were recorded only as held-out keys; their actions were not inspected
+  and they added zero pairs.
+- For each state, pair weights sum exactly to one. The six two-negative states
+  assign 0.5 to behavior and 0.5 to top1; all other states assign 1.0 to their
+  sole behavior pair. Partition-normalized weights sum to 1.0 for train and
+  1.0 for development.
+- The frozen objective is state-balanced pairwise
+  `softplus(Q_rejected-Q_preferred)`. It was not executed, weights were not
+  tuned, capability eligibility is false, and checkpoint promotion is false.
+- Dataset SHA-256:
+  `fad7ae18fea8b02cbc88ad4a8a7f8ecee298abe436ef589f5c88d66e42a32707`;
+  manifest SHA-256:
+  `0a5dc4f60091338b65f86f83ad30ae55dc18c058ee8b07535a314510ad96ef0a`.
+
+Decision:
+
+- Freeze the dataset and manifest. Permit one fixed, from-scratch corrective
+  training smoke using only the 24 train pairs and state-balanced objective.
+- Keep the four development pairs evaluation-only. Do not use them for
+  training, hyperparameter selection, checkpoint selection, or objective
+  design.
+- Keep the old checkpoint rejected. Do not run Arena or access the website in
+  the corrective training stage.
+
 ## Model A / Shared Self-Play / BC / PPO / DMC
 
 Status: not eligible for website control.
@@ -977,22 +1023,20 @@ Decision:
 
 ## Current Next Experiment
 
-Name: Stage 6.5 Frozen Corrective Preference Dataset Construction.
+Name: Stage 6.6 Frozen Corrective Training Smoke.
 
 Purpose:
 
-- Preserve the original 22 teacher-versus-behavior pairs and append only the
-  six Stage 6.4 pipeline-train teacher-versus-top1 comparisons that passed all
-  frozen gates.
-- Freeze a state-balanced pairwise objective manifest without running training
-  or selecting a checkpoint.
+- Run one fixed, deterministic, from-scratch CPU training smoke on the frozen
+  24-pair pipeline-train partition using the frozen state-balanced objective.
+- Evaluate the resulting checkpoint on frozen train/development pairs without
+  checkpoint selection or Arena.
 
 Acceptance:
 
-- The constructed dataset contains 24 pipeline-train pairs across 18 games and
-  four unchanged pipeline-development pairs across four games: 28 total.
-- All 22 original pairs remain exact; only six supported corrective pairs are
-  added. Three inconclusive train pairs and all development unpaired pairs are
-  excluded.
-- No rollout, training, tuning, checkpoint selection or modification, Arena,
-  locked-test load, website access, promotion, or capability claim occurs.
+- Exactly one fixed recipe runs: CPU, seed 20260714, 20 epochs, six states per
+  batch, learning rate 0.001, and no initialization checkpoint.
+- Training uses only 18 train states/24 pairs; four development states/pairs
+  remain evaluation-only. Report base/corrective and aggregate pair metrics.
+- No rollout, tuning, checkpoint selection, locked-test load, Arena, website
+  access, promotion, or capability claim occurs.

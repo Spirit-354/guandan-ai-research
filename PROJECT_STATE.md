@@ -8,7 +8,7 @@ Branch: `agent/stage5-website-bot-adaptation`
 
 Latest completed stage:
 
-- Stage 6.4 Frozen Pipeline-Train Unpaired Counterfactual Confirmation.
+- Stage 6.5 Frozen Corrective Preference Dataset Construction.
 
 Primary program:
 
@@ -115,6 +115,13 @@ Teacher dataset:
   Six of nine train-only teacher-versus-top1 comparisons passed every frozen
   strong-teacher gate; three were inconclusive and none supported top1 over
   teacher. All three pipeline-development targets remained unexecuted.
+- The frozen corrective preference dataset is
+  `website_teacher_preference_corrective_dataset_v1.pth`, SHA-256
+  `fad7ae18fea8b02cbc88ad4a8a7f8ecee298abe436ef589f5c88d66e42a32707`.
+  Its manifest SHA-256 is
+  `0a5dc4f60091338b65f86f83ad30ae55dc18c058ee8b07535a314510ad96ef0a`.
+  It preserves all 22 teacher v6 pairs and adds only six supported train-only
+  corrective pairs, for 24 train and four development pairs.
 
 Current blocker:
 
@@ -126,9 +133,10 @@ Current blocker:
   strictly outranked teacher in 12/22 states, across 161 action entries. This
   is an objective-coverage pattern, not a causal finding.
 - Pass was top-1 in 0/22 teacher states, so the 66.3% Arena pass rate is not
-  explained by this frozen diagnostic. Stage 6.4 now supplies six qualifying
-  train-only teacher-versus-top1 constraints, but the rejected checkpoint has
-  not been retrained and no improved offline performance has been shown.
+  explained by this frozen diagnostic. Stage 6.5 now freezes six qualifying
+  train-only teacher-versus-top1 constraints in a state-balanced dataset, but
+  no corrective model has been trained and no improved offline performance has
+  been shown.
 - The eligible extension v5 pool is exhausted: all 277 rollout-eligible states
   were screened, all permitted positive-screen game signals were confirmed or
   exhausted, and three labels passed.
@@ -627,8 +635,8 @@ Acceptance:
 
 Goal: compare candidates against frozen `tempo_baseline`.
 
-Status: Stage 6.4 completed; continuation rejected, six train-only corrective
-constraints confirmed but not yet converted into a frozen dataset or model.
+Status: Stage 6.5 completed; continuation rejected, corrective dataset frozen
+but no corrective model or improved offline evidence exists yet.
 
 Constraints:
 
@@ -720,6 +728,29 @@ Stage 6.4 acceptance:
 - Curated confirmation evidence:
   `website_teacher_preference_unpaired_train_confirmation_v1.json`, SHA-256
   `8e17377b5a1523d9f0a47af7218d687e062a3ade671c57f387eb4c1a0888cfae`.
+
+Stage 6.5 acceptance:
+
+- All seven frozen input hashes remained unchanged. All 22 teacher v6 samples
+  were embedded unchanged and independently reloaded with exact per-sample and
+  aggregate content hashes.
+- The dataset contains exactly 28 pairs: 24 pipeline train across 18 games and
+  four pipeline development across four games. All 22 original
+  teacher-versus-behavior pairs remain, and only the six Stage 6.4-supported
+  train teacher-versus-top1 pairs were added.
+- Three inconclusive train pairs and all three development unpaired pairs were
+  excluded. Dropped base samples, split overlap, locked-test samples, and
+  unsupported corrective pairs were zero.
+- State-balanced weights sum to exactly one unit for each of 22 states and to
+  one normalized unit per partition. The frozen softplus objective was not
+  executed and no weights or thresholds were tuned.
+- Rollout, training, tuning, checkpoint selection or modification, Arena,
+  website Shadow/play, model control, promotion, and capability claims were
+  zero. The existing checkpoint remains rejected.
+- Curated dataset SHA-256:
+  `fad7ae18fea8b02cbc88ad4a8a7f8ecee298abe436ef589f5c88d66e42a32707`;
+  manifest SHA-256:
+  `0a5dc4f60091338b65f86f83ad30ae55dc18c058ee8b07535a314510ad96ef0a`.
 
 Acceptance:
 

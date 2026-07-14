@@ -1095,3 +1095,36 @@ checkpoint remains rejected from the 100/200-game screen. The next stage may
 only construct a frozen corrective preference dataset by preserving all 22
 original teacher-versus-behavior pairs and adding the six supported train-only
 pairs; it cannot run rollout or training.
+
+## Stage 6.5 Frozen Corrective Preference Dataset Construction
+
+The deterministic builder retained all seven frozen inputs and ran no rollout,
+training, tuning, checkpoint, Arena, locked-test, or website path. It embedded
+all 22 teacher v6 samples unchanged and independently reproduced every
+per-sample content hash plus the aggregate sample hash after reload.
+
+The dataset contains all 22 original teacher-versus-behavior pairs and exactly
+six new train-only teacher-versus-top1 pairs for `13879:6`, `13861:10`,
+`13957:14`, `13960:15`, `13959:7`, and `14022:16`. Each corrective pair
+matches the frozen Stage 6.4 state, action index, 54D action hash,
+physical-card identity, and counterfactual metrics.
+
+Final accounting is 28 pairs: 24 pipeline train across 18 games and four
+pipeline development across four games. The three inconclusive train cases
+added zero pairs. The three development unpaired cases remained held out, had
+no action inspected in this stage, and added zero pairs. Split overlap,
+dropped base samples, and locked-test loads were zero.
+
+The frozen objective is state-balanced pairwise
+`softplus(Q_rejected-Q_preferred)`. Each state receives one aggregate weight
+unit: two-pair states split it 0.5/0.5 and single-pair states retain 1.0.
+Normalized pair weights sum to 1.0 in each partition. The objective was not
+executed and no weight or threshold was tuned.
+
+The dataset is `website_teacher_preference_corrective_dataset_v1.pth`, SHA-256
+`fad7ae18fea8b02cbc88ad4a8a7f8ecee298abe436ef589f5c88d66e42a32707`.
+The manifest SHA-256 is
+`0a5dc4f60091338b65f86f83ad30ae55dc18c058ee8b07535a314510ad96ef0a`.
+Both are pipeline-only and ineligible for capability or checkpoint-promotion
+claims. The next stage may run one fixed from-scratch corrective training
+smoke, but cannot run Arena or website activity in the same Goal.
