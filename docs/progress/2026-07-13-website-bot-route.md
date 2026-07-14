@@ -1237,3 +1237,52 @@ Any next confirmation may execute only these eight train cases under the
 unchanged paired information-set rollout and strong gates. The three
 development targets must remain unexecuted, and training, Arena, and website
 activity remain out of scope.
+
+## Stage 6.9 Frozen Pipeline-Train Residual Counterfactual Confirmation
+
+All eight frozen hashes, including both model checkpoints, remained unchanged.
+The confirmation mapped exactly the eight Stage 6.8 train manifest cases to
+unique physical `train` samples with exact state, original action order,
+teacher and residual indices, 54D hashes, and physical-card identities.
+Missing, duplicate, extra, reconstructed, substituted, ambiguous, and
+non-train mappings were zero.
+
+Each case evaluated exactly the teacher and residual actions with 16 rollouts
+per action: eight greedy and eight frozen-tempo continuations over eight shared
+information-set determinizations. All 256/256 requested rollouts completed,
+split 128/128 by continuation profile. Timeouts and candidate failures were
+zero.
+
+Four teacher-over-residual comparisons passed every unchanged strong gate:
+
+- `14044:9`: advantage 0.625, 95% lower bound 0.1559, greedy/frozen-tempo
+  advantages 1.0/0.25;
+- `14038:12`: advantage 0.75, lower bound 0.26, profile advantages 0.25/1.25;
+- `14000:5`: advantage 0.50, lower bound 0.0617, profile advantages 0.75/0.25;
+- `14022:16`: advantage 0.75, lower bound 0.26, profile advantages 0.75/0.75.
+
+`13957:14` and `14077:10` failed the positive-confidence and one-profile
+gates. `13959:7` had negative teacher advantage, while `14025:20` had zero
+advantage. These four comparisons were inconclusive. No comparison supported
+the residual action over teacher.
+
+Pipeline-development targets `13992:16`, `14074:9`, and `13871:9` retained
+zero source mappings, executions, and rollouts. Hidden/future information use,
+integrity failures, and locked-test loads were zero. A separate process
+recomputed all input/action hashes, determinization seeds, paired returns,
+means, variances, both directional confidence bounds, continuation-profile
+advantages, classifications, partition counts, aggregates, and forbidden
+operation counters exactly.
+
+No dataset or objective was constructed. Training, fine-tuning, threshold
+tuning, checkpoint selection or modification, Arena, website activity,
+promotion, capability claims, and unsupported labels were zero. The curated
+artifact is
+`website_teacher_preference_corrective_residual_train_confirmation_v1.json`,
+SHA-256
+`352cd0dfe0a4c958ba0555b776326a2b58470a980aef461ed49d4c59a7474c7a`.
+
+Only the four supported train comparisons may enter a separate corrective
+dataset extension. That stage must preserve the existing 28 pair identities,
+exclude the four inconclusive and all development residual cases, recompute
+state-balanced weights, and run no rollout, training, Arena, or website path.

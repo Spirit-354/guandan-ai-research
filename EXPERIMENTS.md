@@ -45,7 +45,9 @@ Status: Stage 6.1 continuation rejected at 0-20; Stage 6.4 confirmed six
 train-only teacher-versus-top1 constraints and Stage 6.6 completed one fixed
 corrective pipeline smoke. Stage 6.7 found 11/22 teacher top-1 states, and
 Stage 6.8 found no direct frozen support for the eight residual train
-orderings. No capability evidence exists.
+orderings. Stage 6.9 confirmed four additional teacher-over-residual train
+comparisons, with four inconclusive and no reverse support. No capability
+evidence exists.
 
 Accepted strong labels:
 
@@ -1126,6 +1128,54 @@ Decision:
   manifest cases under the unchanged paired information-set rollout and strong
   gates. Keep all three development targets unexecuted and held out.
 
+## Stage 6.9 Frozen Pipeline-Train Residual Counterfactual Confirmation
+
+Status: completed; four train-only teacher-over-residual comparisons passed the
+frozen gates, without dataset construction, training, or capability claims.
+
+Evidence:
+
+- All eight frozen hashes, including the old and corrective checkpoints,
+  remained unchanged. Exactly the eight Stage 6.8 train manifest cases mapped
+  to unique physical `train` samples by state, action order, teacher/residual
+  indices, 54D hashes, and physical-card identities.
+- Every case executed exactly the teacher and residual action with 16 rollouts
+  per action: eight greedy and eight frozen-tempo continuations over eight
+  determinizations shared by both actions and profiles. All 256/256 rollouts
+  completed, split 128/128 by continuation profile.
+- Four comparisons passed every unchanged teacher-direction gate:
+  `14044:9` (advantage 0.625, lower bound 0.1559, greedy/tempo 1.0/0.25),
+  `14038:12` (0.75, 0.26, 0.25/1.25), `14000:5` (0.50, 0.0617,
+  0.75/0.25), and `14022:16` (0.75, 0.26, 0.75/0.75).
+- `13957:14` and `14077:10` failed positive confidence and one profile gate;
+  `13959:7` had negative mean teacher advantage; `14025:20` had zero
+  advantage. These four were inconclusive. Residual-over-teacher supported
+  comparisons were zero.
+- Development targets `13992:16`, `14074:9`, and `13871:9` had zero source
+  mappings, executions, and rollouts. Timeouts, candidate failures,
+  hidden/future information use, integrity failures, and locked-test loads were
+  zero.
+- A separate process reproduced every input/action hash, determinization seed,
+  paired return, mean, variance, both directional confidence bounds, both
+  profile advantages, classification, partition count, aggregate, and
+  forbidden-operation counter.
+- No dataset or objective was constructed. Training, fine-tuning, threshold
+  tuning, checkpoint selection/modification, Arena, website activity,
+  promotion, capability claims, and unsupported labels were zero.
+- Curated artifact:
+  `website_teacher_preference_corrective_residual_train_confirmation_v1.json`,
+  SHA-256
+  `352cd0dfe0a4c958ba0555b776326a2b58470a980aef461ed49d4c59a7474c7a`.
+
+Decision:
+
+- Permit only the four supported train comparisons to enter a separate frozen
+  corrective dataset extension. Exclude all four inconclusive cases and all
+  three development residual cases.
+- Preserve the existing 28 pairs and 22 states, then recompute state-balanced
+  weights after adding only those four pairs. Do not train, run another
+  rollout, run Arena, or access the website in the dataset stage.
+
 ## Model A / Shared Self-Play / BC / PPO / DMC
 
 Status: not eligible for website control.
@@ -1161,24 +1211,20 @@ Decision:
 
 ## Current Next Experiment
 
-Name: Stage 6.9 Frozen Pipeline-Train Residual Counterfactual Confirmation.
+Name: Stage 6.10 Frozen Residual Corrective Dataset Extension.
 
 Purpose:
 
-- Execute only the eight Stage 6.8 insufficient pipeline-train comparisons
-  using exact frozen teacher/residual actions, shared information-set
-  determinizations, and the unchanged strong-teacher gates.
-- Keep all three pipeline-development residual targets unexecuted and out of
-  candidate, threshold, and objective design.
+- Preserve the frozen corrective dataset v1 and add only the four Stage 6.9
+  supported train teacher-over-residual pairs.
+- Exclude the four inconclusive train comparisons and all three development
+  residual targets, then recompute deterministic state-balanced weights.
 
 Acceptance:
 
-- Reproduce exactly the eight train manifest cases and complete 256/256 paired
-  rollouts: two exact actions, 16 rollouts per action, eight shared
-  determinizations, and equal greedy/frozen-tempo continuation counts.
-- Classify both directions using the unchanged advantage, variance, positive
-  95% lower-bound, and two-profile robustness gates. Unsupported comparisons
-  add no label.
-- Development executions, training, tuning, checkpoint selection/modification,
-  locked-test loads, Arena, website access, promotion, and capability claims
-  remain zero.
+- Preserve all 22 teacher samples and all 28 v1 pair identities; add exactly
+  four supported train pairs for 32 total pairs: 28 train and four development.
+- State weights sum to one for every state, including three equal one-third
+  weights at `14022:16`; partition-normalized weights sum to one.
+- Rollout, training, tuning, checkpoint changes, locked-test loads, Arena,
+  website access, promotion, and capability claims remain zero.

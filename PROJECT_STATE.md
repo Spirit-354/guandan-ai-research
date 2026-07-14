@@ -8,7 +8,7 @@ Branch: `agent/stage5-website-bot-adaptation`
 
 Latest completed stage:
 
-- Stage 6.8 Frozen Corrective Residual-Top1 Evidence Audit.
+- Stage 6.9 Frozen Pipeline-Train Residual Counterfactual Confirmation.
 
 Primary program:
 
@@ -144,6 +144,13 @@ Teacher dataset:
   It reproduced all 11 residual targets, inspected existing source evidence
   only for the eight pipeline-train targets, and kept all three development
   targets identity-only.
+- The Stage 6.9 train-only residual confirmation is
+  `website_teacher_preference_corrective_residual_train_confirmation_v1.json`,
+  SHA-256
+  `352cd0dfe0a4c958ba0555b776326a2b58470a980aef461ed49d4c59a7474c7a`.
+  It completed 256/256 paired rollouts across the eight frozen train cases:
+  four supported teacher over residual, zero supported residual over teacher,
+  and four were inconclusive.
 
 Current blocker:
 
@@ -165,6 +172,11 @@ Current blocker:
   residual action. Existing frozen evidence supports 0/8 train orderings, so
   all eight require train-only counterfactual confirmation before any further
   corrective dataset or objective can be considered.
+- Stage 6.9 confirmed teacher over the residual action for `14044:9`,
+  `14038:12`, `14000:5`, and `14022:16`. `13957:14`, `14077:10`,
+  `13959:7`, and `14025:20` were inconclusive; no comparison supported the
+  residual action over teacher. Only the four supported train comparisons are
+  eligible for a separate corrective-dataset construction stage.
 - The eligible extension v5 pool is exhausted: all 277 rollout-eligible states
   were screened, all permitted positive-screen game signals were confirmed or
   exhausted, and three labels passed.
@@ -663,9 +675,9 @@ Acceptance:
 
 Goal: compare candidates against frozen `tempo_baseline`.
 
-Status: Stage 6.8 completed; continuation remains rejected, all eight residual
-train comparisons lack direct frozen support, and no improved offline
-capability evidence exists yet.
+Status: Stage 6.9 completed; four train-only residual comparisons support
+teacher, four remain inconclusive, and no improved offline capability evidence
+exists yet.
 
 Constraints:
 
@@ -857,6 +869,35 @@ Stage 6.8 acceptance:
   mapping, classification, partition count, aggregate, and forbidden-operation
   counter. Curated audit SHA-256:
   `676232033f07051670b4407f15aca9f3939d9754ac2dcf4d078957263a1e2a6b`.
+
+Stage 6.9 acceptance:
+
+- All eight frozen hashes, including both model checkpoints, remained
+  unchanged. Exactly eight pipeline-train manifest cases mapped to unique
+  physical train samples with exact state, original action order, teacher and
+  residual indices, 54D hashes, and physical-card identities. Missing,
+  duplicate, extra, reconstructed, substituted, ambiguous, and non-train
+  mappings were zero.
+- Exactly 256/256 rollouts completed: eight cases, two exact actions, and 16
+  rollouts per action over eight shared information-set determinizations.
+  Greedy and frozen-tempo continuation counts were 128 each.
+- Four comparisons passed every unchanged teacher-direction gate:
+  `14044:9` (advantage 0.625, lower bound 0.1559), `14038:12` (0.75,
+  0.26), `14000:5` (0.50, 0.0617), and `14022:16` (0.75, 0.26).
+  Four comparisons were inconclusive and residual-over-teacher support was
+  zero.
+- Development targets `13992:16`, `14074:9`, and `13871:9` had zero source
+  mapping, executions, and rollouts. Timeouts, candidate failures,
+  hidden/future information use, integrity failures, and locked-test loads were
+  zero.
+- A new-process audit independently reproduced every input/action hash,
+  determinization seed, paired return, mean, variance, both directional
+  confidence bounds, continuation-profile advantage, classification,
+  partition count, aggregate, and forbidden-operation counter.
+- Dataset/objective construction, training, fine-tuning, threshold tuning,
+  checkpoint changes, Arena, website activity, promotion, capability claims,
+  and unsupported labels were zero. Curated confirmation SHA-256:
+  `352cd0dfe0a4c958ba0555b776326a2b58470a980aef461ed49d4c59a7474c7a`.
 
 Acceptance:
 
