@@ -2,124 +2,119 @@
 
 ## Single Next Stage
 
-Run the Extension v5 information-set teacher candidate expansion. Enumerate all
-new train decisions, screen every eligible state, confirm only robust signals,
-and rebuild teacher v6 from frozen teacher v5 plus accepted new labels.
+Run a frozen teacher-preference training-pipeline smoke using only teacher v6.
+Add the smallest deterministic path that trains the existing compatible
+513-state/54-action Q architecture to rank each frozen teacher action above its
+recorded behavior action.
 
-Do not run website games, train a model, run offline capability evaluation, or
-begin model-controlled website play in this stage, even if the 20-game teacher
-gate is reached.
+This is pipeline validation, not offline capability evaluation. Do not run
+Arena, website Shadow, website games, checkpoint promotion, or
+model-controlled website play in this stage. Do not begin any later evaluation
+or website-risk stage.
 
 ## Frozen Inputs
 
-- Only permitted rollout dataset:
-  `website_danzero_shadow_extension_v5.train_dev.pth`.
-- Permitted dataset SHA-256:
+- Only permitted teacher input:
+  `website_information_set_teacher_dataset_v6.pth`.
+- Required teacher v6 SHA-256:
+  `a74416e6facb28a1bc64563eba90cb33d460dc9e59cc2109518da142465e15f8`.
+- Required teacher metadata: 22 accepted labels from 22 independent games,
+  `training_gate_passed=true`, `locked_test_loaded=false`, state dimension 513,
+  action dimension 54, and `capability_claim_allowed=false`.
+- Frozen provenance dataset, for hash/metadata audit only if needed:
+  `website_danzero_shadow_extension_v5.train_dev.pth`, SHA-256
   `e5e220c3c770116ca9d01478e98e610dd6309a0f3d6c17088a8328f62b47174b`.
-- Required dataset metadata:
-  `partition_role=train_development`, `contains_locked_test_samples=false`,
-  `all_samples_information_set_consistent=true`.
-- Extension v5 manifest content hash:
-  `a2931c6078487662d25f115896034311354eade265bec8b72f94ea2d5a7bdaf7`.
-- Frozen teacher base:
-  `website_information_set_teacher_dataset_v5.pth`.
-- Frozen teacher v5 SHA-256:
+  It must not supply extra training targets.
+- Frozen teacher v5 provenance SHA-256:
   `155fc348e939490bc036b2b5e3e0993be732b259250cac3d0244e888910fb9da`.
-- Frozen teacher v5 contains 19 labels from 19 independent games.
-- New train game IDs, and no others: `14058`, `14059`, `14061`, `14063`,
-  `14064`, `14066`, `14068`, `14070`, `14072`, `14074`, `14077`, and
-  `14081`.
-- These games contain exactly 345 consistent train decisions and 11,587 legal
-  candidates before rollout eligibility filtering.
-- Write the rebuilt artifact only as
-  `website_information_set_teacher_dataset_v6.pth`; never overwrite teacher v5.
-- The teacher v6 output and all stage-prefixed rollout outputs must be unused
-  before execution.
+- Never load `website_danzero_shadow_extension_v5.pth` or
+  `website_danzero_shadow_extension_v5.locked_test.pth`.
+- Use the existing `danzero_dmc.build_q_model` 513+54 architecture. Do not
+  introduce a second model family or change website action semantics.
 
-## Information-Set and Label Rules
+## Training Contract
 
-- Do not load `website_danzero_shadow_extension_v5.pth` or
-  `website_danzero_shadow_extension_v5.locked_test.pth` for selection,
-  screening, tuning, or label construction.
-- Use only decision-time visible state, public counts/history, the actor hand,
-  and the recorded exhaustive website-oracle legal mask.
-- Do not use teammate/opponent true hands, future actions, future states,
-  terminal outcomes as features, or post-game-only information.
-- Hidden-card simulation must use the existing legal uniform physical
-  assignment conditioned on public counts and the stable
-  game/turn/determinization seed scheme.
-- Enumerate all 345 new decisions. Report every ineligible state and reason;
-  screen every eligible state.
-- Greedy-only 8-rollout results are screening evidence only and must emit zero
-  strong labels.
-- Confirm only positive-95%-lower-bound, low-variance screen signals, with
-  independent-game coverage prioritized before alternatives from the same
-  game.
-- A strong label requires at least 16 complete paired rollouts, shared complete
-  determinizations, candidate return variance at most 0.50, candidate advantage
-  at least 0.15, positive 95% lower bound, and at least 0.15 mean advantage
-  under both greedy and frozen `tempo_baseline` continuations.
-- Timeout, incomplete, unstable-seed, high-variance, low-advantage, non-robust,
-  hidden-information, or remap-failing results must be rejected.
-- Preserve all 19 frozen teacher v5 samples exactly after deserialization.
-  Recover every new 54-dimensional teacher action from the source legal action
-  and physical-card metadata; behavior action and source state must match.
+- Treat each teacher sample as one pairwise preference:
+  `Q(state, teacher_action) > Q(state, behavior_action)`.
+- Use only a pairwise logistic/softplus ranking loss. Do not invent scalar
+  return targets, synthesize labels, add self-play data, or use terminal game
+  outcomes as model features.
+- Validate before training that every state has length 513, every teacher and
+  behavior action has length 54, both actions are in the recorded legal-action
+  set, the teacher and behavior actions differ, all samples are train-only,
+  and no sample reports locked-test use.
+- Split by complete `game_id`, never by individual sample. Sort games by
+  `sha256("website_teacher_v6_split_v1:" + game_id)`; assign the first four to
+  an internal pipeline-development partition and the remaining 18 to the
+  internal pipeline-train partition. This internal split does not alter the
+  frozen website dataset split and is not capability evidence.
+- Use CPU, seed `20260714`, deterministic PyTorch settings, no initialization
+  checkpoint, and a single fixed smoke recipe. Keep the recipe small; do not
+  add a hyperparameter search or checkpoint selection loop.
+- Report train and internal-development pairwise ranking accuracy and mean
+  teacher-minus-behavior margin before and after training, but label every
+  metric as pipeline-only and ineligible for capability or promotion claims.
 
 ## Required Work
 
-1. Re-read the canonical handoffs and verify Git state, frozen hashes, dataset
-   partition metadata, teacher v5 contents, and that teacher v6 and all planned
-   stage-prefixed rollout outputs do not exist.
-2. Enumerate the 345 decisions in the 12 permitted game IDs and report eligible
-   and ineligible counts by game and reason.
-3. Run greedy-only 8-rollout screening for every eligible state, with zero
-   strong-label acceptance.
-4. Select confirmation candidates only from frozen positive-lower-bound,
-   low-variance screen evidence, prioritizing one strongest state per game.
-5. Run 16-rollout greedy-plus-frozen-tempo confirmation. If a game fails, test
-   only its remaining positive-screen alternatives; do not broaden to negative
-   or zero-lower-bound candidates.
-6. Build teacher v6 from frozen teacher v5 plus all and only accepted new labels.
-7. Audit frozen-prefix identity, source state, behavior action, legal teacher
-   action, physical-card remap, dimensions, thresholds, independent-game count,
-   and the 20-game gate.
-8. Keep raw rollout JSON and teacher PTH ignored. Update `PROJECT_STATE.md`,
-   `EXPERIMENTS.md`, `NEXT_TASK.md`, and the durable progress document; run
-   tests, credential/diff checks, commit, and push.
+1. Re-read the canonical handoffs and verify Git state, frozen hashes, teacher
+   v6 schema/counts/games, and that planned smoke outputs do not already exist.
+2. Add the narrowest CLI/training implementation and focused tests for teacher
+   validation, deterministic game-grouped splitting, pairwise loss direction,
+   513+54 model compatibility, and checkpoint reload.
+3. Write a small curated frozen split manifest as
+   `website_teacher_preference_split_v1.json`. It must record the exact method,
+   seed, teacher hash, 18/4 game membership, zero overlap, and zero locked-test
+   use.
+4. Run one deterministic CPU smoke and write its ignored checkpoint under
+   `models_website_teacher_preference_v1/` plus a small curated report named
+   `website_teacher_preference_training_v1.json`.
+5. Reload the final checkpoint and independently recompute the reported
+   pairwise metrics. Re-run the smoke to temporary outputs and verify the split
+   and predictions/metrics are reproducible under the frozen recipe.
+6. Audit that teacher v6 and all frozen provenance artifacts remain unchanged;
+   locked-test loads, website access, Arena runs, checkpoint promotion,
+   capability claims, and model-controlled website actions must all be zero.
+7. Update `PROJECT_STATE.md`, `EXPERIMENTS.md`, `NEXT_TASK.md`, and the durable
+   progress document; run narrow tests, credential and diff checks, commit, and
+   push.
 
 ## Acceptance Criteria
 
-- New decisions enumerated: 345; all eligible states screened; every ineligible
-  state has a reported frozen reason.
-- Complete bundle and locked-test partition loads: 0; locked-test states used: 0.
-- Hidden teammate/opponent hands, future information, and post-game feature
-  use: 0.
-- Greedy-only accepted strong labels: 0; incomplete rollout files accepted: 0.
-- Every new label passes the frozen 16-rollout completeness, variance,
-  advantage, positive-confidence, and greedy/frozen-tempo dual-robustness gates.
-- Frozen teacher v5 labels changed or removed: 0; source-state,
-  behavior-action, legal-action, 513/54 dimension, and physical-card remap
-  errors: 0.
-- Teacher v6 accurately reports new labels, total labels, independent games,
-  and whether the 20-game teacher gate is reached.
-- Website games, model training, offline capability evaluation, and
-  model-controlled website play in this stage: 0 regardless of gate status.
-- Frozen extension v5 and teacher v5 hashes remain unchanged; credential
-  occurrences in new tracked/curated files: 0.
-- Handoff updates, narrow tests, conventional commit, and push all succeed
-  before the stage Goal is marked complete.
+- Teacher v6 hash, 22 labels, 22 independent games, dimensions, legal actions,
+  differing preference pairs, train-only provenance, and gate metadata all
+  pass before training.
+- The frozen internal split contains 18 train games and four development games,
+  with 22 unique games total and zero overlap or dropped games.
+- The existing 513+54 Q model consumes both actions for every preference pair;
+  ranking-loss direction and checkpoint reload tests pass.
+- The CPU smoke completes with finite losses and metrics. Independent checkpoint
+  reload reproduces the report, and a temporary rerun reproduces the frozen
+  split and predictions/metrics under the same environment and recipe.
+- All reported train/development metrics are marked pipeline-only;
+  `capability_claim_allowed=false` and `checkpoint_promotion_allowed=false`.
+- Locked-test and complete-bundle loads: 0. Extra training targets, hidden or
+  future information, website games, Arena evaluation, website Shadow,
+  checkpoint promotion, and model-controlled website actions: 0.
+- Teacher v6, teacher v5, extension v5 train/development, and frozen semantics
+  remain unchanged. Credential occurrences in new tracked/curated files: 0.
+- Handoff updates, focused tests, deterministic audits, conventional commit,
+  and push all succeed before the stage Goal is marked complete.
 
 ## Ready-to-Use Goal Prompt
 
-请创建一个阶段 Goal：完成 extension v5 新增 12 个 train 游戏的全量信息集
-teacher candidate 筛选、稳健双 continuation 确认和 teacher v6 重建。只能加载
-`website_danzero_shadow_extension_v5.train_dev.pth`，严禁加载 complete bundle
-或 locked-test partition；只处理 game_id `14058`、`14059`、`14061`、`14063`、
-`14064`、`14066`、`14068`、`14070`、`14072`、`14074`、`14077`、`14081`
-的 345 个 train 决策。greedy-only 8-rollout 只能初筛，不能产强标签；强标签
-必须至少 16 个完整配对 rollout，variance 不超过 0.50，advantage 至少 0.15，
-95% 下界为正，并且 greedy 与冻结 tempo continuation 的平均优势都至少 0.15。
-冻结保留 teacher v5 的 19 条标签，核验 54 维 physical-action remap，只输出
-teacher v6。即使达到 20-game gate，本阶段也不得运行网站对局、训练、离线能力
-评估或模型控制网站。更新交接、验证、凭据零命中、commit 和 push 全部成功后
-才能完成 Goal。
+请创建一个阶段 Goal：只使用 SHA-256 为
+`a74416e6facb28a1bc64563eba90cb33d460dc9e59cc2109518da142465e15f8` 的
+`website_information_set_teacher_dataset_v6.pth`，完成冻结的
+teacher-preference 训练管线 smoke。严格校验 22 条标签、22 个独立游戏、
+513/54 维度、合法且不同的 teacher/behavior action、train-only 来源及
+locked-test 零使用；按 `sha256("website_teacher_v6_split_v1:" + game_id)`
+排序，将前 4 个完整游戏分到内部 pipeline-development、其余 18 个分到
+pipeline-train。复用现有 513+54 Q 模型，仅用 pairwise logistic/softplus
+损失令 teacher action 排在 behavior action 之前；CPU、seed 20260714、无
+初始化 checkpoint、无调参或 checkpoint 选择。产出冻结 split manifest、
+一次 smoke 报告和忽略的 checkpoint，独立 reload 并用临时输出复跑验证可
+复现性。所有指标只能标记为 pipeline-only，严禁加载 complete bundle 或
+locked-test，严禁 Arena、网站 Shadow、网站对局、checkpoint 提升、能力
+结论或模型控制网站。只完成本阶段；更新交接、验证、凭据零命中、commit
+并 push 全部成功后才能完成 Goal。

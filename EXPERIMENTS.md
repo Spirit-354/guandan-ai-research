@@ -41,7 +41,7 @@ Decision:
 
 ## Website Information-Set Teacher Labels
 
-Status: expanded but below training gate.
+Status: 20-game gate passed; frozen but untrained.
 
 Accepted strong labels:
 
@@ -54,24 +54,27 @@ Accepted strong labels:
   `14025:20`, and `14031:4`.
 - Extension v4 contributed 3 labels from 3 independent games: `14038:12`,
   `14044:9`, and `14045:5`.
-- Current teacher dataset: `website_information_set_teacher_dataset_v5.pth`.
-- Current total: 19 labels from 19 independent games.
+- Extension v5 contributed 3 labels from 3 independent games: `14058:22`,
+  `14074:9`, and `14077:10`.
+- Current teacher dataset: `website_information_set_teacher_dataset_v6.pth`.
+- Current total: 22 labels from 22 independent games.
 - State/action representation: 513/54.
-- Teacher v5 SHA-256:
-  `155fc348e939490bc036b2b5e3e0993be732b259250cac3d0244e888910fb9da`.
+- Teacher v6 SHA-256:
+  `a74416e6facb28a1bc64563eba90cb33d460dc9e59cc2109518da142465e15f8`.
 
 Rejected or exhausted evidence:
 
 - Several old candidates had positive mean advantage but failed confidence,
   variance, or continuation-robustness gates.
 - The old 50-game candidate pool is mostly exhausted.
-- The extension v4 eligible pool is exhausted under the frozen gates.
+- The extension v5 eligible pool is exhausted under the frozen gates.
 
 Decision:
 
-- Do not train from the 19-label teacher dataset as a capability candidate.
-- Collect more independent baseline-only train games before another teacher
-  expansion; at least 1 additional strong-label game is still required.
+- Freeze teacher v6. The 20-game label-count gate is satisfied, but no model
+  has been trained and no capability claim is allowed.
+- Proceed only to a deterministic, game-grouped teacher-preference training
+  smoke before any offline capability comparison.
 
 ## Website Shadow Supplement v1
 
@@ -651,6 +654,60 @@ Decision:
 - Preserve teacher v5 as the frozen 19-label base and do not train during the
   next teacher expansion even if the 20-game gate is reached.
 
+## Extension v5 Teacher Candidate Expansion
+
+Status: completed; three new labels accepted and the 20-game gate passed.
+
+Evidence:
+
+- The only loaded dataset was
+  `website_danzero_shadow_extension_v5.train_dev.pth`, whose SHA-256 remained
+  `e5e220c3c770116ca9d01478e98e610dd6309a0f3d6c17088a8328f62b47174b`;
+  complete-bundle and locked-test loads were zero.
+- All 345 decisions from the 12 new train games were enumerated. Per-game
+  total/eligible/ineligible counts were: `14058` 38/38/0, `14059` 19/19/0,
+  `14061` 28/28/0, `14063` 16/16/0, `14064` 29/21/8, `14066` 49/21/28,
+  `14068` 26/17/9, `14070` 27/22/5, `14072` 31/22/9, `14074` 18/17/1,
+  `14077` 31/29/2, and `14081` 33/27/6. All 68 exclusions were caused only
+  by a nonpositive public hand count.
+- Greedy-only screening covered all 277 eligible states, 843 candidate
+  actions, and 6,744/6,744 rollouts. It emitted zero strong labels and was
+  used only to choose confirmation cases.
+- Six positive-lower-bound, low-variance screen signals covered five games.
+  Confirmation evaluated one strongest state per game: five cases, 20
+  candidates, and 320/320 rollouts split evenly between greedy and
+  frozen-tempo continuations.
+- Every rollout used uniform physical assignment conditioned on public counts,
+  stable game/turn/determinization seeds, and shared complete
+  determinizations. Timeouts, incomplete cases, integrity failures,
+  hidden-hand access, future-information access, and locked-test access were
+  all zero.
+- `14058:22` passed with advantage 0.50, 95% lower bound 0.0617, candidate
+  variance 0.0, and greedy/frozen-tempo advantages 0.75/0.25.
+- `14074:9` passed with advantage 1.00, 95% lower bound 0.4939, candidate
+  variance 0.0, and greedy/frozen-tempo advantages 1.00/1.00.
+- `14077:10` passed with advantage 0.50, 95% lower bound 0.0617, candidate
+  variance 0.0, and greedy/frozen-tempo advantages 0.75/0.25.
+- `14064:1` failed confidence, variance, and frozen-tempo robustness;
+  `14070:1` failed variance and frozen-tempo robustness. Neither game retained
+  another permitted positive-screen alternative. The same-game alternative
+  `14074:10` was not run because the stronger `14074:9` passed.
+- Teacher v6 preserves all 19 teacher v5 samples exactly after deserialization
+  and appends only the three accepted labels. Source-state, behavior-action,
+  legal-action, 513/54 dimension, and physical-card remap errors were zero.
+
+Decision:
+
+- Freeze `website_information_set_teacher_dataset_v6.pth` at 22 labels from 22
+  independent games; its SHA-256 is
+  `a74416e6facb28a1bc64563eba90cb33d460dc9e59cc2109518da142465e15f8`.
+- The 20-game label-count gate passes. No model was trained, no offline
+  capability evaluation ran, and no capability or checkpoint-promotion claim
+  is allowed from this stage.
+- Treat the extension v5 candidate pool as exhausted. The next stage is only a
+  frozen, deterministic teacher-preference training-pipeline smoke with
+  complete-game grouping; Arena and website play remain out of scope.
+
 ## Model A / Shared Self-Play / BC / PPO / DMC
 
 Status: not eligible for website control.
@@ -686,23 +743,21 @@ Decision:
 
 ## Current Next Experiment
 
-Name: Extension v5 Teacher Candidate Expansion.
+Name: Frozen Teacher-Preference Training Smoke.
 
 Purpose:
 
-- Screen every eligible decision from the 12 new train games using only the
-  frozen physical extension v5 train/development partition.
-- Preserve teacher v5 and append only labels that pass every frozen
-  information-set and dual-continuation gate.
+- Add the smallest deterministic training path that can consume frozen teacher
+  v6 as 513-state/54-action teacher-over-behavior preferences.
+- Freeze a complete-game-grouped internal train/development split and verify
+  the pipeline without using locked test or making a capability claim.
 
 Acceptance:
 
-- Complete bundle and locked-test loads are zero; only the 345 new train
-  decisions are enumerated and every eligible state is screened.
-- Greedy-only screening creates no labels. Every accepted label passes the
-  frozen 16-rollout completeness, variance, advantage, positive-confidence,
-  and greedy/frozen-tempo robustness gates.
-- All 19 teacher v5 samples remain unchanged, and source state, behavior
-  action, legal action, physical remap, and 513/54 dimensions pass.
-- No website play, model training, offline capability evaluation, or
-  model-controlled website play occurs, even if the 20-game gate is reached.
+- Teacher v6 hash and its 22-game frozen contents are verified before use.
+- Every sample has 513 state dimensions, legal 54-dimensional teacher and
+  behavior actions, and no game appears in both internal partitions.
+- A deterministic CPU smoke produces reproducible split/training metadata and
+  a loadable checkpoint; metrics are explicitly pipeline-only.
+- Locked-test loads, Arena evaluation, website play, checkpoint promotion,
+  model-controlled website play, and capability claims are zero.

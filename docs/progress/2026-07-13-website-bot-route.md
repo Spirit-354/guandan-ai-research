@@ -837,3 +837,59 @@ The next stage may read only the v5 physical train/development partition and
 screen the 345 new train decisions for robust teacher candidates. Teacher v5
 remains the frozen 19-label base; training stays prohibited even if the next
 stage reaches the 20-game gate.
+
+## Extension v5 Teacher Expansion
+
+The v5 physical train/development partition was the only dataset loaded for
+selection and rollout. Its SHA-256 remained
+`e5e220c3c770116ca9d01478e98e610dd6309a0f3d6c17088a8328f62b47174b`;
+the complete bundle and isolated locked-test partition were not loaded.
+
+All 345 decisions from the 12 new train games were enumerated. Sixty-eight
+were ineligible only because at least one public hand count was nonpositive.
+The remaining 277 states all completed greedy-only screening: 843 candidates
+and 6,744/6,744 rollouts, with zero timeout or integrity failure. Screening
+emitted no strong labels.
+
+The frozen audit by game, shown as total/eligible/ineligible, was: `14058`
+38/38/0, `14059` 19/19/0, `14061` 28/28/0, `14063` 16/16/0, `14064`
+29/21/8, `14066` 49/21/28, `14068` 26/17/9, `14070` 27/22/5, `14072`
+31/22/9, `14074` 18/17/1, `14077` 31/29/2, and `14081` 33/27/6.
+
+Six positive-95%-lower-bound, low-variance screen signals covered five
+independent games. The strongest signal per game was confirmed: five cases and
+20 candidates completed 320/320 rollouts, evenly divided between greedy and
+frozen-tempo continuations. Every run used uniform physical information-set
+assignment, stable game/turn/seed determinizations shared across profiles, and
+no hidden-hand or future information. Locked-test loads, incomplete accepted
+files, timeouts, and integrity failures remained zero.
+
+Three cases passed every frozen gate:
+
+- `14058:22`: advantage 0.50, 95% lower bound 0.0617, candidate variance 0.0,
+  and greedy/frozen-tempo advantages 0.75/0.25;
+- `14074:9`: advantage 1.00, 95% lower bound 0.4939, candidate variance 0.0,
+  and greedy/frozen-tempo advantages 1.00/1.00;
+- `14077:10`: advantage 0.50, 95% lower bound 0.0617, candidate variance 0.0,
+  and greedy/frozen-tempo advantages 0.75/0.25.
+
+`14064:1` was rejected for candidate variance 0.80, a negative confidence lower
+bound, and zero frozen-tempo advantage. `14070:1` was rejected for candidate
+variance 1.067 and frozen-tempo advantage -0.25. Neither game retained another
+permitted positive-screen alternative. The same-game `14074:10` alternative
+was not run because the stronger `14074:9` passed.
+
+`website_information_set_teacher_dataset_v6.pth` preserves all 19 teacher v5
+samples exactly after deserialization and appends only the three accepted
+labels. Source states, behavior actions, legal teacher actions, physical-card
+mapping, and 513-state/54-action dimensions all passed. Its SHA-256 is
+`a74416e6facb28a1bc64563eba90cb33d460dc9e59cc2109518da142465e15f8`;
+teacher v5 remained unchanged at
+`155fc348e939490bc036b2b5e3e0993be732b259250cac3d0244e888910fb9da`.
+
+Teacher v6 contains 22 labels from 22 independent games, so the 20-game
+label-count gate passes. This stage ran no website games, model training,
+offline capability evaluation, or model-controlled website play. The next
+stage is limited to a deterministic, complete-game-grouped teacher-preference
+training-pipeline smoke; it cannot run Arena or website play, promote a
+checkpoint, or make a capability claim.

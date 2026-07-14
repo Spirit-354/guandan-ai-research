@@ -8,7 +8,7 @@ Branch: `agent/stage5-website-bot-adaptation`
 
 Latest completed stage:
 
-- Frozen Dataset Extension v5.
+- Extension v5 Teacher Candidate Expansion.
 
 Primary program:
 
@@ -78,25 +78,26 @@ Teacher dataset:
   13 labels from 13 independent games.
 - Frozen base: `website_information_set_teacher_dataset_v4.pth`, unchanged at
   16 labels from 16 independent games.
-- Current dataset: `website_information_set_teacher_dataset_v5.pth`.
-- 19 accepted high-confidence teacher labels from 19 independent games: 16
-  frozen labels plus 3 extension v4 labels.
-- New accepted cases: `14038:12`, `14044:9`, and `14045:5`.
+- Frozen base: `website_information_set_teacher_dataset_v5.pth`, unchanged at
+  19 labels from 19 independent games.
+- Current dataset: `website_information_set_teacher_dataset_v6.pth`.
+- 22 accepted high-confidence teacher labels from 22 independent games: 19
+  frozen labels plus 3 extension v5 labels.
+- New accepted cases: `14058:22`, `14074:9`, and `14077:10`.
 - Representation: 513 state dimensions, 54 website action dimensions.
-- Teacher v5 SHA-256:
-  `155fc348e939490bc036b2b5e3e0993be732b259250cac3d0244e888910fb9da`.
-- Training gate is closed until at least 20 independent high-confidence teacher
-  games exist.
+- Teacher v6 SHA-256:
+  `a74416e6facb28a1bc64563eba90cb33d460dc9e59cc2109518da142465e15f8`.
+- The 20-game teacher gate is satisfied at 22 independent games. No model has
+  yet been trained from teacher v6, and capability claims remain prohibited.
 
 Current blocker:
 
-- Training remains blocked until at least 20 independent high-confidence
-  teacher games exist; the current count is 19 and at least 1 more independent
-  strong-label game is required.
-- The eligible extension v4 train pool is exhausted: all 252 rollout-eligible
-  states were screened. Extension v5 now exposes 345 new consistent train
-  decisions from 12 independent games for the next frozen-gate teacher
-  candidate expansion.
+- The label-count gate is no longer the blocker. Stage 5 still requires a
+  frozen, game-grouped teacher-preference training recipe and a pipeline smoke
+  before any offline capability comparison.
+- The eligible extension v5 pool is exhausted: all 277 rollout-eligible states
+  were screened, all permitted positive-screen game signals were confirmed or
+  exhausted, and three labels passed.
 
 ## Active Stage Plan
 
@@ -518,7 +519,7 @@ Acceptance:
 Goal: screen every eligible new train state from the 12 Supplement v5 games and
 append only robust information-set labels to frozen teacher v5.
 
-Status: next stage; not started.
+Status: completed.
 
 Constraints:
 
@@ -530,9 +531,41 @@ Constraints:
 - Preserve all 19 teacher v5 labels exactly and write only teacher v6. Do not
   train or evaluate even if the 20-game teacher gate is reached.
 
+Acceptance:
+
+- Only the v5 physical train/development partition was loaded; complete-bundle
+  and locked-test loads were zero.
+- All 345 new train decisions were enumerated: 277 eligible states completed
+  greedy-only screening and 68 were ineligible only because a public hand
+  count was nonpositive.
+- Greedy-only screening completed 6,744/6,744 rollouts across 843 candidates
+  and accepted zero strong labels. Dual-continuation confirmation completed
+  320/320 rollouts across five cases and 20 candidates.
+- `14058:22`, `14074:9`, and `14077:10` passed every frozen strong-label gate.
+  Failed games retained no permitted positive-screen alternatives; the unused
+  same-game `14074:10` alternative was not run because `14074:9` passed.
+- All 19 teacher v5 samples were preserved exactly after deserialization;
+  source state, behavior action, legal teacher action, 513/54 dimensions, and
+  physical-card remap errors were zero.
+- Teacher v6 contains 22 labels from 22 games and passes the 20-game teacher
+  gate. Website play, model training, offline capability evaluation, and
+  model-controlled website play were all zero.
+
 ### Stage 5: Training Gate
 
 Goal: train only after enough teacher labels and coverage exist.
+
+Status: next stage; not started.
+
+Constraints:
+
+- Freeze teacher v6 and extension v5 train/development as the only permitted
+  training/readiness inputs; never load locked test.
+- Add the smallest 513+54 teacher-preference training path needed for a
+  deterministic pipeline smoke, with complete-game grouping and a frozen split
+  manifest. Do not run Arena or website Shadow in the same stage.
+- Treat all training metrics as pipeline evidence only; do not promote a
+  checkpoint or make a capability claim.
 
 Acceptance:
 
