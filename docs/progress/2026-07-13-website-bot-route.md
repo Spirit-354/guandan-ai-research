@@ -517,3 +517,53 @@ This stage did not rebuild a dataset, run teacher rollout, train a model, run
 offline evaluation, or allow model-controlled website play. The next stage is
 limited to constructing extension v3 artifacts from frozen extension v2 plus
 this preassigned train session.
+
+## Frozen Dataset Extension v3
+
+The extension v2 manifest content hash and all five v2 artifact hashes were
+verified before construction. Its 70 game IDs, split lists, 13 session
+assignments, 70 source paths and hashes, and nine-game locked-test set were
+recorded. None of the five v3 outputs existed before the build.
+
+The builder used extension v2 as its frozen manifest base and added only
+`logs_website_shadow_supplement_train_003` through the cumulative v3 assignment
+file. It accepted all 82 source games and rejected none. The new bundle contains
+49 wins, 33 losses, 2,061 decisions, and 57,871 legal candidates. Every game is
+bot verified, every metric source is `leaderboard_elo`, and the
+model-controlled action count is zero.
+
+Independent manifest comparison found zero removed old games, source-hash
+changes, old session changes, old split changes, or locked-test membership
+changes. The 12 added game IDs exactly match Supplement v3 and all entered
+train; none entered development or locked test. Comparing serialized samples
+found all 1,753 old samples unchanged except for the expected v3 split manifest
+hash field. All 308 new samples are consistent train samples.
+
+The physical train/development partition contains 1,190 consistent decisions
+across 73 games: 1,026 train and 164 development, with 45,774 legal candidates.
+It includes 193 lead, 997 follow, 807 level-card, 331 wildcard, 891 endgame, and
+606 bomb-candidate decisions. All 13 levels and all four first-player seats are
+covered across the 1900-1999, 2000-2099, and 2100-2199 Elo bands, and duplicate
+state count remains zero. The isolated locked-test partition remains the same
+nine games and 90 consistent decisions.
+
+Coverage, information-set rollout, and threshold gates all pass. Capability
+evidence remains ineligible, and this stage ran no website play, teacher
+rollout, model training, offline evaluation, or model-controlled website play.
+The extension v3 manifest content hash is
+`51fe0244407d67e8267ea11b7146ff214f73823c29db92062189a58d033e5af9`.
+
+The frozen v3 artifact SHA-256 audit is:
+
+- bundle: `0235f53f7aec87cd3f7c62a529fd2d05af899a7befa72280fe4d5da234b4ac81`;
+- train/development partition:
+  `e5edc7090657ac1c4b4a2b2a14f38ad9bb0145ba1c19b6e85fca20bb1b5a687a`;
+- locked-test partition:
+  `941c66107e93aaa5d26965aa4b3a26fee0e0fab70f73ed489d6c49eaf3d60e59`;
+- manifest file:
+  `c91cb7665e9fcca68ee0161582a2794701057611a71485527f7ab8fcf97ecc83`;
+- data card:
+  `f8eedcec8fa6679760e5bf4e202bef19bd07ee681b040f68168b22ce8b01c177`.
+
+The next stage may read only the v3 physical train/development partition and
+screen the 308 new train decisions for robust teacher candidates.

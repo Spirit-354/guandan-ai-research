@@ -334,6 +334,54 @@ Decision:
 - Do not screen these states or train from them before the v3 physical
   partitions, manifest, and coverage gates pass.
 
+## Website Dataset Extension v3
+
+Status: frozen; coverage gate passed.
+
+Evidence:
+
+- The extension v2 manifest content hash was verified as
+  `31c5bc501286ac41d3a791811c7089200e49097132bfd886aa10d281c5ddb27e`
+  before construction, and all five v2 artifact hashes remained unchanged.
+- Extension v3 contains 82 accepted bot-only games, 49 wins, 33 losses, 2,061
+  decisions, and 57,871 legal candidates; rejected files or games: 0.
+- All 70 extension v2 games, their split assignments, all 13 old sessions, and
+  every old source-file hash are unchanged. The nine-game locked-test set is
+  exactly identical.
+- New games 14018, 14019, 14020, 14021, 14022, 14023, 14025, 14026, 14027,
+  14029, 14030, and 14031 all entered train. New development and locked-test
+  games: 0.
+- All 1,753 old samples are unchanged after excluding the expected new split
+  manifest hash field. All 308 new samples are train, bot-verified,
+  `leaderboard_elo`, information-set consistent, and sourced from Supplement
+  v3.
+- The physical train/development partition contains 1,190 decisions across 73
+  games: 1,026 train and 164 development, with 45,774 legal candidates.
+- Physical coverage includes 193 lead, 997 follow, 807 level-card, 331 wildcard,
+  891 endgame, and 606 bomb-candidate decisions; all levels and first-player
+  seats are represented across three Elo bands.
+- Duplicate state count is zero. Coverage, information-set rollout, and dataset
+  threshold gates pass; capability evidence remains ineligible.
+- The isolated locked-test partition contains the same nine games and 90
+  consistent decisions, with zero training samples.
+- Extension v3 manifest content hash:
+  `51fe0244407d67e8267ea11b7146ff214f73823c29db92062189a58d033e5af9`.
+- Extension v3 artifact SHA-256 values:
+  - bundle: `0235f53f7aec87cd3f7c62a529fd2d05af899a7befa72280fe4d5da234b4ac81`;
+  - train/development: `e5edc7090657ac1c4b4a2b2a14f38ad9bb0145ba1c19b6e85fca20bb1b5a687a`;
+  - locked-test: `941c66107e93aaa5d26965aa4b3a26fee0e0fab70f73ed489d6c49eaf3d60e59`;
+  - manifest file: `c91cb7665e9fcca68ee0161582a2794701057611a71485527f7ab8fcf97ecc83`;
+  - data card: `f8eedcec8fa6679760e5bf4e202bef19bd07ee681b040f68168b22ce8b01c177`.
+
+Decision:
+
+- Freeze extension v3 and use only its physical train/development partition in
+  the next teacher-candidate stage.
+- Keep the complete bundle and isolated locked-test partition out of screening,
+  threshold selection, and label construction.
+- Preserve teacher v3 as the frozen 13-label base; do not train during the next
+  teacher expansion.
+
 ## Model A / Shared Self-Play / BC / PPO / DMC
 
 Status: not eligible for website control.
@@ -369,25 +417,24 @@ Decision:
 
 ## Current Next Experiment
 
-Name: Frozen Website Dataset Extension v3.
+Name: Extension v3 information-set teacher candidate expansion.
 
 Purpose:
 
-- Extend frozen website dataset v2 with only the already preassigned Supplement
-  v3 train session.
-- Produce new v3 bundle, physical partitions, manifest, and data card without
-  overwriting any v2 artifact or changing old split membership.
+- Screen every eligible consistent train decision from the 12 new games using
+  legal information-set determinization.
+- Confirm only high-evidence candidates against both greedy and frozen-tempo
+  continuations, then append accepted labels to frozen teacher v3.
 
 Acceptance:
 
-- All 70 extension v2 games, old source hashes, session assignments, split
-  membership, and the nine-game locked-test set remain unchanged.
-- Exactly 12 new games and 308 decisions enter train; new development and
-  locked-test games are zero.
-- Expected totals are 82 games, 49 wins, 33 losses, 2,061 decisions, and 57,871
-  candidates; the physical train/development partition is expected to contain
-  1,190 consistent decisions.
-- Coverage, duplicate-state, information-set, physical-isolation, manifest,
-  and credential gates pass.
-- Website play, teacher rollout, model training, offline evaluation, and
-  model-controlled website play are all zero.
+- Load only `website_danzero_shadow_extension_v3.train_dev.pth`; locked-test
+  loads and hidden/future information use: 0.
+- Enumerate all 308 new train decisions, report ineligible states, and screen
+  every eligible state without allowing greedy-only signals to become labels.
+- Every accepted label passes the frozen 16-rollout completeness, variance,
+  advantage, confidence, and dual-continuation robustness gates.
+- Frozen teacher v3 labels remain unchanged and physical-action remap errors
+  are zero.
+- Report the resulting independent teacher-game count, but do not train a model
+  in this stage.

@@ -8,7 +8,7 @@ Branch: `agent/stage5-website-bot-adaptation`
 
 Latest completed stage:
 
-- Website Shadow Supplement v3.
+- Frozen Website Dataset Extension v3.
 
 Primary program:
 
@@ -28,38 +28,39 @@ Current website dataset:
 
 - The original 50-game baseline-only dataset remains frozen and unchanged.
 - Extension v1 remains frozen and unchanged at 58 games.
-- Current extension v2 contains 70 baseline-only website bot games: 40 wins and
-  30 losses, 1,753 decisions, and 49,549 legal candidates.
+- Extension v2 remains frozen and unchanged at 70 games.
+- Current extension v3 contains 82 baseline-only website bot games: 49 wins and
+  33 losses, 2,061 decisions, and 57,871 legal candidates.
 - Frozen base manifest hash:
   `83a58a43ea91f5662e2588494d7bad1b3d9d18de51c30216e5be0e589e0437e4`.
 - Extension v1 manifest hash:
   `db209561f6961b289dda668861687fcd7a258a2f283cecaae065501b2006f429`.
 - Extension v2 manifest hash:
   `31c5bc501286ac41d3a791811c7089200e49097132bfd886aa10d281c5ddb27e`.
-- Curated evidence: `website_dataset_split_manifest_extension_v2.json` and
-  `website_dataset_card_extension_v2.json`.
-- All 12 Supplement v2 games and 280 decisions entered train; rejected new
-  games or decisions: 0.
-- Supplement v3 is collected but not yet part of a frozen dataset: 12 verified
-  bot-only train-session games, 9 wins and 3 losses, 308 decisions, and 8,322
-  exhaustive legal candidates.
+- Extension v3 manifest hash:
+  `51fe0244407d67e8267ea11b7146ff214f73823c29db92062189a58d033e5af9`.
+- Curated evidence: `website_dataset_split_manifest_extension_v3.json` and
+  `website_dataset_card_extension_v3.json`.
+- All 12 Supplement v3 games, 308 decisions, and 8,322 candidates entered
+  train; rejected new games or decisions: 0.
 
 Information-set-consistent train/development subset:
 
-- 882 decisions across 61 independent games.
-- 718 train decisions and 164 development decisions.
-- 37,452 legal candidates.
-- 141 lead decisions and 741 follow decisions.
-- 659 level-card states, including 278 wildcard states.
-- 619 endgame states and 500 bomb-candidate states.
+- 1,190 decisions across 73 independent games.
+- 1,026 train decisions and 164 development decisions.
+- 45,774 legal candidates.
+- 193 lead decisions and 997 follow decisions.
+- 807 level-card states, including 331 wildcard states.
+- 891 endgame states and 606 bomb-candidate states.
 - All 13 level values and all four first-player seats are represented; the
   website account itself remains in seat 0.
-- Elo bands: 174 decisions in `1900-1999` and 708 in `2000-2099`.
+- Elo bands: 174 decisions in `1900-1999`, 744 in `2000-2099`, and 272 in
+  `2100-2199`.
 - Duplicate state count: 0.
 
 Locked test:
 
-- The original nine-game locked-test set is exactly unchanged in extension v2.
+- The original nine-game locked-test set is exactly unchanged in extension v3.
 - No new session or game was assigned to locked test.
 - The isolated physical locked-test partition remains 90 consistent decisions.
 - The locked-test partition remains prohibited for training, candidate design,
@@ -87,8 +88,8 @@ Current blocker:
 - The eligible extension v2 train pool is exhausted: all 249 rollout-eligible
   states were screened and every positive-lower-bound alternative was either
   confirmed or rejected by the frozen strong-label gates.
-- Supplement v3 must pass a separate frozen dataset-extension stage before its
-  states may be screened for teacher labels.
+- Extension v3 now exposes 308 new consistent train decisions from 12
+  independent games for the next teacher-candidate stage.
 
 ## Active Stage Plan
 
@@ -265,18 +266,43 @@ Acceptance:
 Goal: add the preassigned Supplement v3 train session without changing any
 frozen extension v2 game, split, source hash, or locked-test membership.
 
+Status: completed.
+
+Acceptance:
+
+- New v3 bundle, physical partitions, manifest, and data card were written
+  without overwriting v2.
+- All 70 extension v2 games, 70 old source hashes, 13 old session assignments,
+  old split memberships, and the exact nine-game locked-test set are unchanged.
+- All 12 Supplement v3 games entered train, contributing 308 decisions and
+  8,322 candidates; new development or locked-test games: 0.
+- Extension v3 contains 82 games, 49 wins, 33 losses, 2,061 decisions, and
+  57,871 candidates; rejected files or games: 0.
+- The physical train/development partition contains 1,190 consistent decisions:
+  1,026 train and 164 development, with 45,774 candidates and zero duplicate
+  states. Coverage, information-set rollout, and threshold gates pass.
+- The isolated locked-test partition remains nine games and 90 consistent
+  decisions. Model-controlled actions: 0; no website play, teacher rollout,
+  model training, or offline evaluation occurred.
+
+### Stage 4.10: Extension v3 Teacher Candidate Expansion
+
+Goal: screen every eligible new train state from the 12 Supplement v3 games and
+append only robust information-set labels to the frozen teacher v3 base.
+
 Status: next stage; not started.
 
 Constraints:
 
-- Use extension v2 as the frozen manifest base and the cumulative v3 session
-  assignment file.
-- Build new v3 bundle, physical train/development and locked-test partitions,
-  manifest, and data card without overwriting v2 artifacts.
-- Accept only the 12 new completed verified bot games into train; new
-  development or locked-test games must remain zero.
-- Do not run website play, teacher rollout, model training, offline evaluation,
-  or model-controlled website play in the dataset-extension stage.
+- Load only `website_danzero_shadow_extension_v3.train_dev.pth`; do not load
+  the complete bundle or locked-test partition.
+- Restrict screening to the 12 new game IDs recorded in `NEXT_TASK.md`.
+- Greedy-only results may select confirmation candidates but cannot directly
+  produce strong labels.
+- Accept labels only through the frozen 16-rollout completeness, variance,
+  advantage, confidence, and greedy-plus-frozen-tempo robustness gates.
+- Preserve all 13 teacher v3 labels and verify 54-dimensional physical-action
+  remapping. Do not train, even if the 20-game gate is reached.
 
 ### Stage 5: Training Gate
 
