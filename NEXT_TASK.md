@@ -2,124 +2,119 @@
 
 ## Single Next Stage
 
-Run Stage 6.10: frozen residual corrective dataset extension.
+Run Stage 6.11: frozen residual corrective training smoke.
 
-Preserve the frozen corrective dataset v1 and add only the four Stage 6.9
-pipeline-train teacher-over-residual comparisons that passed every unchanged
-strong gate: `14044:9`, `14038:12`, `14000:5`, and `14022:16`. Exclude the
-four inconclusive train comparisons and all three pipeline-development residual
-targets. Recompute deterministic state-balanced pair weights after the four
-additions.
+Use only the frozen Stage 6.10 corrective dataset v2 and execute exactly one
+fixed, from-scratch CPU training run with the unchanged Stage 6.6
+state-balanced pairwise softplus recipe. Train on the 18 pipeline-train states
+and 28 train pairs only. Keep the four pipeline-development states and four
+development pairs evaluation-only.
 
-Do not run rollout, train or fine-tune a model, tune thresholds, select or
-modify a checkpoint, load locked test or any website dataset, run Arena, access
-the website, begin Shadow or model-controlled play, promote a model, claim
-capability, or execute the new objective.
+Do not run rollout, fine-tune from any checkpoint, tune thresholds or
+hyperparameters, select among checkpoints, load locked test or any website
+dataset, run a full-legal-set diagnosis or Arena, access the website, begin
+Shadow or model-controlled play, promote a model, or claim capability.
 
 ## Frozen Inputs
 
-- Stage 6.9 residual confirmation:
-  `website_teacher_preference_corrective_residual_train_confirmation_v1.json`,
-  SHA-256
-  `352cd0dfe0a4c958ba0555b776326a2b58470a980aef461ed49d4c59a7474c7a`.
-- Corrective dataset v1 and manifest:
+- Corrective dataset v2 and manifest:
+  `website_teacher_preference_corrective_dataset_v2.pth`, SHA-256
+  `40024f7c064f0ebb7999c4ac0f7bc85d77b759a23956cbe596756763d4009d4d`;
+  `website_teacher_preference_corrective_dataset_v2_manifest.json`, SHA-256
+  `ce5141f6254218d9230b15117a88d3c5e6bd374839bcf5fc77b393e2599ec353`.
+- Stage 6.6 fixed-recipe authority:
+  `website_teacher_preference_corrective_training_v1.json`, SHA-256
+  `baa97ccf71c237895a92f4cb8b36b9559cf3cabe45b4901b7481d9f50f4c0830`.
+- Corrective dataset v1 and manifest remain frozen provenance inputs:
   `website_teacher_preference_corrective_dataset_v1.pth`, SHA-256
   `fad7ae18fea8b02cbc88ad4a8a7f8ecee298abe436ef589f5c88d66e42a32707`;
   `website_teacher_preference_corrective_dataset_v1_manifest.json`, SHA-256
   `0a5dc4f60091338b65f86f83ad30ae55dc18c058ee8b07535a314510ad96ef0a`.
-- Stage 6.8 residual evidence audit:
-  `website_teacher_preference_corrective_residual_evidence_audit_v1.json`,
-  SHA-256
-  `676232033f07051670b4407f15aca9f3939d9754ac2dcf4d078957263a1e2a6b`.
-- Frozen teacher v6 and 18/4 split:
+- Teacher v6 and frozen 18/4 split:
   `website_information_set_teacher_dataset_v6.pth`, SHA-256
   `a74416e6facb28a1bc64563eba90cb33d460dc9e59cc2109518da142465e15f8`;
   `website_teacher_preference_split_v1.json`, SHA-256
   `5a15e514dc9bc51d77d300837151d9f1a49250f42885cc7940725bcbe4d35107`.
-- Stage 6.4 confirmation remains the provenance authority for the six existing
-  corrective pairs:
-  `website_teacher_preference_unpaired_train_confirmation_v1.json`, SHA-256
-  `8e17377b5a1523d9f0a47af7218d687e062a3ade671c57f387eb4c1a0888cfae`.
-- The only new outputs are
-  `website_teacher_preference_corrective_dataset_v2.pth` and
-  `website_teacher_preference_corrective_dataset_v2_manifest.json`; neither may
-  exist before execution.
+- Stage 6.9 residual confirmation:
+  `website_teacher_preference_corrective_residual_train_confirmation_v1.json`,
+  SHA-256
+  `352cd0dfe0a4c958ba0555b776326a2b58470a980aef461ed49d4c59a7474c7a`.
+- The new curated report must be
+  `website_teacher_preference_residual_corrective_training_v1.json`. The new
+  ignored checkpoint must be
+  `models_website_teacher_preference_residual_corrective_v1/website_teacher_preference_residual_corrective_final.pth`.
+  Neither output may exist before execution.
 
-## Dataset Contract
+## Training Contract
 
-- Validate every frozen hash and reload the v1 dataset/manifest. Preserve all
-  22 embedded teacher v6 samples exactly after deserialization, including every
-  per-sample canonical hash and the aggregate sample hash.
-- Preserve the identities, preferred/rejected actions, action hashes, physical
-  identities, pair types, partitions, and provenance of all 28 v1 pairs.
-  Pair-weight fields may change only through the deterministic state-balancing
-  rule required after adding the four new pairs.
-- Add exactly four `teacher_action_beats_residual_top1` pairs for `14044:9`,
-  `14038:12`, `14000:5`, and `14022:16`. Each must match the Stage 6.9 teacher
-  and residual indices, 54D hashes, physical identities, and frozen directional
-  metrics with an empty teacher-direction failure list.
-- Add no pair for inconclusive train cases `13957:14`, `14077:10`, `13959:7`,
-  and `14025:20`. Record them as exclusions. Keep development residual targets
-  `13992:16`, `14074:9`, and `13871:9` as held-out keys only; do not inspect or
-  add their actions.
-- The final dataset must contain 32 pairs across the same 22 states: 28
-  pipeline-train pairs across 18 states and four pipeline-development pairs
-  across four states. Counts are 22 base teacher-versus-behavior pairs, six
-  existing Stage 6.4 corrective pairs, and four new Stage 6.9 residual pairs.
-- Apply only the frozen state-balanced rule: pair weights sum to exactly one
-  for every state. Eight two-pair states use weights 0.5/0.5; `14022:16` has
-  three pairs with equal one-third weights; the other 13 states retain weight
-  1.0. Partition-normalized weights sum to exactly one for train and one for
-  development.
-- The manifest may describe the unchanged state-balanced pairwise softplus
-  objective, but the objective must not execute. Capability and checkpoint-
-  promotion eligibility remain false.
-- Independently reload and recompute all sample/pair hashes, v1 preservation,
-  four additions, seven exclusions/held-out keys, state and partition counts,
-  weight arithmetic, provenance, and forbidden-operation counters.
+- Independently reload dataset v2 and reproduce all 22 teacher sample hashes,
+  all 28 preserved v1 pair semantic hashes, all four Stage 6.9 residual pair
+  hashes, the 32/28/4 pair accounting, the unchanged 18/4 state split, every
+  state-balanced weight, both partition-normalized sums, all provenance, and
+  every zero forbidden-operation counter.
+- Freeze the Stage 6.6 recipe exactly: CPU, seed `20260714`, 20 epochs, six
+  states per batch, learning rate `0.001`, no initialization checkpoint, and
+  the existing `danzero_dmc.build_q_model` 513+54 architecture.
+- Run exactly one training job from scratch. Each optimizer batch must group
+  complete states and evaluate the frozen objective
+  `softplus(Q_rejected-Q_preferred)` with the recorded within-state pair
+  weights. With 18 train states, the run must complete exactly 60 optimizer
+  steps.
+- Use only the 18 pipeline-train states and 28 train pairs for gradients. The
+  four pipeline-development states/pairs may be evaluated only after training;
+  development training uses must remain zero.
+- Record deterministic train and development state-balanced loss, pair
+  accuracy, mean margin, and prediction digest. Report train metrics separately
+  for the 18 base pairs, six Stage 6.4 corrective pairs, and four Stage 6.9
+  residual corrective pairs.
+- Save only the final checkpoint from the one frozen run. Record every frozen
+  input hash, the exact recipe, architecture dimensions, false promotion and
+  capability flags, and zero tuning/selection counts.
+- In a separate process, reload the checkpoint and independently reproduce all
+  train/development aggregate and pair-type metrics plus prediction digests.
+  Do not use those metrics to tune, select, or modify the checkpoint.
 
 ## Required Work
 
 1. Re-read the canonical handoffs; verify Git state, every frozen hash, and both
    output paths are unused.
-2. Add the smallest v2 dataset-extension path and focused tests for exact v1
-   preservation, four supported additions, exclusion/held-out isolation,
-   32/28/4 accounting, one-third weighting, and output refusal.
-3. Build the v2 dataset and manifest once, then independently reload and audit
-   both outputs.
-4. Keep all frozen inputs and both checkpoints unchanged. Do not run rollout,
-   training, Arena, or any website path regardless of the result.
+2. Add the smallest v2 training path and focused tests for loader invariants,
+   state-grouped weighting, 28-train/4-development isolation, fixed recipe,
+   output refusal, and checkpoint metadata.
+3. Run preflight before training. Execute the formal training job exactly once,
+   then independently reload and audit the final checkpoint/report.
+4. Keep all frozen inputs unchanged. Do not run rollout, diagnosis, Arena, or
+   any website path regardless of metrics.
 5. Update `PROJECT_STATE.md`, `EXPERIMENTS.md`, `NEXT_TASK.md`, and the durable
    progress document; run narrow regressions, credential and diff checks,
    commit, and push.
 
 ## Acceptance Criteria
 
-- All frozen hashes remain unchanged. All 22 teacher samples and 28 v1 pair
-  identities/provenance records are preserved with zero dropped, substituted,
-  ambiguous, or unsupported old pairs.
-- Exactly four supported train residual pairs are added. Final counts are 32
-  total, 28 train, four development, 22 base, six existing corrective, and four
-  new residual corrective pairs across the unchanged 18/4 state split.
-- The four inconclusive train cases add zero pairs. The three development
-  residual targets have zero action inspection and zero pair additions.
-- Every state weight sum is exactly one; `14022:16` has three equal one-third
-  pair weights; train/development normalized weights each sum to one.
-- Rollout, training, fine-tuning, tuning, checkpoint selection/modification,
-  locked-test or website-dataset loads, Arena, website Shadow/play,
-  model-controlled website actions, promotion, and capability claims are zero.
+- All frozen hashes and all Stage 6.10 dataset invariants reproduce exactly.
+- Exactly one from-scratch training run uses only 18 train states and 28 train
+  pairs with seed `20260714`, 20 epochs, six states per batch, learning rate
+  `0.001`, and exactly 60 optimizer steps.
+- Development training uses, extra targets, fine-tuning, hyperparameter or
+  threshold searches, and checkpoint selections are zero.
+- The final report records aggregate and base/Stage-6.4/Stage-6.9 residual
+  train metrics plus development metrics. All values are finite and an
+  independent process exactly reproduces every metric and prediction digest.
+- Rollout, locked-test or website-dataset loads, full-set diagnosis, Arena,
+  website Shadow/play, model-controlled website actions, promotion, and
+  capability claims are zero.
 - Credential occurrences in new tracked/curated files are zero.
 - Handoff updates, focused tests, independent audit, conventional commit, and
-  push all succeed before the next stage Goal is marked complete.
+  push all succeed before the Stage 6.11 Goal is marked complete.
 
 ## Ready-to-Use Goal Prompt
 
-请创建一个阶段 Goal：完成 Stage 6.10 frozen residual corrective dataset
-extension。完整保留 corrective dataset v1 的 22 个 sample 和 28 个 pair identity/
-provenance，仅加入 Stage 6.9 支持的 4 个 pipeline-train teacher-over-residual
-pair；4 个 inconclusive train case 和 3 个 development target 必须零新增 pair，
-development action 不得检查。最终应为 32 pairs（28 train/4 development），逐 state
-权重和为 1，`14022:16` 的 3 个 pair 各为三分之一。不得 rollout、训练、调参、
-checkpoint 选择/修改、加载 locked test/网站 dataset、运行 Arena、访问网站、Shadow、
-模型控制、提升或能力结论。独立复核、交接更新、验证、凭据零命中、commit 和 push
+请创建一个阶段 Goal：完成 Stage 6.11 frozen residual corrective training
+smoke。只使用冻结的 corrective dataset v2，在 CPU 上按固定 seed 20260714、
+20 epochs、每批 6 个完整状态、学习率 0.001，从头执行恰好一次
+state-balanced pairwise softplus 训练；只允许 18 个 train 状态和 28 个 train
+pair 进入梯度，4 个 development pair 仅评估，完成 60 个 optimizer steps。
+不得 rollout、fine-tune、调参、选择 checkpoint、加载 locked test 或网站
+dataset、运行诊断/Arena、访问网站、Shadow、模型控制、提升或能力结论。独立
+进程精确复现全部指标和 digest，交接更新、验证、凭据零命中、commit 和 push
 全部成功后，才能完成 Goal。

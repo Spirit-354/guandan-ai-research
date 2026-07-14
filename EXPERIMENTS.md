@@ -46,8 +46,9 @@ train-only teacher-versus-top1 constraints and Stage 6.6 completed one fixed
 corrective pipeline smoke. Stage 6.7 found 11/22 teacher top-1 states, and
 Stage 6.8 found no direct frozen support for the eight residual train
 orderings. Stage 6.9 confirmed four additional teacher-over-residual train
-comparisons, with four inconclusive and no reverse support. No capability
-evidence exists.
+comparisons, with four inconclusive and no reverse support. Stage 6.10 froze a
+32-pair residual corrective dataset without executing its objective. No
+capability evidence exists.
 
 Accepted strong labels:
 
@@ -1176,6 +1177,49 @@ Decision:
   weights after adding only those four pairs. Do not train, run another
   rollout, run Arena, or access the website in the dataset stage.
 
+## Stage 6.10 Frozen Residual Corrective Dataset Extension
+
+Status: completed; 32-pair state-balanced dataset frozen without training.
+
+Evidence:
+
+- All seven frozen inputs retained their expected hashes. The formal builder
+  wrote the dataset and manifest once and executed no rollout, training,
+  tuning, checkpoint, Arena, locked-test, website-dataset, or website path.
+- All 22 embedded teacher samples preserved their exact per-sample and
+  aggregate canonical hashes. All 28 v1 pairs preserved their ID, action,
+  action-hash, physical identity, pair type, partition, and provenance fields;
+  only deterministic weight fields changed.
+- Exactly four `teacher_action_beats_residual_top1` train pairs were added for
+  `14044:9`, `14038:12`, `14000:5`, and `14022:16`, with exact Stage 6.9
+  indices, 54D hashes, physical identities, metrics, and empty teacher failure
+  lists.
+- Final counts are 32 pairs across the same 22 states: 28 train and four
+  development, comprising 22 base, six Stage 6.4 corrective, and four Stage
+  6.9 residual pairs. The four inconclusive train cases and three identity-only
+  development targets added zero pairs.
+- State pair-count distribution is 13 single, eight double, and one triple.
+  Double states use 0.5/0.5; `14022:16` uses three equal one-third weights;
+  all state sums and train/development normalized sums equal one.
+- A separate process reconstructed the entire payload and manifest and matched
+  hashes, v1 semantics, additions, seven exclusions/held-out keys, counts,
+  weights, provenance, and all zero forbidden-operation counters.
+- Dataset SHA-256:
+  `40024f7c064f0ebb7999c4ac0f7bc85d77b759a23956cbe596756763d4009d4d`.
+  Manifest SHA-256:
+  `ce5141f6254218d9230b15117a88d3c5e6bd374839bcf5fc77b393e2599ec353`.
+
+Decision:
+
+- Freeze corrective dataset v2 and its manifest. The unchanged state-balanced
+  pairwise softplus objective remains unexecuted, and promotion/capability
+  eligibility remains false.
+- Permit one separate fixed, from-scratch CPU training smoke using only the 18
+  train states and 28 train pairs. Keep all four development pairs
+  evaluation-only and do not tune or select a checkpoint.
+- Do not run Arena, full-legal-set diagnosis, website Shadow, or website play in
+  that training stage.
+
 ## Model A / Shared Self-Play / BC / PPO / DMC
 
 Status: not eligible for website control.
@@ -1211,20 +1255,23 @@ Decision:
 
 ## Current Next Experiment
 
-Name: Stage 6.10 Frozen Residual Corrective Dataset Extension.
+Name: Stage 6.11 Frozen Residual Corrective Training Smoke.
 
 Purpose:
 
-- Preserve the frozen corrective dataset v1 and add only the four Stage 6.9
-  supported train teacher-over-residual pairs.
-- Exclude the four inconclusive train comparisons and all three development
-  residual targets, then recompute deterministic state-balanced weights.
+- Execute exactly one fixed, from-scratch CPU pipeline smoke on frozen
+  corrective dataset v2 using the unchanged state-balanced pairwise softplus
+  recipe.
+- Train only on 18 train states and 28 train pairs; keep all four development
+  states/pairs evaluation-only.
 
 Acceptance:
 
-- Preserve all 22 teacher samples and all 28 v1 pair identities; add exactly
-  four supported train pairs for 32 total pairs: 28 train and four development.
-- State weights sum to one for every state, including three equal one-third
-  weights at `14022:16`; partition-normalized weights sum to one.
-- Rollout, training, tuning, checkpoint changes, locked-test loads, Arena,
-  website access, promotion, and capability claims remain zero.
+- Frozen v2 hashes and all 32 pair/sample/weight invariants reproduce exactly.
+- One seed-`20260714`, 20-epoch, six-state-batch, learning-rate-`0.001` run
+  completes from scratch with 60 optimizer steps and zero development training
+  uses, extra targets, tuning, or checkpoint selection.
+- Independent checkpoint reload exactly reproduces train/development and
+  base/Stage-6.4/Stage-6.9 residual metrics and prediction digests.
+- Rollout, locked-test or website-dataset loads, Arena, website access,
+  promotion, and capability claims remain zero.

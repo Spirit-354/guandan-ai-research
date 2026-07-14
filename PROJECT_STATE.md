@@ -8,7 +8,7 @@ Branch: `agent/stage5-website-bot-adaptation`
 
 Latest completed stage:
 
-- Stage 6.9 Frozen Pipeline-Train Residual Counterfactual Confirmation.
+- Stage 6.10 Frozen Residual Corrective Dataset Extension.
 
 Primary program:
 
@@ -151,6 +151,14 @@ Teacher dataset:
   It completed 256/256 paired rollouts across the eight frozen train cases:
   four supported teacher over residual, zero supported residual over teacher,
   and four were inconclusive.
+- The frozen residual corrective dataset is
+  `website_teacher_preference_corrective_dataset_v2.pth`, SHA-256
+  `40024f7c064f0ebb7999c4ac0f7bc85d77b759a23956cbe596756763d4009d4d`.
+  Its manifest SHA-256 is
+  `ce5141f6254218d9230b15117a88d3c5e6bd374839bcf5fc77b393e2599ec353`.
+  It preserves all 22 teacher samples and all 28 v1 pair semantics, adds only
+  the four Stage 6.9-supported train residual pairs, and contains 28 train plus
+  four development pairs across the unchanged 18/4 states.
 
 Current blocker:
 
@@ -176,7 +184,12 @@ Current blocker:
   `14038:12`, `14000:5`, and `14022:16`. `13957:14`, `14077:10`,
   `13959:7`, and `14025:20` were inconclusive; no comparison supported the
   residual action over teacher. Only the four supported train comparisons are
-  eligible for a separate corrective-dataset construction stage.
+  included in corrective dataset v2; the four inconclusive train cases and
+  three development residual targets added zero pairs.
+- Stage 6.10 is dataset evidence only. The v2 objective was not executed, no
+  new checkpoint exists, and no improved offline capability has been shown.
+  A separate fixed training stage is required before any new full-legal-set
+  diagnosis or Arena can be considered.
 - The eligible extension v5 pool is exhausted: all 277 rollout-eligible states
   were screened, all permitted positive-screen game signals were confirmed or
   exhausted, and three labels passed.
@@ -675,9 +688,9 @@ Acceptance:
 
 Goal: compare candidates against frozen `tempo_baseline`.
 
-Status: Stage 6.9 completed; four train-only residual comparisons support
-teacher, four remain inconclusive, and no improved offline capability evidence
-exists yet.
+Status: Stage 6.10 completed; the frozen v2 dataset contains only the four
+supported residual corrections, but its objective has not executed and no
+improved offline capability evidence exists yet.
 
 Constraints:
 
@@ -898,6 +911,33 @@ Stage 6.9 acceptance:
   checkpoint changes, Arena, website activity, promotion, capability claims,
   and unsupported labels were zero. Curated confirmation SHA-256:
   `352cd0dfe0a4c958ba0555b776326a2b58470a980aef461ed49d4c59a7474c7a`.
+
+Stage 6.10 acceptance:
+
+- All seven frozen input hashes remained unchanged. All 22 embedded teacher
+  samples retained exact per-sample and aggregate canonical hashes.
+- All 28 v1 pair IDs, actions, hashes, physical identities, pair types,
+  partitions, and provenance were preserved exactly after removing only the
+  three deterministic weight fields. Exactly four supported train
+  `teacher_action_beats_residual_top1` pairs were added.
+- Final counts are 32 pairs across the unchanged 22 states: 28 train across 18
+  states and four development across four states, comprising 22 base pairs,
+  six Stage 6.4 corrective pairs, and four Stage 6.9 residual pairs.
+- The four inconclusive train cases added zero pairs. Development targets
+  `13992:16`, `14074:9`, and `13871:9` remained identity-only with zero action
+  inspection and pair additions.
+- Thirteen states have one pair, eight have two pairs weighted 0.5/0.5, and
+  `14022:16` has three pairs weighted one-third each. Every state sum and both
+  partition-normalized sums equal one.
+- An independent process reconstructed the complete payload and manifest,
+  including all hashes, counts, exclusions, weights, provenance, and zero
+  forbidden-operation counters. Rollout, training, tuning, checkpoint,
+  locked-test or website-dataset load, Arena, website activity, promotion, and
+  capability claims were zero.
+- Curated dataset SHA-256:
+  `40024f7c064f0ebb7999c4ac0f7bc85d77b759a23956cbe596756763d4009d4d`;
+  manifest SHA-256:
+  `ce5141f6254218d9230b15117a88d3c5e6bd374839bcf5fc77b393e2599ec353`.
 
 Acceptance:
 
