@@ -43,8 +43,9 @@ Decision:
 
 Status: Stage 6.1 continuation rejected at 0-20; Stage 6.4 confirmed six
 train-only teacher-versus-top1 constraints and Stage 6.6 completed one fixed
-corrective pipeline smoke. Stage 6.7 found 11/22 teacher top-1 states and no
-capability evidence.
+corrective pipeline smoke. Stage 6.7 found 11/22 teacher top-1 states, and
+Stage 6.8 found no direct frozen support for the eight residual train
+orderings. No capability evidence exists.
 
 Accepted strong labels:
 
@@ -1078,6 +1079,53 @@ Decision:
   top1 actions before proposing any further corrective objective or rollout.
   Keep the three residual development cases held out from design.
 
+## Stage 6.8 Frozen Corrective Residual-Top1 Evidence Audit
+
+Status: completed; all eight train residual comparisons lack sufficient direct
+frozen evidence, with development isolation preserved.
+
+Evidence:
+
+- All nine frozen input hashes remained unchanged. The audit reproduced the
+  Stage 6.7 conclusion without model scoring: 22 states, 934 full-set action
+  scores, 11/0/11 teacher/behavior/other first-max top-1 counts, zero pass
+  top-1, and exact Stage 6.6 metrics plus all prediction digests.
+- Exactly 11 residual targets reproduced by game/turn key, frozen partition,
+  original action index/order, 54D action hash, and teacher rank. Counts were
+  eight pipeline train and three pipeline development; missing, duplicate,
+  extra, reconstructed, substituted, and ambiguous mappings were zero.
+- The audit opened only the six rollout files directly referenced by the eight
+  train teacher samples and recorded every file hash. All eight actions mapped
+  exactly to the frozen legal-action order and physical-card metadata.
+- Five residual actions were present in the source legal-action list but were
+  not evaluated as candidates. Three actions had complete teacher and residual
+  candidate summaries, but no direct teacher-versus-residual paired advantage,
+  positive 95% lower bound/confidence, or both continuation-profile advantages.
+- Direct supported teacher-over-residual or residual-over-teacher orderings
+  were both 0/8. All eight train cases therefore remain insufficient and enter
+  only a non-executed future confirmation manifest; unsupported labels are zero.
+- Development targets `13992:16`, `14074:9`, and `13871:9` contain identity
+  fields only. Their source-reference exposure, target evidence queries,
+  candidate inspection, threshold-design use, and objective-design use were
+  all zero.
+- Independent recomputation matched every target identity, source hash, action
+  mapping, classification, partition count, aggregate, and forbidden-operation
+  counter. Rollout, training, tuning, checkpoint changes, locked-test or
+  website-dataset loads, Arena, website activity, promotion, and capability
+  claims were zero.
+- Curated artifact:
+  `website_teacher_preference_corrective_residual_evidence_audit_v1.json`,
+  SHA-256
+  `676232033f07051670b4407f15aca9f3939d9754ac2dcf4d078957263a1e2a6b`.
+
+Decision:
+
+- Do not define or train another corrective objective from the existing
+  evidence, and do not run Arena or promote the corrective checkpoint.
+- If confirmation proceeds, execute only the eight frozen pipeline-train
+  manifest cases under the unchanged paired information-set rollout and strong
+  gates. Keep all three development targets unexecuted and held out.
+
 ## Model A / Shared Self-Play / BC / PPO / DMC
 
 Status: not eligible for website control.
@@ -1113,21 +1161,24 @@ Decision:
 
 ## Current Next Experiment
 
-Name: Stage 6.8 Frozen Corrective Residual-Top1 Evidence Audit.
+Name: Stage 6.9 Frozen Pipeline-Train Residual Counterfactual Confirmation.
 
 Purpose:
 
-- Reproduce the 11 Stage 6.7 residual other-action top1 states and audit only
-  the eight pipeline-train targets against their already frozen source evidence.
-- Keep the three pipeline-development targets identity-only and out of evidence
-  inspection, objective design, and threshold design.
+- Execute only the eight Stage 6.8 insufficient pipeline-train comparisons
+  using exact frozen teacher/residual actions, shared information-set
+  determinizations, and the unchanged strong-teacher gates.
+- Keep all three pipeline-development residual targets unexecuted and out of
+  candidate, threshold, and objective design.
 
 Acceptance:
 
-- Reproduce exactly eight train and three development residual targets with
-  zero missing, extra, substituted, or ambiguous mappings.
-- Classify existing train-only evidence for direct teacher-versus-new-top1
-  support under frozen gates; do not execute any future manifest.
-- No rollout, training, tuning, checkpoint selection/modification, locked-test
-  or website-dataset load, Arena, website access, promotion, or capability
-  claim occurs.
+- Reproduce exactly the eight train manifest cases and complete 256/256 paired
+  rollouts: two exact actions, 16 rollouts per action, eight shared
+  determinizations, and equal greedy/frozen-tempo continuation counts.
+- Classify both directions using the unchanged advantage, variance, positive
+  95% lower-bound, and two-profile robustness gates. Unsupported comparisons
+  add no label.
+- Development executions, training, tuning, checkpoint selection/modification,
+  locked-test loads, Arena, website access, promotion, and capability claims
+  remain zero.

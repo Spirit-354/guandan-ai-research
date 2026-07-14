@@ -2,114 +2,118 @@
 
 ## Single Next Stage
 
-Run Stage 6.8: frozen corrective residual-top1 evidence audit.
+Run Stage 6.9: frozen pipeline-train residual counterfactual confirmation.
 
-Reproduce the 11 residual `other` first-maximum top1 states from the frozen
-Stage 6.7 corrective diagnosis. Audit existing frozen source evidence only for
-the eight pipeline-train targets. Keep the three pipeline-development targets
-identity-only and out of evidence inspection, candidate rules, objective design,
-and threshold design.
+Execute only the eight insufficient pipeline-train cases in the frozen Stage
+6.8 future manifest. Compare each exact teacher action with its exact residual
+top1 action under the already frozen paired information-set rollout schedule
+and strong-teacher gates. Keep the three pipeline-development residual targets
+unexecuted and out of candidate rules, threshold design, objective design, and
+all result-based decisions.
 
-Do not run rollout, train or fine-tune a model, tune thresholds, select or
-modify a checkpoint, load locked test or any website dataset, run Arena, access
+Do not train or fine-tune a model, tune thresholds, select or modify a
+checkpoint, load locked test or any complete website dataset, run Arena, access
 the website, begin Shadow or model-controlled play, promote a model, claim
-capability, or execute a future manifest.
+capability, construct a corrective dataset, or define a new objective.
 
 ## Frozen Inputs
 
+- Stage 6.8 residual evidence audit:
+  `website_teacher_preference_corrective_residual_evidence_audit_v1.json`,
+  SHA-256
+  `676232033f07051670b4407f15aca9f3939d9754ac2dcf4d078957263a1e2a6b`.
 - Stage 6.7 corrective diagnosis:
   `website_teacher_preference_corrective_failure_diagnosis_v1.json`, SHA-256
   `2b4359470e74f5eae28d6589477aca5f929ae6b5b88e094fa86209bf4328163d`.
-- Corrective checkpoint and training report, unchanged:
-  `models_website_teacher_preference_corrective_v1/website_teacher_preference_corrective_final.pth`,
-  SHA-256
-  `8cb368c8c0ae3f8c41c577e055ddd4796cbaae8163720cc630a435aa25bc1a49`;
-  `website_teacher_preference_corrective_training_v1.json`, SHA-256
-  `baa97ccf71c237895a92f4cb8b36b9559cf3cabe45b4901b7481d9f50f4c0830`.
-- Corrective dataset and manifest, unchanged:
-  `website_teacher_preference_corrective_dataset_v1.pth`, SHA-256
-  `fad7ae18fea8b02cbc88ad4a8a7f8ecee298abe436ef589f5c88d66e42a32707`;
-  `website_teacher_preference_corrective_dataset_v1_manifest.json`, SHA-256
-  `0a5dc4f60091338b65f86f83ad30ae55dc18c058ee8b07535a314510ad96ef0a`.
-- Frozen teacher v6 and 18/4 split, unchanged:
+- Frozen teacher v6 and 18/4 split:
   `website_information_set_teacher_dataset_v6.pth`, SHA-256
   `a74416e6facb28a1bc64563eba90cb33d460dc9e59cc2109518da142465e15f8`;
   `website_teacher_preference_split_v1.json`, SHA-256
   `5a15e514dc9bc51d77d300837151d9f1a49250f42885cc7940725bcbe4d35107`.
-- Stage 6.4 confirmation and old diagnosis, unchanged:
+- The only permitted physical source partition is
+  `website_danzero_shadow_extension_v5.train_dev.pth`, SHA-256
+  `e5e220c3c770116ca9d01478e98e610dd6309a0f3d6c17088a8328f62b47174b`.
+  Every executed target must map to a source sample whose dataset split is
+  `train`; do not load the complete bundle or locked-test partition.
+- Stage 6.4 confirmation, which freezes the paired rollout schedule, seed
+  construction, arithmetic, and strong gates:
   `website_teacher_preference_unpaired_train_confirmation_v1.json`, SHA-256
-  `8e17377b5a1523d9f0a47af7218d687e062a3ade671c57f387eb4c1a0888cfae`;
-  `website_teacher_preference_failure_diagnosis_v1.json`, SHA-256
-  `da08516c39986a01349533e160ba0e97a566d7fad6e42b0b7b3ce41df835b0b2`.
+  `8e17377b5a1523d9f0a47af7218d687e062a3ade671c57f387eb4c1a0888cfae`.
 - The only new curated output is
-  `website_teacher_preference_corrective_residual_evidence_audit_v1.json`, which
-  must not exist before execution.
+  `website_teacher_preference_corrective_residual_train_confirmation_v1.json`,
+  which must not exist before execution.
 
-## Audit Contract
+## Confirmation Contract
 
-- Validate every frozen hash and the Stage 6.7 independent-audit conclusion.
-  Reproduce overall 11 teacher/0 behavior/11 other top1 counts, zero pass top1,
-  and exact Stage 6.6 metric/prediction digests without rescoring or training.
-- Reproduce exactly the 11 residual `other` top1 targets by game/turn key,
-  pipeline partition, original action index/order, 54D action hash, and teacher
-  rank. Expected partition counts are eight train and three development.
-- For the eight train targets only, inspect only the frozen source rollout files
-  directly referenced by their teacher samples. Record every source-file hash.
-  Map the exact residual action to recorded legal-action and physical-card
-  metadata with zero reconstruction or substitution.
-- Classify whether existing evidence contains a direct teacher-versus-residual-
-  top1 paired comparison with rollout count, hidden-card sampling method, mean
-  returns, return variances, candidate advantage, confidence/lower bound, and
-  both continuation-profile advantages under the already frozen strong gates.
-- Development targets may be recorded only by identity, partition, action index,
-  and action hash from the Stage 6.7 diagnosis. Do not open their source evidence
-  for candidate, threshold, or objective design.
-- If train evidence is insufficient, write a non-executed future manifest for
-  only the insufficient train cases. Do not run it and do not define or train a
-  new objective in this stage.
-- Independently recompute target identities, source hashes, mappings,
-  classifications, partition counts, aggregates, and all forbidden-operation
+- Validate every frozen hash and reproduce exactly the eight Stage 6.8
+  insufficient train manifest cases by game/turn key, original action order,
+  teacher and residual indices, 54D hashes, and physical-card identities.
+- Do not score a checkpoint. Use only the exact teacher and residual actions
+  frozen by Stage 6.8 and the matching physical train source sample.
+- For each case, execute exactly 16 rollouts for the teacher and 16 for the
+  residual action: eight `greedy_bot` and eight frozen `tempo_baseline`
+  continuations over eight information-set determinizations shared across both
+  actions and both profiles. Total requested completion is 256/256 rollouts,
+  split 128/128 by continuation profile.
+- Keep the Stage 6.4 gates unchanged: paired rollout count 16, mean directional
+  advantage at least 0.15, candidate return variance at most 0.50, positive 95%
+  lower bound, and both continuation-profile directional advantages at least
+  0.15. Record both directions and classify each case as teacher-over-residual
+  supported, residual-over-teacher supported, or inconclusive.
+- Record rollout count, hidden-card sampling method, both mean returns and
+  return variances, paired advantage and variance, 95% lower bound/confidence,
+  both profile advantages, completion, and integrity for every executed case.
+- The three development targets `13992:16`, `14074:9`, and `13871:9` must have
+  zero source-sample mapping, zero execution, and zero rollout. They may appear
+  only as frozen held-out keys copied from Stage 6.8.
+- Independently recompute input/action hashes, determinization seeds, paired
+  returns, means, variances, confidence bounds, both-profile advantages,
+  classifications, partition counts, aggregates, and forbidden-operation
   counters.
 
 ## Required Work
 
-1. Re-read the canonical handoffs; verify Git state, all frozen hashes, Stage
-   6.7 conclusion, and output nonexistence.
-2. Add the smallest residual-evidence audit path and focused tests for target
-   extraction, 8/3 isolation, exact action mapping, evidence classification,
-   development non-inspection, and output refusal.
-3. Run the audit once and independently verify the curated output.
-4. Keep every frozen input and both checkpoints unchanged.
+1. Re-read the canonical handoffs; verify Git state, all frozen hashes, source
+   partition isolation, and output nonexistence.
+2. Add the smallest train-only confirmation path and focused tests for exact
+   manifest mapping, 8/3 isolation, rollout schedule, frozen gates, paired
+   arithmetic, development non-execution, and output refusal.
+3. Run exactly one formal 256-rollout confirmation and independently verify the
+   curated output.
+4. Keep every frozen input and both model checkpoints unchanged. Do not build a
+   dataset, train, run Arena, or access the website regardless of the result.
 5. Update `PROJECT_STATE.md`, `EXPERIMENTS.md`, `NEXT_TASK.md`, and the durable
    progress document; run narrow regressions, credential and diff checks,
    commit, and push.
 
 ## Acceptance Criteria
 
-- All frozen hashes remain unchanged. Stage 6.7 remains 22 states/934 full-set
-  action scores with exact independent reproduction and zero integrity errors.
-- Exactly 11 residual targets reproduce: eight train and three development,
-  with zero missing, duplicate, extra, reconstructed, substituted, or ambiguous
-  mappings.
-- Only train-target source evidence is inspected. Development source-evidence
-  reads, locked-test or website-dataset loads, and future-manifest executions
-  are zero.
-- Every train classification records the required frozen evidence fields or an
-  explicit insufficiency reason. No unsupported ordering becomes a label.
-- Rollout, training, tuning, checkpoint selection/modification, Arena, website
-  Shadow/play, model-controlled website actions, promotion, and capability
-  claims are zero.
+- All frozen hashes remain unchanged. Exactly eight train manifest cases map
+  with zero missing, duplicate, extra, reconstructed, substituted, ambiguous,
+  or non-train source mappings.
+- Exactly 256/256 requested rollouts complete: eight cases, two exact actions,
+  and 16 rollouts per action. Greedy/frozen-tempo counts are 128/128 and all
+  paired actions share the same eight determinizations per case.
+- Every directional classification is derived only from the unchanged frozen
+  gates. Inconclusive comparisons and the losing direction add no label; no
+  dataset or objective is constructed in this stage.
+- Development case executions, development source mappings, development
+  rollouts, hidden/future information use, timeouts, candidate failures,
+  integrity failures, and locked-test loads are zero.
+- Training, fine-tuning, tuning, checkpoint selection/modification, Arena,
+  website Shadow/play, model-controlled website actions, promotion, and
+  capability claims are zero.
 - Credential occurrences in new tracked/curated files are zero.
 - Handoff updates, focused tests, independent audit, conventional commit, and
   push all succeed before the next stage Goal is marked complete.
 
 ## Ready-to-Use Goal Prompt
 
-请创建一个阶段 Goal：完成 Stage 6.8 frozen corrective residual-top1 evidence
-audit。精确复现 Stage 6.7 的 11 个 residual other-top1 state，只审计其中 8 个
-pipeline-train target 已有的冻结 source evidence；3 个 development target 只能
-登记 identity，不得检查其 source evidence 或用于规则/阈值/目标设计。不得
-rollout、训练、调参、选择/修改 checkpoint、加载 locked test/网站 dataset、
-运行 Arena、访问网站、Shadow、模型控制、提升、能力结论或执行 future
-manifest。独立复核、交接更新、验证、凭据零命中、commit 和 push 全部成功后
-才能完成 Goal。
+请创建一个阶段 Goal：完成 Stage 6.9 frozen pipeline-train residual
+counterfactual confirmation。只执行 Stage 6.8 future manifest 中 8 个证据不足的
+pipeline-train case，严格复用冻结的 teacher/residual action、共享信息集
+determinization、16-rollout 双 continuation schedule 和强 teacher gates；3 个
+development target 必须零映射、零执行、零 rollout。不得训练、调参、选择/修改
+checkpoint、加载 locked test/完整网站 dataset、构建 dataset/新目标、运行 Arena、
+访问网站、Shadow、模型控制、提升或能力结论。独立复核、交接更新、验证、凭据零命中、
+commit 和 push 全部成功后，才能完成 Goal。

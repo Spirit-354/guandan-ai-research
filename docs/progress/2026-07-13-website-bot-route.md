@@ -1195,3 +1195,45 @@ operation counts were zero. The curated diagnosis SHA-256 is
 `2b4359470e74f5eae28d6589477aca5f929ae6b5b88e094fa86209bf4328163d`.
 The next stage may only audit existing frozen evidence for the eight residual
 train targets; the three development targets remain identity-only and held out.
+
+## Stage 6.8 Frozen Corrective Residual-Top1 Evidence Audit
+
+All nine frozen input hashes remained unchanged. Without rescoring the model,
+the audit reproduced the Stage 6.7 conclusion exactly: 22 states, 934 full-set
+action scores, 11/0/11 teacher/behavior/other first-maximum top-1 counts, zero
+pass top-1, and exact Stage 6.6 metrics and prediction digests.
+
+The 11 residual targets reproduced by game/turn key, 18/4 pipeline partition,
+original action index/order, 54D action hash, and teacher rank. Eight targets
+were pipeline train and three were pipeline development. Missing, duplicate,
+extra, reconstructed, substituted, and ambiguous mappings were all zero.
+
+Only six rollout files directly referenced by the eight train teacher samples
+were opened and hashed. Five residual actions were exact members of the source
+legal-action list and physical metadata but had not been evaluated as source
+candidates. Three had both teacher and residual candidate summaries, yet the
+source records contained no direct teacher-versus-residual paired advantage,
+positive 95% lower bound/confidence, or both continuation-profile advantages.
+Consequently, frozen evidence supports zero teacher-over-residual and zero
+residual-over-teacher orderings among the eight train cases.
+
+Development targets `13992:16`, `14074:9`, and `13871:9` remained identity-
+only. Development target source queries, candidate inspection, threshold or
+objective-design uses, locked-test loads, and website-dataset loads were zero.
+The future manifest contains only the eight insufficient train cases and was
+not executed. No new objective or unsupported label was created.
+
+A separate-process audit matched every target identity, source-file hash,
+physical action mapping, classification, partition count, aggregate, and
+forbidden-operation counter. Rollout, training, fine-tuning, threshold tuning,
+checkpoint selection or modification, Arena, website activity, promotion, and
+capability claims were zero.
+
+The curated artifact is
+`website_teacher_preference_corrective_residual_evidence_audit_v1.json`,
+SHA-256
+`676232033f07051670b4407f15aca9f3939d9754ac2dcf4d078957263a1e2a6b`.
+Any next confirmation may execute only these eight train cases under the
+unchanged paired information-set rollout and strong gates. The three
+development targets must remain unexecuted, and training, Arena, and website
+activity remain out of scope.

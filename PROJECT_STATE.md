@@ -8,7 +8,7 @@ Branch: `agent/stage5-website-bot-adaptation`
 
 Latest completed stage:
 
-- Stage 6.7 Frozen Corrective Full-Legal-Set Diagnosis.
+- Stage 6.8 Frozen Corrective Residual-Top1 Evidence Audit.
 
 Primary program:
 
@@ -137,6 +137,13 @@ Teacher dataset:
   `2b4359470e74f5eae28d6589477aca5f929ae6b5b88e094fa86209bf4328163d`.
   It scored all 934 recorded actions across the same 22 states and independently
   reproduced every Stage 6.6 metric and prediction digest.
+- The Stage 6.8 train-only residual evidence audit is
+  `website_teacher_preference_corrective_residual_evidence_audit_v1.json`,
+  SHA-256
+  `676232033f07051670b4407f15aca9f3939d9754ac2dcf4d078957263a1e2a6b`.
+  It reproduced all 11 residual targets, inspected existing source evidence
+  only for the eight pipeline-train targets, and kept all three development
+  targets identity-only.
 
 Current blocker:
 
@@ -152,6 +159,12 @@ Current blocker:
   in only 11/22 states despite perfect frozen pair accuracy. Eleven residual
   other-action top-1 states remain: eight train and three development. No
   improved offline capability has been shown.
+- Stage 6.8 found that five residual train actions were not evaluated as source
+  candidates. Three had both candidate records but no direct paired advantage,
+  confidence/lower bound, or two-profile advantages for teacher versus the
+  residual action. Existing frozen evidence supports 0/8 train orderings, so
+  all eight require train-only counterfactual confirmation before any further
+  corrective dataset or objective can be considered.
 - The eligible extension v5 pool is exhausted: all 277 rollout-eligible states
   were screened, all permitted positive-screen game signals were confirmed or
   exhausted, and three labels passed.
@@ -650,8 +663,9 @@ Acceptance:
 
 Goal: compare candidates against frozen `tempo_baseline`.
 
-Status: Stage 6.7 completed; continuation remains rejected, residual full-set
-top actions remain, and no improved offline capability evidence exists yet.
+Status: Stage 6.8 completed; continuation remains rejected, all eight residual
+train comparisons lack direct frozen support, and no improved offline
+capability evidence exists yet.
 
 Constraints:
 
@@ -816,6 +830,33 @@ Stage 6.7 acceptance:
   loads, Arena, website activity, promotion, and capability claims were zero.
 - Curated diagnosis SHA-256:
   `2b4359470e74f5eae28d6589477aca5f929ae6b5b88e094fa86209bf4328163d`.
+
+Stage 6.8 acceptance:
+
+- All nine frozen input hashes remained unchanged. The Stage 6.7 conclusion
+  remained exactly 22 states/934 full-set action scores, 11/0/11
+  teacher/behavior/other top-1 counts, zero pass top-1, and exact Stage 6.6
+  metrics and prediction digests without rescoring.
+- Exactly 11 residual targets reproduced by game/turn, partition, original
+  action index/order, 54D action hash, and teacher rank: eight pipeline train
+  and three pipeline development. Missing, duplicate, extra, reconstructed,
+  substituted, and ambiguous mappings were zero.
+- Only six source rollout files directly referenced by the eight train teacher
+  samples were inspected and hashed. Five residual actions had no candidate
+  evaluation; three had candidate results but no direct teacher-versus-residual
+  paired statistics required by the frozen gates. Supported orderings: 0/8.
+- Development targets `13992:16`, `14074:9`, and `13871:9` remained
+  identity-only. Development target source queries, candidate inspection,
+  threshold/objective-design uses, locked-test loads, and website-dataset loads
+  were zero.
+- The non-executed future manifest contains only the eight insufficient train
+  cases. Rollout, training, fine-tuning, threshold tuning, checkpoint changes,
+  Arena, website activity, promotion, capability claims, and unsupported labels
+  were zero.
+- Independent recomputation matched every target identity, source hash, action
+  mapping, classification, partition count, aggregate, and forbidden-operation
+  counter. Curated audit SHA-256:
+  `676232033f07051670b4407f15aca9f3939d9754ac2dcf4d078957263a1e2a6b`.
 
 Acceptance:
 
