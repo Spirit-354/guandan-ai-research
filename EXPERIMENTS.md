@@ -41,7 +41,7 @@ Decision:
 
 ## Website Information-Set Teacher Labels
 
-Status: promising but below training gate.
+Status: expanded but below training gate.
 
 Accepted strong labels:
 
@@ -50,11 +50,13 @@ Accepted strong labels:
   `13958:12`, `13959:7`, `13957:14`, and `13960:15`.
 - Extension v2 contributed 2 labels from 2 independent games: `13992:16` and
   `14000:5`.
-- Current teacher dataset: `website_information_set_teacher_dataset_v3.pth`.
-- Current total: 13 labels from 13 independent games.
+- Extension v3 contributed 3 labels from 3 independent games: `14022:16`,
+  `14025:20`, and `14031:4`.
+- Current teacher dataset: `website_information_set_teacher_dataset_v4.pth`.
+- Current total: 16 labels from 16 independent games.
 - State/action representation: 513/54.
-- Teacher v3 SHA-256:
-  `901ebe397d4fea8842e439e80cd0dfa7605985133ab01b5172bac4708a1a75b1`.
+- Teacher v4 SHA-256:
+  `fa193705777987d0bad91f9a45f5aa956a02e22ffa077a04bc2c81892aeb5f99`.
 
 Rejected or exhausted evidence:
 
@@ -64,9 +66,9 @@ Rejected or exhausted evidence:
 
 Decision:
 
-- Do not train from the 13-label teacher dataset as a capability candidate.
+- Do not train from the 16-label teacher dataset as a capability candidate.
 - Collect more independent baseline-only train games before another teacher
-  expansion; at least 7 additional strong-label games are still required.
+  expansion; at least 4 additional strong-label games are still required.
 
 ## Website Shadow Supplement v1
 
@@ -382,6 +384,56 @@ Decision:
 - Preserve teacher v3 as the frozen 13-label base; do not train during the next
   teacher expansion.
 
+## Extension v3 Teacher Candidate Expansion
+
+Status: completed; three new labels accepted and training gate remains closed.
+
+Evidence:
+
+- The only loaded dataset was
+  `website_danzero_shadow_extension_v3.train_dev.pth`, whose SHA-256 remained
+  `e5edc7090657ac1c4b4a2b2a14f38ad9bb0145ba1c19b6e85fca20bb1b5a687a`;
+  complete-bundle and locked-test loads were zero.
+- All 308 decisions from the 12 new train games were enumerated. 247 were
+  rollout eligible; 61 were excluded because at least one public hand count was
+  nonpositive. Per-game eligibility and rejection counts were recorded.
+- Greedy-only screening covered all 247 eligible states, 695 candidate actions,
+  and 5,560/5,560 rollouts. It emitted zero strong labels and was used only to
+  choose confirmation cases.
+- Ten positive-lower-bound, low-variance screen signals covered five games.
+  Confirmation evaluated the strongest state per game first and then the only
+  remaining permitted alternative for a failed game: six cases, 23 candidates,
+  and 368/368 rollouts split evenly between greedy and frozen-tempo
+  continuations.
+- Every rollout used uniform physical assignment conditioned on public counts,
+  stable game/turn/determinization seeds, and shared determinizations. Timeouts,
+  incomplete cases, integrity failures, hidden-hand access, future-information
+  access, and locked-test access were all zero.
+- `14022:16` passed with advantage 0.875, 95% lower bound 0.373, candidate
+  variance 0.0, and greedy/frozen-tempo advantages 1.25/0.50.
+- `14025:20` passed with advantage 1.0, 95% lower bound 0.494, candidate
+  variance 0.0, and greedy/frozen-tempo advantages 1.0/1.0.
+- `14031:4` passed with advantage 0.625, 95% lower bound 0.156, candidate
+  variance 0.25, and greedy/frozen-tempo advantages 0.75/0.50.
+- `14020:7` and `14021:2` exceeded candidate variance 0.50. The only remaining
+  failed-game alternative, `14021:10`, had a negative 95% lower bound. No other
+  failed game retained a permitted positive-screen alternative.
+- Teacher v4 preserves all 13 teacher v3 samples exactly after deserialization
+  and appends only the three accepted labels. All source-state,
+  behavior-action, legal-action, 513/54 dimension, and physical-card remap
+  checks passed. Teacher v3 remained unchanged.
+
+Decision:
+
+- Freeze `website_information_set_teacher_dataset_v4.pth` at 16 labels from 16
+  independent games; its SHA-256 is
+  `fa193705777987d0bad91f9a45f5aa956a02e22ffa077a04bc2c81892aeb5f99`.
+- Keep the 20-game training gate closed; do not train, evaluate, or promote a
+  model from this artifact.
+- Treat the extension v3 candidate pool as exhausted and collect another
+  explicitly preassigned baseline-only train supplement without weakening any
+  teacher threshold.
+
 ## Model A / Shared Self-Play / BC / PPO / DMC
 
 Status: not eligible for website control.
@@ -417,24 +469,24 @@ Decision:
 
 ## Current Next Experiment
 
-Name: Extension v3 information-set teacher candidate expansion.
+Name: Website Shadow Supplement v4.
 
 Purpose:
 
-- Screen every eligible consistent train decision from the 12 new games using
-  legal information-set determinization.
-- Confirm only high-evidence candidates against both greedy and frozen-tempo
-  continuations, then append accepted labels to frozen teacher v3.
+- Collect another explicitly preassigned baseline-only train session to expose
+  new independent website-domain information-set teacher candidates.
+- Preserve all frozen dataset and teacher artifacts while keeping model control
+  disabled.
 
 Acceptance:
 
-- Load only `website_danzero_shadow_extension_v3.train_dev.pth`; locked-test
-  loads and hidden/future information use: 0.
-- Enumerate all 308 new train decisions, report ineligible states, and screen
-  every eligible state without allowing greedy-only signals to become labels.
-- Every accepted label passes the frozen 16-rollout completeness, variance,
-  advantage, confidence, and dual-continuation robustness gates.
-- Frozen teacher v3 labels remain unchanged and physical-action remap errors
-  are zero.
-- Report the resulting independent teacher-game count, but do not train a model
-  in this stage.
+- Preassign one unused v4 supplement session to train without changing any
+  existing assignment or locked-test membership.
+- Complete exactly 12 verified bot-only games with frozen `tempo_baseline` as
+  the only website submitter.
+- Every retained decision has exhaustive website-oracle candidates and a
+  decision-time-consistent information set; all safety counters remain zero.
+- Elo evidence comes only from `leaderboard_elo`; credential occurrences are
+  zero.
+- Dataset rebuilds, teacher rollout, training, offline evaluation, and
+  model-controlled website play remain zero.
