@@ -2,13 +2,13 @@
 
 ## Current Project State
 
-Date: 2026-07-14
+Date: 2026-07-15
 
 Branch: `agent/stage5-website-bot-adaptation`
 
 Latest completed stage:
 
-- Stage 6.5 Frozen Corrective Preference Dataset Construction.
+- Stage 6.6 Frozen Corrective Training Smoke.
 
 Primary program:
 
@@ -122,6 +122,16 @@ Teacher dataset:
   `0a5dc4f60091338b65f86f83ad30ae55dc18c058ee8b07535a314510ad96ef0a`.
   It preserves all 22 teacher v6 pairs and adds only six supported train-only
   corrective pairs, for 24 train and four development pairs.
+- The Stage 6.6 fixed corrective training report is
+  `website_teacher_preference_corrective_training_v1.json`, SHA-256
+  `baa97ccf71c237895a92f4cb8b36b9559cf3cabe45b4901b7481d9f50f4c0830`.
+  Exactly one from-scratch CPU run used the frozen 18 train states/24 pairs;
+  the four development states/pairs were evaluation-only.
+- The ignored corrective checkpoint is
+  `models_website_teacher_preference_corrective_v1/website_teacher_preference_corrective_final.pth`,
+  SHA-256
+  `8cb368c8c0ae3f8c41c577e055ddd4796cbaae8163720cc630a435aa25bc1a49`.
+  It is pipeline-only, unpromoted, and ineligible for capability claims.
 
 Current blocker:
 
@@ -133,10 +143,10 @@ Current blocker:
   strictly outranked teacher in 12/22 states, across 161 action entries. This
   is an objective-coverage pattern, not a causal finding.
 - Pass was top-1 in 0/22 teacher states, so the 66.3% Arena pass rate is not
-  explained by this frozen diagnostic. Stage 6.5 now freezes six qualifying
-  train-only teacher-versus-top1 constraints in a state-balanced dataset, but
-  no corrective model has been trained and no improved offline performance has
-  been shown.
+  explained by this frozen diagnostic. Stage 6.6 trained one fixed corrective
+  pipeline checkpoint and fit all frozen train/development pairs, but its full
+  legal-action rankings and offline performance have not been diagnosed. No
+  improved capability has been shown.
 - The eligible extension v5 pool is exhausted: all 277 rollout-eligible states
   were screened, all permitted positive-screen game signals were confirmed or
   exhausted, and three labels passed.
@@ -635,8 +645,8 @@ Acceptance:
 
 Goal: compare candidates against frozen `tempo_baseline`.
 
-Status: Stage 6.5 completed; continuation rejected, corrective dataset frozen
-but no corrective model or improved offline evidence exists yet.
+Status: Stage 6.6 completed; continuation remains rejected, the corrective
+pipeline smoke passed, and no improved offline capability evidence exists yet.
 
 Constraints:
 
@@ -751,6 +761,29 @@ Stage 6.5 acceptance:
   `fad7ae18fea8b02cbc88ad4a8a7f8ecee298abe436ef589f5c88d66e42a32707`;
   manifest SHA-256:
   `0a5dc4f60091338b65f86f83ad30ae55dc18c058ee8b07535a314510ad96ef0a`.
+
+Stage 6.6 acceptance:
+
+- All seven frozen input hashes remained unchanged. The corrective dataset
+  independently reproduced 28 total pairs, 24 train pairs across 18 states,
+  four development pairs across four states, 22 exact base samples, and six
+  exact corrective pairs with zero excluded-pair leakage.
+- Exactly one fixed from-scratch CPU training run completed with seed
+  `20260714`, 20 epochs, six states per batch, learning rate `0.001`, and 60
+  optimizer steps. Development training uses and extra targets were zero.
+- Final train state-balanced loss was `0.0003623383`; train aggregate, base,
+  and corrective pair accuracies were all `1.0`. Development state-balanced
+  loss was `0.0000023221` with pair accuracy `1.0`. Nonfinite values were zero.
+- The checkpoint recorded the seven hashes, fixed 513/54 recipe, and false
+  promotion/capability flags. A new-process reload exactly reproduced all
+  train/development, base/corrective metrics and prediction digests.
+- Rollout, hyperparameter search, checkpoint selection, locked-test or website
+  dataset load, Arena, website Shadow/play, model control, promotion, and
+  capability claims were all zero.
+- Curated report SHA-256:
+  `baa97ccf71c237895a92f4cb8b36b9559cf3cabe45b4901b7481d9f50f4c0830`;
+  ignored checkpoint SHA-256:
+  `8cb368c8c0ae3f8c41c577e055ddd4796cbaae8163720cc630a435aa25bc1a49`.
 
 Acceptance:
 

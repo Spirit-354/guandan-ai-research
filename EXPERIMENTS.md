@@ -41,8 +41,9 @@ Decision:
 
 ## Website Information-Set Teacher Labels
 
-Status: pipeline smoke trained; Stage 6.1 continuation rejected at 0-20 and
-Stage 6.4 confirmed six train-only teacher-versus-top1 constraints.
+Status: Stage 6.1 continuation rejected at 0-20; Stage 6.4 confirmed six
+train-only teacher-versus-top1 constraints and Stage 6.6 completed one fixed
+corrective pipeline smoke without capability evidence.
 
 Accepted strong labels:
 
@@ -988,6 +989,49 @@ Decision:
 - Keep the old checkpoint rejected. Do not run Arena or access the website in
   the corrective training stage.
 
+## Stage 6.6 Frozen Corrective Training Smoke
+
+Status: completed; deterministic pipeline smoke passed without capability
+validation.
+
+Evidence:
+
+- All seven frozen input hashes remained unchanged. Reload validation exactly
+  reproduced all 28 pairs, the 24/4 train/development split, 18/4 state split,
+  all 22 base samples, all six corrective pairs, and zero excluded-pair
+  leakage.
+- Exactly one from-scratch CPU run used seed `20260714`, 20 epochs, six states
+  per batch, learning rate `0.001`, no initialization checkpoint, and the
+  frozen state-balanced pairwise softplus objective. It completed 60 optimizer
+  steps using only the 18 train states/24 pairs; development training uses and
+  extra targets were zero.
+- Final train state-balanced loss was `0.0003623383`. Aggregate, base, and
+  corrective train pair accuracies were all `1.0`, with mean margins
+  `18.9867`, `19.8011`, and `16.5434` respectively.
+- Final development state-balanced loss was `0.0000023221`, pair accuracy was
+  `1.0`, and mean margin was `26.5879`. These are pipeline diagnostics only and
+  were not used for tuning or checkpoint selection.
+- Nonfinite training losses and predictions were zero. The checkpoint records
+  all frozen hashes, the fixed 513/54 recipe, and false promotion/capability
+  flags. A separate process independently reloaded it and exactly reproduced
+  every train/development, base/corrective metric and prediction digest.
+- Rollout, hyperparameter search, checkpoint selection, locked-test or website
+  dataset load, Arena, website Shadow/play, model control, promotion, and
+  capability claims were all zero.
+- Curated report:
+  `website_teacher_preference_corrective_training_v1.json`, SHA-256
+  `baa97ccf71c237895a92f4cb8b36b9559cf3cabe45b4901b7481d9f50f4c0830`.
+  Ignored checkpoint SHA-256:
+  `8cb368c8c0ae3f8c41c577e055ddd4796cbaae8163720cc630a435aa25bc1a49`.
+
+Decision:
+
+- Keep the corrective checkpoint pipeline-only, unpromoted, and ineligible for
+  capability claims despite perfect pair accuracy.
+- Before any Arena, run only a frozen static full-legal-set ranking diagnosis
+  across the same 22 teacher states. Do not train, tune, change the checkpoint,
+  or access the website in that diagnosis stage.
+
 ## Model A / Shared Self-Play / BC / PPO / DMC
 
 Status: not eligible for website control.
@@ -1023,20 +1067,22 @@ Decision:
 
 ## Current Next Experiment
 
-Name: Stage 6.6 Frozen Corrective Training Smoke.
+Name: Stage 6.7 Frozen Corrective Full-Legal-Set Diagnosis.
 
 Purpose:
 
-- Run one fixed, deterministic, from-scratch CPU training smoke on the frozen
-  24-pair pipeline-train partition using the frozen state-balanced objective.
-- Evaluate the resulting checkpoint on frozen train/development pairs without
-  checkpoint selection or Arena.
+- Score the frozen corrective checkpoint on every recorded legal action in the
+  same 22 teacher states and compare its rankings with the frozen old diagnosis.
+- Verify the six corrective orderings and determine whether unsupported
+  full-set top actions remain, without training or Arena.
 
 Acceptance:
 
-- Exactly one fixed recipe runs: CPU, seed 20260714, 20 epochs, six states per
-  batch, learning rate 0.001, and no initialization checkpoint.
-- Training uses only 18 train states/24 pairs; four development states/pairs
-  remain evaluation-only. Report base/corrective and aggregate pair metrics.
-- No rollout, tuning, checkpoint selection, locked-test load, Arena, website
-  access, promotion, or capability claim occurs.
+- Score all 934 frozen legal-action entries exactly once with no reconstruction,
+  omission, or repeat scoring, and exactly reproduce the Stage 6.6 pair metrics
+  and prediction digests.
+- Report full-set teacher ranks/top-1 classes and all six corrective-pair ranks,
+  partitioned 18/4, as static diagnostic evidence only.
+- No rollout, training, tuning, checkpoint selection/modification, locked-test
+  or website-dataset load, Arena, website access, promotion, or capability
+  claim occurs.

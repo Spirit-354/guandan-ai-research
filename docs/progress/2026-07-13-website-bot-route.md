@@ -1128,3 +1128,36 @@ The manifest SHA-256 is
 Both are pipeline-only and ineligible for capability or checkpoint-promotion
 claims. The next stage may run one fixed from-scratch corrective training
 smoke, but cannot run Arena or website activity in the same Goal.
+
+## Stage 6.6 Frozen Corrective Training Smoke
+
+All seven frozen inputs were verified before and after execution. The loader
+independently reproduced 28 pairs, including 24 train pairs across 18 states,
+four development pairs across four states, all 22 exact teacher-v6 base
+samples, and all six Stage 6.4 corrective pairs. Excluded-pair leakage was zero.
+
+Exactly one fixed from-scratch CPU run completed with seed `20260714`, 20
+epochs, six states per batch, learning rate `0.001`, no initialization
+checkpoint, and the frozen state-balanced pairwise softplus objective. It used
+only the 18 train states/24 pairs for 60 optimizer steps. Development training
+uses, extra targets, hyperparameter searches, and checkpoint selections were
+zero.
+
+Final train state-balanced loss was `0.0003623383`. Aggregate, base, and
+corrective pair accuracies were all `1.0`, with mean margins `18.9867`,
+`19.8011`, and `16.5434`. Development state-balanced loss was `0.0000023221`,
+pair accuracy was `1.0`, and mean margin was `26.5879`. All nonfinite counts
+were zero. These values are pipeline diagnostics, not capability evidence.
+
+The final checkpoint SHA-256 is
+`8cb368c8c0ae3f8c41c577e055ddd4796cbaae8163720cc630a435aa25bc1a49`.
+It records the seven frozen hashes, fixed 513/54 recipe, and false
+promotion/capability flags. A separate process independently reloaded it and
+exactly reproduced every train/development, base/corrective metric and
+prediction digest. The curated report SHA-256 is
+`baa97ccf71c237895a92f4cb8b36b9559cf3cabe45b4901b7481d9f50f4c0830`.
+
+Rollout, locked-test or website-dataset loads, Arena, website Shadow/play,
+model control, promotion, and capability claims were zero. The next stage may
+only run a static full-legal-set ranking diagnosis on the same 22 frozen states;
+it cannot train, run Arena, or access the website.
