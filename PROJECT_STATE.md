@@ -8,7 +8,7 @@ Branch: `agent/stage5-website-bot-adaptation`
 
 Latest completed stage:
 
-- Stage 6.6 Frozen Corrective Training Smoke.
+- Stage 6.7 Frozen Corrective Full-Legal-Set Diagnosis.
 
 Primary program:
 
@@ -132,6 +132,11 @@ Teacher dataset:
   SHA-256
   `8cb368c8c0ae3f8c41c577e055ddd4796cbaae8163720cc630a435aa25bc1a49`.
   It is pipeline-only, unpromoted, and ineligible for capability claims.
+- The Stage 6.7 corrective full-legal-set diagnosis is
+  `website_teacher_preference_corrective_failure_diagnosis_v1.json`, SHA-256
+  `2b4359470e74f5eae28d6589477aca5f929ae6b5b88e094fa86209bf4328163d`.
+  It scored all 934 recorded actions across the same 22 states and independently
+  reproduced every Stage 6.6 metric and prediction digest.
 
 Current blocker:
 
@@ -143,10 +148,10 @@ Current blocker:
   strictly outranked teacher in 12/22 states, across 161 action entries. This
   is an objective-coverage pattern, not a causal finding.
 - Pass was top-1 in 0/22 teacher states, so the 66.3% Arena pass rate is not
-  explained by this frozen diagnostic. Stage 6.6 trained one fixed corrective
-  pipeline checkpoint and fit all frozen train/development pairs, but its full
-  legal-action rankings and offline performance have not been diagnosed. No
-  improved capability has been shown.
+  explained by the frozen diagnostics. Stage 6.7 found teacher full-set top-1
+  in only 11/22 states despite perfect frozen pair accuracy. Eleven residual
+  other-action top-1 states remain: eight train and three development. No
+  improved offline capability has been shown.
 - The eligible extension v5 pool is exhausted: all 277 rollout-eligible states
   were screened, all permitted positive-screen game signals were confirmed or
   exhausted, and three labels passed.
@@ -645,8 +650,8 @@ Acceptance:
 
 Goal: compare candidates against frozen `tempo_baseline`.
 
-Status: Stage 6.6 completed; continuation remains rejected, the corrective
-pipeline smoke passed, and no improved offline capability evidence exists yet.
+Status: Stage 6.7 completed; continuation remains rejected, residual full-set
+top actions remain, and no improved offline capability evidence exists yet.
 
 Constraints:
 
@@ -784,6 +789,33 @@ Stage 6.6 acceptance:
   `baa97ccf71c237895a92f4cb8b36b9559cf3cabe45b4901b7481d9f50f4c0830`;
   ignored checkpoint SHA-256:
   `8cb368c8c0ae3f8c41c577e055ddd4796cbaae8163720cc630a435aa25bc1a49`.
+
+Stage 6.7 acceptance:
+
+- All ten directly validated frozen hashes remained unchanged. Stage 6.6 still
+  records one fixed training run, zero development training uses, and exact
+  checkpoint reload; the old Stage 6.1 conclusion remains rejected at 0-20.
+- Exactly 22 states and all 934 recorded legal-action entries were scored once
+  for full-set ranking. All eight duplicate action vectors remained in recorded
+  positions. Dropped, reconstructed, repeated-score, invalid-dimension,
+  illegal-recorded, and nonfinite-Q counts were zero.
+- A separately accounted frozen-batch replay exactly reproduced all Stage 6.6
+  train/development, base/corrective metrics and four prediction digests. It
+  was not included in the 934-entry full-set scoring count.
+- Overall teacher/behavior/other first-max top-1 counts were 11/0/11. Mean and
+  median teacher rank were 2.27/1.5; pass top-1 remained 0/22. Eleven states
+  contained 28 actions strictly above teacher, versus 12 states/161 actions for
+  the old checkpoint.
+- Teacher outranked all six frozen rejected-top1 actions and none remained new
+  top-1, but teacher became first-max full-set top-1 in only three of the six
+  corrective states. Residual other-action top-1 states are eight train and
+  three development.
+- A new-process audit exactly reproduced action order, every Q ranking/tie,
+  aggregate, Stage 6.6 metric/digest, and corrective-pair mapping/arithmetic.
+  Rollout, training, tuning, checkpoint changes, locked-test or website-dataset
+  loads, Arena, website activity, promotion, and capability claims were zero.
+- Curated diagnosis SHA-256:
+  `2b4359470e74f5eae28d6589477aca5f929ae6b5b88e094fa86209bf4328163d`.
 
 Acceptance:
 

@@ -1161,3 +1161,37 @@ Rollout, locked-test or website-dataset loads, Arena, website Shadow/play,
 model control, promotion, and capability claims were zero. The next stage may
 only run a static full-legal-set ranking diagnosis on the same 22 frozen states;
 it cannot train, run Arena, or access the website.
+
+## Stage 6.7 Frozen Corrective Full-Legal-Set Diagnosis
+
+All ten directly validated frozen hashes remained unchanged. The full-set path
+scored all 934 recorded legal-action positions across the same 22 states: 889
+train and 45 development. Eight duplicate vectors stayed in their original
+positions. Dropped, reconstructed, repeated-score, invalid-dimension,
+illegal-recorded, and nonfinite-Q counts were zero.
+
+The Stage 6.6 train/development and base/corrective metrics plus all four
+prediction digests reproduced exactly. Because the six corrective Q values have
+last-bit batch-shape differences between the frozen pair batches and the
+full-set other-action batch, the exact 24/18/6/4 pair replay was separately
+accounted as 52 pair/104 action-value evaluations and excluded from the 934
+full-set score count.
+
+Teacher/behavior/other first-max top-1 counts were 10/0/8 in train, 1/0/3 in
+development, and 11/0/11 overall. Pass was top-1 in zero states. Overall
+mean/median teacher rank changed from 8.36/2.0 under the old checkpoint to
+2.27/1.5. States with an action strictly above teacher fell from 12 to 11 and
+the corresponding action-entry count fell from 161 to 28.
+
+All six frozen rejected-top1 actions now ranked below teacher and none remained
+new top-1. Teacher became first-max full-set top-1 in only three of those six
+states, however. Eleven residual other-action top1 states remain: eight train
+and three development. This is static ranking evidence only, not causal or
+capability evidence.
+
+A separate-process audit reproduced every ranking, tie, action-order digest,
+aggregate, Stage 6.6 metric/digest, and corrective-pair mapping. All forbidden
+operation counts were zero. The curated diagnosis SHA-256 is
+`2b4359470e74f5eae28d6589477aca5f929ae6b5b88e094fa86209bf4328163d`.
+The next stage may only audit existing frozen evidence for the eight residual
+train targets; the three development targets remain identity-only and held out.

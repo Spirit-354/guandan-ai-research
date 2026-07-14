@@ -43,7 +43,8 @@ Decision:
 
 Status: Stage 6.1 continuation rejected at 0-20; Stage 6.4 confirmed six
 train-only teacher-versus-top1 constraints and Stage 6.6 completed one fixed
-corrective pipeline smoke without capability evidence.
+corrective pipeline smoke. Stage 6.7 found 11/22 teacher top-1 states and no
+capability evidence.
 
 Accepted strong labels:
 
@@ -1032,6 +1033,51 @@ Decision:
   across the same 22 teacher states. Do not train, tune, change the checkpoint,
   or access the website in that diagnosis stage.
 
+## Stage 6.7 Frozen Corrective Full-Legal-Set Diagnosis
+
+Status: completed; six intended orderings were corrected, but residual full-set
+coverage remains insufficient for Arena or capability claims.
+
+Evidence:
+
+- All ten directly validated frozen hashes remained unchanged. The Stage 6.6
+  report still records exactly one training run, zero development training
+  uses, an exact reload, and false promotion/capability flags.
+- The formal full-set path scored exactly 22 frozen states and all 934 recorded
+  legal-action entries: 889 train and 45 development. All eight duplicate
+  vectors were retained in original positions. Dropped, reconstructed,
+  repeated-score, invalid-dimension, illegal-recorded, and nonfinite-Q counts
+  were zero.
+- Exact Stage 6.6 metric/digest reproduction required the frozen 24/18/6/4 pair
+  batch shapes because the six corrective values have last-bit batch-shape
+  differences in the 865-action full-set other batch. This replay was separately
+  accounted as 52 pair/104 action-value evaluations and was excluded from the
+  934-entry full-set scoring count.
+- Train teacher/behavior/other first-max top-1 counts were 10/0/8; development
+  counts were 1/0/3; overall counts were 11/0/11. Pass top-1 remained 0/22.
+- Overall mean/median teacher rank improved from 8.36/2.0 to 2.27/1.5. States
+  with an action strictly above teacher fell from 12 to 11, and the number of
+  such action entries fell from 161 to 28. These are static ranking changes,
+  not causal or capability evidence.
+- Teacher outranked all six Stage 6.4 rejected top1 actions with margins from
+  9.26 to 22.58, and none of those rejected actions remained new top-1.
+  Teacher was first-max full-set top-1 in only three of those six states;
+  residual other actions remained above teacher in the other three.
+- A separate process independently reproduced every ranking, tie, action-order
+  digest, aggregate, Stage 6.6 metric/prediction digest, and corrective mapping.
+  All forbidden operation counts were zero.
+- Curated output:
+  `website_teacher_preference_corrective_failure_diagnosis_v1.json`, SHA-256
+  `2b4359470e74f5eae28d6589477aca5f929ae6b5b88e094fa86209bf4328163d`.
+
+Decision:
+
+- Do not run Arena, promote the checkpoint, or claim capability. Perfect pair
+  fit did not produce teacher full-set top-1 in half of the frozen states.
+- Audit existing frozen evidence only for the eight residual pipeline-train
+  top1 actions before proposing any further corrective objective or rollout.
+  Keep the three residual development cases held out from design.
+
 ## Model A / Shared Self-Play / BC / PPO / DMC
 
 Status: not eligible for website control.
@@ -1067,22 +1113,21 @@ Decision:
 
 ## Current Next Experiment
 
-Name: Stage 6.7 Frozen Corrective Full-Legal-Set Diagnosis.
+Name: Stage 6.8 Frozen Corrective Residual-Top1 Evidence Audit.
 
 Purpose:
 
-- Score the frozen corrective checkpoint on every recorded legal action in the
-  same 22 teacher states and compare its rankings with the frozen old diagnosis.
-- Verify the six corrective orderings and determine whether unsupported
-  full-set top actions remain, without training or Arena.
+- Reproduce the 11 Stage 6.7 residual other-action top1 states and audit only
+  the eight pipeline-train targets against their already frozen source evidence.
+- Keep the three pipeline-development targets identity-only and out of evidence
+  inspection, objective design, and threshold design.
 
 Acceptance:
 
-- Score all 934 frozen legal-action entries exactly once with no reconstruction,
-  omission, or repeat scoring, and exactly reproduce the Stage 6.6 pair metrics
-  and prediction digests.
-- Report full-set teacher ranks/top-1 classes and all six corrective-pair ranks,
-  partitioned 18/4, as static diagnostic evidence only.
+- Reproduce exactly eight train and three development residual targets with
+  zero missing, extra, substituted, or ambiguous mappings.
+- Classify existing train-only evidence for direct teacher-versus-new-top1
+  support under frozen gates; do not execute any future manifest.
 - No rollout, training, tuning, checkpoint selection/modification, locked-test
   or website-dataset load, Arena, website access, promotion, or capability
   claim occurs.
