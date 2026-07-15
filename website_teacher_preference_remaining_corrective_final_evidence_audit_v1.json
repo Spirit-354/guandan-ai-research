@@ -1,0 +1,639 @@
+{
+  "schema_version": "website_teacher_preference_remaining_corrective_final_evidence_audit_v1",
+  "status": "completed",
+  "frozen_inputs": {
+    "paths": {
+      "stage_6_13_audit": "website_teacher_preference_residual_corrective_remaining_evidence_audit_v1.json",
+      "stage_6_12_diagnosis": "website_teacher_preference_residual_corrective_failure_diagnosis_v1.json",
+      "stage_6_9_confirmation": "website_teacher_preference_corrective_residual_train_confirmation_v1.json",
+      "teacher_dataset": "website_information_set_teacher_dataset_v6.pth",
+      "split_manifest": "website_teacher_preference_split_v1.json",
+      "source_train_development_dataset": "website_danzero_shadow_extension_v5.train_dev.pth",
+      "stage_6_1_arena": "website_teacher_preference_arena_smoke20_v1.json",
+      "stage_6_14p_parallel_equivalence": "website_teacher_preference_residual_corrective_remaining_parallel_equivalence_v1.json",
+      "stage_6_14p_parallel_implementation": "website_teacher_preference_residual_corrective_remaining_parallel_equivalence.py",
+      "stage_6_14_confirmation_implementation": "website_teacher_preference_residual_corrective_remaining_confirmation.py",
+      "stage_6_14e_confirmation": "website_teacher_preference_residual_corrective_remaining_train_confirmation_v1.json",
+      "stage_6_14e_formal_implementation": "website_teacher_preference_residual_corrective_remaining_parallel_confirmation.py",
+      "corrective_dataset_v2": "website_teacher_preference_corrective_dataset_v2.pth",
+      "corrective_dataset_v2_manifest": "website_teacher_preference_corrective_dataset_v2_manifest.json",
+      "corrective_dataset_v3": "website_teacher_preference_corrective_dataset_v3.pth",
+      "corrective_manifest_v3": "website_teacher_preference_corrective_dataset_v3_manifest.json",
+      "stage_6_15_dataset_builder": "website_teacher_preference_corrective_dataset_v3.py",
+      "stage_6_11_recipe_authority": "website_teacher_preference_residual_corrective_training_v1.json",
+      "stage_6_11_implementation": "website_teacher_preference_residual_corrective_training.py",
+      "stage_6_16_training_report": "website_teacher_preference_remaining_corrective_training_v1.json",
+      "stage_6_16_checkpoint": "models_website_teacher_preference_remaining_corrective_v1\\website_teacher_preference_remaining_corrective_final.pth",
+      "stage_6_16_implementation": "website_teacher_preference_remaining_corrective_training.py",
+      "stage_6_12_implementation": "website_teacher_preference_residual_corrective_diagnosis.py",
+      "stage_6_12_evidence": "website_teacher_preference_residual_corrective_failure_diagnosis_v1.json",
+      "stage_6_17_diagnosis": "website_teacher_preference_remaining_corrective_failure_diagnosis_v1.json",
+      "stage_6_17_implementation": "website_teacher_preference_remaining_corrective_diagnosis.py",
+      "stage_6_13_implementation": "website_teacher_preference_residual_corrective_remaining_evidence_audit.py",
+      "stage_6_4_confirmation": "website_teacher_preference_unpaired_train_confirmation_v1.json"
+    },
+    "sha256": {
+      "stage_6_13_audit": "2dff04b2be010a10c3f3e77a144f98d1aeca89a885e21cc98be9c51868b53345",
+      "stage_6_12_diagnosis": "e8e12f4fd259bc0c2689100d08bdfb3b71662e29c8af0f1e1013fbc6e9573e9f",
+      "stage_6_9_confirmation": "352cd0dfe0a4c958ba0555b776326a2b58470a980aef461ed49d4c59a7474c7a",
+      "teacher_dataset": "a74416e6facb28a1bc64563eba90cb33d460dc9e59cc2109518da142465e15f8",
+      "split_manifest": "5a15e514dc9bc51d77d300837151d9f1a49250f42885cc7940725bcbe4d35107",
+      "source_train_development_dataset": "e5e220c3c770116ca9d01478e98e610dd6309a0f3d6c17088a8328f62b47174b",
+      "stage_6_1_arena": "aa45da9de202194102fe8d11e612ad3eb4b51177fd910b9a7948836afd2a1fe6",
+      "stage_6_14p_parallel_equivalence": "8e168656c35519aae9054038f0fd31398ac0e9260c419de0534a09bf1f4c59ca",
+      "stage_6_14p_parallel_implementation": "f2093a8c348d9d91435209fd9ee258130b18f7de7b4b7758c0656c1d7a70e2e5",
+      "stage_6_14_confirmation_implementation": "e509ebc50f9fef9a159435d582561e72ac36083f059a0781539ec797c709bf55",
+      "stage_6_14e_confirmation": "450e89f780a33dd543f49f029e735f7fb32e11cd657163c52e6a4301d21f7eb5",
+      "stage_6_14e_formal_implementation": "972b67ed585e9a96f9e8be55b70d0b6585a7e499f6dc692c2861d5e636b9e55d",
+      "corrective_dataset_v2": "40024f7c064f0ebb7999c4ac0f7bc85d77b759a23956cbe596756763d4009d4d",
+      "corrective_dataset_v2_manifest": "ce5141f6254218d9230b15117a88d3c5e6bd374839bcf5fc77b393e2599ec353",
+      "corrective_dataset_v3": "71e90241170882dd97893e71fbe0694368af96525737b55370cd0a60e098ce6f",
+      "corrective_manifest_v3": "c9b25d75da0fc5966e1f29bcbd50dd471971e16fc9f4a368cda5b5ba2f8d822d",
+      "stage_6_15_dataset_builder": "df44cdc1c1e45ddea310324393b2ec0d1693523480b3f78ef4bf70fd369a8d97",
+      "stage_6_11_recipe_authority": "307b92eca7aef2d7fa927dec71f1e2ccd8b87b71d2336c5630f39c24d0a176dd",
+      "stage_6_11_implementation": "cc1c6263644635da01822f9ce8f231610b997d7ddbac932ba19efb24a905f00c",
+      "stage_6_16_training_report": "cac3ecb0542a7f9aaac2654f73f4e3650422be7eb5990bf4c403f3f082145156",
+      "stage_6_16_checkpoint": "8407f897e36b45affc628fbd2fe68dc4c76a5085fad095511c8045bc73ec5aad",
+      "stage_6_16_implementation": "8f3c74b272228cb0423aa192187d64028c4b7bce2f23dd74d12d811c55f76ded",
+      "stage_6_12_implementation": "75af0c847a49484059c103fe12f8db1f4fb447cb04c2161ed1ffe913dea8e008",
+      "stage_6_12_evidence": "e8e12f4fd259bc0c2689100d08bdfb3b71662e29c8af0f1e1013fbc6e9573e9f",
+      "stage_6_17_diagnosis": "1757016ae33628cca075a9cdfc881cd49be7b63f1078ca3f7288f95c7fa00a68",
+      "stage_6_17_implementation": "9231c25d24ee773c0fc376c4e2bb55c6a746897e8d95be2a351fd0c0b6fa85e1",
+      "stage_6_13_implementation": "f49975ace9a3eefd6fa93fafb838463f0b4c2690438856214809ada9d6b31687",
+      "stage_6_4_confirmation": "8e17377b5a1523d9f0a47af7218d687e062a3ade671c57f387eb4c1a0888cfae"
+    }
+  },
+  "stage_6_17_conclusion_reproduction": {
+    "state_count": 22,
+    "full_set_action_score_count": 934,
+    "teacher_top1_count": 16,
+    "behavior_top1_count": 0,
+    "other_top1_count": 6,
+    "pass_top1_count": 0,
+    "model_loaded_or_scored": false
+  },
+  "target_reproduction": {
+    "expected_target_count": 6,
+    "reproduced_target_count": 6,
+    "pipeline_train_target_count": 3,
+    "pipeline_development_target_count": 3,
+    "missing_target_count": 0,
+    "duplicate_target_count": 0,
+    "extra_target_count": 0,
+    "reconstructed_action_count": 0,
+    "substituted_action_count": 0,
+    "transferred_action_count": 0,
+    "ambiguous_mapping_count": 0
+  },
+  "pipeline_train_target_audits": [
+    {
+      "game_id": "14077",
+      "turn_index": 10,
+      "pipeline_partition": "pipeline_train",
+      "legal_action_count": 7,
+      "legal_action_order_sha256": "bd36fb06646ece848dbe377227eb6a51aed02bf5fd1b4c164af2cf216ff99040",
+      "teacher_action_index": 1,
+      "teacher_action_sha256": "9181713c41dbef760876616e5c2e1454e210ceb3985b082ea6548456e3ec91c9",
+      "teacher_rank": 2,
+      "top1_action_index": 0,
+      "top1_action_sha256": "a7aaaf7c156c09ab5ad0b8c5d33bb6bb60cd85766562f597d1b89c9be31d053c",
+      "top1_same_vector_recorded_indices": [
+        0
+      ],
+      "top1_physical_cards_website": [
+        "D2"
+      ],
+      "teacher_physical_cards_website": [
+        "H9"
+      ],
+      "physical_identity_derivation": "decoded_from_frozen_physical_action_54",
+      "source_rollout_evidence": "website_information_set_rollout_extension_v5_confirm1_top5_ensemble16.json",
+      "source_rollout_evidence_sha256": "cae66ab1d24c1cc357a6ca407576dd96acd89682e1e8e7adabbe06fe424408e9",
+      "source_state_match": true,
+      "source_legal_actions_match": true,
+      "action_mapping_reconstructed": false,
+      "action_mapping_substituted": false,
+      "source_physical_metadata_status": "exact_source_legal_action_metadata",
+      "top1_candidate_match_count": 1,
+      "teacher_candidate_match_count": 1,
+      "top1_candidate_evidence": {
+        "action_id": 1,
+        "action_type": "single",
+        "physical_cards": [
+          "方块2"
+        ],
+        "physical_cards_website": [
+          "D2"
+        ],
+        "rollout_count": 16,
+        "mean_return": 0.75,
+        "return_variance": 0.4666666666666667,
+        "completion_rate": 1.0
+      },
+      "teacher_candidate_evidence": {
+        "action_id": 8,
+        "action_type": "single",
+        "physical_cards": [
+          "红桃9"
+        ],
+        "physical_cards_website": [
+          "H9"
+        ],
+        "rollout_count": 16,
+        "mean_return": 1.0,
+        "return_variance": 0.0,
+        "completion_rate": 1.0
+      },
+      "source_hidden_card_sampling_method": "uniform_physical_assignment_given_public_counts_v1",
+      "source_continuation_profiles": [
+        "greedy_bot",
+        "tempo_baseline"
+      ],
+      "stage_6_9_provenance": {
+        "case_present": true,
+        "residual_action_index": 0,
+        "residual_action_sha256": "a7aaaf7c156c09ab5ad0b8c5d33bb6bb60cd85766562f597d1b89c9be31d053c",
+        "residual_physical_cards_website": [
+          "D2"
+        ],
+        "directional_classification": "inconclusive",
+        "teacher_over_residual_failure_reasons": [
+          "advantage_95_lower_bound_not_positive",
+          "continuation_profile_advantage_below_frozen_threshold"
+        ],
+        "residual_over_teacher_failure_reasons": [
+          "mean_advantage_below_frozen_threshold",
+          "advantage_95_lower_bound_not_positive",
+          "continuation_profile_advantage_below_frozen_threshold"
+        ],
+        "residual_action_identity_matches_current_top1": true,
+        "applicable_to_current_top1": true,
+        "used_as_current_direct_evidence": true
+      },
+      "current_top1_evidence_source": "stage_6_9_exact_action_confirmation",
+      "evidence_classification": "direct_paired_comparison_inconclusive",
+      "insufficiency_reasons": [
+        "stage_6_9_direct_comparison_inconclusive",
+        "teacher_direction:advantage_95_lower_bound_not_positive",
+        "teacher_direction:continuation_profile_advantage_below_frozen_threshold",
+        "residual_direction:mean_advantage_below_frozen_threshold",
+        "residual_direction:advantage_95_lower_bound_not_positive",
+        "residual_direction:continuation_profile_advantage_below_frozen_threshold"
+      ],
+      "teacher_over_current_top1_supported": false,
+      "current_top1_over_teacher_supported": false,
+      "stage_6_13_provenance": {
+        "target_present": true,
+        "action_identity_matches_current_top1": true,
+        "old_action_index": 0,
+        "old_action_sha256": "a7aaaf7c156c09ab5ad0b8c5d33bb6bb60cd85766562f597d1b89c9be31d053c",
+        "old_evidence_classification": "direct_paired_comparison_inconclusive",
+        "used_as_current_direct_evidence": false
+      },
+      "stage_6_4_provenance": {
+        "case_present": true,
+        "rejected_action_role": "top1",
+        "rejected_action_index": 0,
+        "rejected_action_sha256": "a7aaaf7c156c09ab5ad0b8c5d33bb6bb60cd85766562f597d1b89c9be31d053c",
+        "directional_classification": "inconclusive",
+        "rejected_action_identity_matches_current_top1": true,
+        "applicable_to_current_top1": true,
+        "used_as_current_direct_evidence": false
+      },
+      "stage_6_14e_provenance": {
+        "case_present": false,
+        "rejected_action_identity_matches_current_top1": false,
+        "applicable_to_current_top1": false,
+        "used_as_current_direct_evidence": false
+      }
+    },
+    {
+      "game_id": "14031",
+      "turn_index": 4,
+      "pipeline_partition": "pipeline_train",
+      "legal_action_count": 3,
+      "legal_action_order_sha256": "53fb44f95ecbfc7dcdc48c7c1a2aef87b0864b48a99cb8f3af703d503954a3ba",
+      "teacher_action_index": 1,
+      "teacher_action_sha256": "364be86515cc84afcbe05e4d5f5f1b0b52b7303b175868bbb4765dc6679e4230",
+      "teacher_rank": 2,
+      "top1_action_index": 2,
+      "top1_action_sha256": "44eb6c47c92f2c639293a75a2e4825abf2478d706ca7b45f31e8e9a4afc6bb42",
+      "top1_same_vector_recorded_indices": [
+        2
+      ],
+      "top1_physical_cards_website": [
+        "CT",
+        "CT",
+        "ST",
+        "DT"
+      ],
+      "teacher_physical_cards_website": [
+        "H5",
+        "H5",
+        "C5",
+        "S5"
+      ],
+      "physical_identity_derivation": "decoded_from_frozen_physical_action_54",
+      "source_rollout_evidence": "website_information_set_rollout_extension_v3_confirm1_top5_ensemble16.json",
+      "source_rollout_evidence_sha256": "e60d6d442d3b0b0a683ada2ba778cecc4b5a65c63cf88d1deb0af7c4346f8616",
+      "source_state_match": true,
+      "source_legal_actions_match": true,
+      "action_mapping_reconstructed": false,
+      "action_mapping_substituted": false,
+      "source_physical_metadata_status": "exact_source_legal_action_metadata",
+      "top1_candidate_match_count": 1,
+      "teacher_candidate_match_count": 1,
+      "top1_candidate_evidence": {
+        "action_id": 57,
+        "action_type": "4_bomb",
+        "physical_cards": [
+          "黑桃10",
+          "方块10",
+          "梅花10",
+          "梅花10"
+        ],
+        "physical_cards_website": [
+          "ST",
+          "DT",
+          "CT",
+          "CT"
+        ],
+        "rollout_count": 16,
+        "mean_return": 0.75,
+        "return_variance": 0.4666666666666667,
+        "completion_rate": 1.0
+      },
+      "teacher_candidate_evidence": {
+        "action_id": 52,
+        "action_type": "4_bomb",
+        "physical_cards": [
+          "黑桃5",
+          "红桃5",
+          "红桃5",
+          "梅花5"
+        ],
+        "physical_cards_website": [
+          "S5",
+          "H5",
+          "H5",
+          "C5"
+        ],
+        "rollout_count": 16,
+        "mean_return": 0.875,
+        "return_variance": 0.25,
+        "completion_rate": 1.0
+      },
+      "source_hidden_card_sampling_method": "uniform_physical_assignment_given_public_counts_v1",
+      "source_continuation_profiles": [
+        "greedy_bot",
+        "tempo_baseline"
+      ],
+      "stage_6_9_provenance": {
+        "case_present": false,
+        "residual_action_identity_matches_current_top1": false,
+        "applicable_to_current_top1": false,
+        "used_as_current_direct_evidence": false
+      },
+      "current_top1_evidence_source": "direct_source_rollout_evidence",
+      "evidence_classification": "source_candidates_present_without_direct_paired_comparison",
+      "insufficiency_reasons": [
+        "current_top1_and_teacher_candidates_present",
+        "direct_teacher_vs_current_top1_statistics_missing"
+      ],
+      "teacher_over_current_top1_supported": false,
+      "current_top1_over_teacher_supported": false,
+      "stage_6_13_provenance": {
+        "target_present": false,
+        "action_identity_matches_current_top1": false,
+        "old_action_index": null,
+        "old_action_sha256": null,
+        "old_evidence_classification": null,
+        "used_as_current_direct_evidence": false
+      },
+      "stage_6_4_provenance": {
+        "case_present": false,
+        "rejected_action_identity_matches_current_top1": false,
+        "applicable_to_current_top1": false,
+        "used_as_current_direct_evidence": false
+      },
+      "stage_6_14e_provenance": {
+        "case_present": false,
+        "rejected_action_identity_matches_current_top1": false,
+        "applicable_to_current_top1": false,
+        "used_as_current_direct_evidence": false
+      }
+    },
+    {
+      "game_id": "14025",
+      "turn_index": 20,
+      "pipeline_partition": "pipeline_train",
+      "legal_action_count": 4,
+      "legal_action_order_sha256": "b483f81eb0e369f159599261d1faa88108b86323048780fcbb78d78d379043bf",
+      "teacher_action_index": 0,
+      "teacher_action_sha256": "a5645e7a3fa0866cde8842c4dab96567507c3d1a3c028b816bc63f6966367b70",
+      "teacher_rank": 3,
+      "top1_action_index": 2,
+      "top1_action_sha256": "8b631095d2fc255edfa14d27e864858829b4f70d910d347d1bff89e38eb903a9",
+      "top1_same_vector_recorded_indices": [
+        2
+      ],
+      "top1_physical_cards_website": [
+        "D5"
+      ],
+      "teacher_physical_cards_website": [],
+      "physical_identity_derivation": "decoded_from_frozen_physical_action_54",
+      "source_rollout_evidence": "website_information_set_rollout_extension_v3_confirm1_top5_ensemble16.json",
+      "source_rollout_evidence_sha256": "e60d6d442d3b0b0a683ada2ba778cecc4b5a65c63cf88d1deb0af7c4346f8616",
+      "source_state_match": true,
+      "source_legal_actions_match": true,
+      "action_mapping_reconstructed": false,
+      "action_mapping_substituted": false,
+      "source_physical_metadata_status": "exact_source_legal_action_metadata",
+      "top1_candidate_match_count": 1,
+      "teacher_candidate_match_count": 1,
+      "top1_candidate_evidence": {
+        "action_id": 4,
+        "action_type": "single",
+        "physical_cards": [
+          "方块5"
+        ],
+        "physical_cards_website": [
+          "D5"
+        ],
+        "rollout_count": 16,
+        "mean_return": 1.0,
+        "return_variance": 0.0,
+        "completion_rate": 1.0
+      },
+      "teacher_candidate_evidence": {
+        "action_id": 0,
+        "action_type": "None",
+        "physical_cards": [],
+        "physical_cards_website": [],
+        "rollout_count": 16,
+        "mean_return": 1.0,
+        "return_variance": 0.0,
+        "completion_rate": 1.0
+      },
+      "source_hidden_card_sampling_method": "uniform_physical_assignment_given_public_counts_v1",
+      "source_continuation_profiles": [
+        "greedy_bot",
+        "tempo_baseline"
+      ],
+      "stage_6_9_provenance": {
+        "case_present": true,
+        "residual_action_index": 1,
+        "residual_action_sha256": "ee08530197e3efe995f061a54faa19b0eb3ceaa27742e9bf4b13be665ce07247",
+        "residual_physical_cards_website": [
+          "H5"
+        ],
+        "directional_classification": "inconclusive",
+        "teacher_over_residual_failure_reasons": [
+          "mean_advantage_below_frozen_threshold",
+          "advantage_95_lower_bound_not_positive",
+          "continuation_profile_advantage_below_frozen_threshold"
+        ],
+        "residual_over_teacher_failure_reasons": [
+          "mean_advantage_below_frozen_threshold",
+          "advantage_95_lower_bound_not_positive",
+          "continuation_profile_advantage_below_frozen_threshold"
+        ],
+        "residual_action_identity_matches_current_top1": false,
+        "applicable_to_current_top1": false,
+        "used_as_current_direct_evidence": false
+      },
+      "current_top1_evidence_source": "direct_source_rollout_evidence",
+      "evidence_classification": "source_candidates_present_without_direct_paired_comparison",
+      "insufficiency_reasons": [
+        "current_top1_and_teacher_candidates_present",
+        "direct_teacher_vs_current_top1_statistics_missing"
+      ],
+      "teacher_over_current_top1_supported": false,
+      "current_top1_over_teacher_supported": false,
+      "stage_6_13_provenance": {
+        "target_present": true,
+        "action_identity_matches_current_top1": false,
+        "old_action_index": 1,
+        "old_action_sha256": "ee08530197e3efe995f061a54faa19b0eb3ceaa27742e9bf4b13be665ce07247",
+        "old_evidence_classification": "direct_paired_comparison_inconclusive",
+        "used_as_current_direct_evidence": false
+      },
+      "stage_6_4_provenance": {
+        "case_present": true,
+        "rejected_action_role": "top1",
+        "rejected_action_index": 1,
+        "rejected_action_sha256": "ee08530197e3efe995f061a54faa19b0eb3ceaa27742e9bf4b13be665ce07247",
+        "directional_classification": "inconclusive",
+        "rejected_action_identity_matches_current_top1": false,
+        "applicable_to_current_top1": false,
+        "used_as_current_direct_evidence": false
+      },
+      "stage_6_14e_provenance": {
+        "case_present": false,
+        "rejected_action_identity_matches_current_top1": false,
+        "applicable_to_current_top1": false,
+        "used_as_current_direct_evidence": false
+      }
+    }
+  ],
+  "pipeline_development_identity_only": [
+    {
+      "game_id": "13992",
+      "turn_index": 16,
+      "pipeline_partition": "pipeline_development",
+      "legal_action_count": 10,
+      "legal_action_order_sha256": "eea6f645847d3628e6ae917a8892266e44ad17dbd36fe75213a1d5d03042ff3b",
+      "teacher_action_index": 9,
+      "teacher_action_sha256": "0eb54a917a601da211462db8732b7da735c49c01680a6e0c4f9be9632c725dde",
+      "teacher_rank": 4,
+      "top1_action_index": 7,
+      "top1_action_sha256": "a98870e1dc8a5f20d49b6c84af9842e2836e4206bd9cb15f55355fdeaa082b16",
+      "top1_same_vector_recorded_indices": [
+        7
+      ],
+      "top1_physical_cards_website": [
+        "H6",
+        "HT",
+        "HT",
+        "CT"
+      ],
+      "teacher_physical_cards_website": [
+        "H6",
+        "H7",
+        "H9",
+        "HT",
+        "HJ"
+      ],
+      "physical_identity_derivation": "decoded_from_frozen_physical_action_54"
+    },
+    {
+      "game_id": "14074",
+      "turn_index": 9,
+      "pipeline_partition": "pipeline_development",
+      "legal_action_count": 17,
+      "legal_action_order_sha256": "c4e61989b6e58b5fce4c3c12905585dfbbcc2a3b5c749573b0de84ba6fbcd6ed",
+      "teacher_action_index": 0,
+      "teacher_action_sha256": "8b631095d2fc255edfa14d27e864858829b4f70d910d347d1bff89e38eb903a9",
+      "teacher_rank": 6,
+      "top1_action_index": 9,
+      "top1_action_sha256": "ddb74d891debbd87a8b831fafbb033463b89bd6c0b04575eda14b69e28ce9ecd",
+      "top1_same_vector_recorded_indices": [
+        9
+      ],
+      "top1_physical_cards_website": [
+        "DQ",
+        "DQ"
+      ],
+      "teacher_physical_cards_website": [
+        "D5"
+      ],
+      "physical_identity_derivation": "decoded_from_frozen_physical_action_54"
+    },
+    {
+      "game_id": "13871",
+      "turn_index": 9,
+      "pipeline_partition": "pipeline_development",
+      "legal_action_count": 12,
+      "legal_action_order_sha256": "db00b62774d949022e0e873ef0f213fa94af0491bb63a14e2797a02420506d6e",
+      "teacher_action_index": 2,
+      "teacher_action_sha256": "c1d443ee9bd0fb09716a6d64820ef73f55e482aee02a0b28e32b20b04a683712",
+      "teacher_rank": 5,
+      "top1_action_index": 10,
+      "top1_action_sha256": "15b33787374be514c26620c84f095dd12eb39f03ce77dd30e748e95797648a0e",
+      "top1_same_vector_recorded_indices": [
+        10
+      ],
+      "top1_physical_cards_website": [
+        "H3",
+        "S3",
+        "D3",
+        "D3",
+        "HQ"
+      ],
+      "teacher_physical_cards_website": [
+        "H3",
+        "S3",
+        "D3",
+        "D3"
+      ],
+      "physical_identity_derivation": "decoded_from_frozen_physical_action_54"
+    }
+  ],
+  "source_evidence_files": [
+    {
+      "path": "website_information_set_rollout_extension_v3_confirm1_top5_ensemble16.json",
+      "sha256": "e60d6d442d3b0b0a683ada2ba778cecc4b5a65c63cf88d1deb0af7c4346f8616"
+    },
+    {
+      "path": "website_information_set_rollout_extension_v5_confirm1_top5_ensemble16.json",
+      "sha256": "cae66ab1d24c1cc357a6ca407576dd96acd89682e1e8e7adabbe06fe424408e9"
+    }
+  ],
+  "source_evidence_file_count": 2,
+  "train_evidence_aggregates": {
+    "target_count": 3,
+    "source_file_count": 2,
+    "current_top1_absent_from_source_legal_actions_count": 0,
+    "current_top1_not_evaluated_as_source_candidate_count": 0,
+    "source_candidates_present_without_direct_paired_comparison_count": 2,
+    "direct_paired_comparison_inconclusive_count": 1,
+    "teacher_over_current_top1_supported_count": 0,
+    "current_top1_over_teacher_supported_count": 0,
+    "stage_6_9_exact_action_evidence_count": 1,
+    "stage_6_9_different_action_nontransfer_count": 1,
+    "insufficient_evidence_count": 3,
+    "ambiguous_mapping_count": 0
+  },
+  "development_isolation": {
+    "identity_only_target_count": 3,
+    "source_reference_record_count": 0,
+    "source_evidence_target_query_count": 0,
+    "candidate_inspection_count": 0,
+    "threshold_design_use_count": 0,
+    "objective_design_use_count": 0,
+    "confirmation_design_use_count": 0
+  },
+  "future_counterfactual_manifest": [
+    {
+      "game_id": "14077",
+      "turn_index": 10,
+      "pipeline_partition": "pipeline_train",
+      "top1_action_index": 0,
+      "top1_action_sha256": "a7aaaf7c156c09ab5ad0b8c5d33bb6bb60cd85766562f597d1b89c9be31d053c",
+      "evidence_classification": "direct_paired_comparison_inconclusive",
+      "reason": [
+        "stage_6_9_direct_comparison_inconclusive",
+        "teacher_direction:advantage_95_lower_bound_not_positive",
+        "teacher_direction:continuation_profile_advantage_below_frozen_threshold",
+        "residual_direction:mean_advantage_below_frozen_threshold",
+        "residual_direction:advantage_95_lower_bound_not_positive",
+        "residual_direction:continuation_profile_advantage_below_frozen_threshold"
+      ],
+      "new_confirmation_needed": false,
+      "execution_allowed_in_this_stage": false
+    },
+    {
+      "game_id": "14031",
+      "turn_index": 4,
+      "pipeline_partition": "pipeline_train",
+      "top1_action_index": 2,
+      "top1_action_sha256": "44eb6c47c92f2c639293a75a2e4825abf2478d706ca7b45f31e8e9a4afc6bb42",
+      "evidence_classification": "source_candidates_present_without_direct_paired_comparison",
+      "reason": [
+        "current_top1_and_teacher_candidates_present",
+        "direct_teacher_vs_current_top1_statistics_missing"
+      ],
+      "new_confirmation_needed": true,
+      "execution_allowed_in_this_stage": false
+    },
+    {
+      "game_id": "14025",
+      "turn_index": 20,
+      "pipeline_partition": "pipeline_train",
+      "top1_action_index": 2,
+      "top1_action_sha256": "8b631095d2fc255edfa14d27e864858829b4f70d910d347d1bff89e38eb903a9",
+      "evidence_classification": "source_candidates_present_without_direct_paired_comparison",
+      "reason": [
+        "current_top1_and_teacher_candidates_present",
+        "direct_teacher_vs_current_top1_statistics_missing"
+      ],
+      "new_confirmation_needed": true,
+      "execution_allowed_in_this_stage": false
+    }
+  ],
+  "future_counterfactual_manifest_case_count": 3,
+  "future_counterfactual_manifest_new_confirmation_needed_count": 2,
+  "future_counterfactual_manifest_existing_inconclusive_count": 1,
+  "future_counterfactual_manifest_executed": false,
+  "new_dataset_or_objective_defined": false,
+  "unsupported_ordering_label_count": 0,
+  "interpretation_scope": {
+    "read_only_existing_evidence_audit": true,
+    "causal_claim_allowed": false,
+    "capability_claim_allowed": false,
+    "checkpoint_promotion_allowed": false
+  },
+  "forbidden_operation_counts": {
+    "model_loads": 0,
+    "model_scoring_runs": 0,
+    "new_rollout_runs": 0,
+    "dataset_constructions": 0,
+    "objective_constructions": 0,
+    "training_runs": 0,
+    "fine_tuning_runs": 0,
+    "hyperparameter_tuning_runs": 0,
+    "threshold_tuning_runs": 0,
+    "checkpoint_selections": 0,
+    "checkpoint_modifications": 0,
+    "complete_website_dataset_loads": 0,
+    "locked_test_loads": 0,
+    "arena_games": 0,
+    "website_shadow_games": 0,
+    "website_games": 0,
+    "model_controlled_website_actions": 0,
+    "future_manifest_executions": 0,
+    "checkpoint_promotions": 0,
+    "capability_claims": 0,
+    "unsupported_ordering_labels": 0
+  }
+}

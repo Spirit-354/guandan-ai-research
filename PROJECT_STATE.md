@@ -8,7 +8,7 @@ Branch: `agent/stage5-website-bot-adaptation`
 
 Latest completed stage:
 
-- Stage 6.17 Frozen Remaining-Top1 Corrective Full-Legal-Set Diagnosis.
+- Stage 6.18 Frozen Three-Train Remaining-Top1 Evidence Audit.
 
 Primary program:
 
@@ -208,6 +208,13 @@ Teacher dataset:
   It scored all 934 recorded actions across the same 22 states, reproduced all
   six Stage 6.16 metric sections and prediction digests, and independently
   audited every ranking, action hash/order, aggregate, and 6+4+2 mapping.
+- The Stage 6.18 final remaining-top1 evidence audit is
+  `website_teacher_preference_remaining_corrective_final_evidence_audit_v1.json`,
+  SHA-256
+  `b7dc15c779556a972c1b471348cb949bd98d54c1ce1aecb14a3d23cda083681b`.
+  It inspected only the two directly referenced train source files, preserved
+  one direct inconclusive comparison, identified two exact actions that lack
+  paired statistics, and kept all three development targets identity-only.
 
 Current blocker:
 
@@ -283,6 +290,14 @@ Current blocker:
   disallowed. The next stage must audit existing evidence only for train
   `14077:10` index 0, `14031:4` index 2, and `14025:20` index 2; development
   remains identity-only.
+- Stage 6.18 found no supported direction for any of the three current train
+  top-1 actions. `14077:10` index 0 preserves its frozen direct inconclusive
+  classification. `14031:4` index 2 and `14025:20` index 2 are present in
+  source candidates but have no direct teacher-versus-current paired
+  statistics. The old `14025:20` index 1 evidence has a different action hash
+  and was not transferred. Only those two new-action cases may enter a
+  separate frozen train-only confirmation; all development exposure remains
+  zero and Arena remains disallowed.
 - The eligible extension v5 pool is exhausted: all 277 rollout-eligible states
   were screened, all permitted positive-screen game signals were confirmed or
   exhausted, and three labels passed.
@@ -781,10 +796,11 @@ Acceptance:
 
 Goal: compare candidates against frozen `tempo_baseline`.
 
-Status: Stage 6.17 completed the frozen full-legal-set diagnosis. Teacher is
-first-max top-1 in 16/22 states, with three train and three held-out
-development residual states. A frozen train-only evidence audit is next;
-no improved offline capability evidence exists yet.
+Status: Stage 6.18 completed the frozen train-only evidence audit. One exact
+train action remains directly inconclusive and two exact train actions lack
+paired statistics; three development residuals remain held out. A separate
+two-case train-only confirmation is next; no improved offline capability
+evidence exists yet.
 
 Constraints:
 
@@ -1293,6 +1309,28 @@ Stage 6.17 acceptance:
   `1757016ae33628cca075a9cdfc881cd49be7b63f1078ca3f7288f95c7fa00a68`;
   implementation SHA-256:
   `9231c25d24ee773c0fc376c4e2bb55c6a746897e8d95be2a351fd0c0b6fa85e1`.
+
+Stage 6.18 acceptance:
+
+- All 28 frozen hashes matched. The exact three train and three identity-only
+  development targets reproduced with zero missing, duplicate, extra,
+  reconstructed, substituted, transferred, or ambiguous actions.
+- Only two directly referenced train source files were opened. `14077:10`
+  index 0 is direct-paired inconclusive; `14031:4` index 2 and `14025:20`
+  index 2 have both source candidates but no direct paired statistics.
+- Stage 6.4, Stage 6.9, Stage 6.13, and Stage 6.14E provenance was checked by
+  exact 54D action hash. The different old `14025:20` index 1 evidence was not
+  transferred to current index 2.
+- The three development cases had zero source-reference exposure, query,
+  candidate inspection, or design use. Model loading/scoring and every other
+  forbidden operation were zero.
+- A separate process reproduced every frozen/source hash, target and action
+  identity, classification, aggregate, future-manifest entry, isolation
+  counter, and forbidden counter.
+- Curated audit SHA-256:
+  `b7dc15c779556a972c1b471348cb949bd98d54c1ce1aecb14a3d23cda083681b`;
+  implementation SHA-256:
+  `6200af71c14081418b1abfd1fd45d99347c3f20d601ec355014dbbc931a3ea26`.
 
 Acceptance:
 

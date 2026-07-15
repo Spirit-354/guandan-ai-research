@@ -63,7 +63,9 @@ preserved all 32 v2 pairs and froze a 34-pair v3 dataset containing only those
 two supported additions. Stage 6.16 completed one fixed from-scratch smoke on
 its 30 train pairs with exact independent checkpoint reload. Stage 6.17 then
 raised frozen teacher full-set top-1 to 16/22 while leaving three train and
-three held-out development residual states; no capability evidence exists.
+three held-out development residual states. Stage 6.18 found one preserved
+direct-inconclusive train ordering and two exact train actions without direct
+paired statistics; no capability evidence exists.
 
 Accepted strong labels:
 
@@ -1642,6 +1644,46 @@ Decision:
 - Keep all three development targets identity-only. Do not score a model,
   train, or execute rollout in the evidence-audit stage.
 
+## Stage 6.18 Frozen Three-Train Remaining-Top1 Evidence Audit
+
+Status: completed; read-only train evidence audit passed with development
+isolation and no capability claim.
+
+Evidence:
+
+- All 28 frozen hashes reproduced. Exactly three train and three identity-only
+  development targets matched Stage 6.17 by state, original action index/order,
+  54D hash, rank, and physical identity with zero missing, duplicate, extra,
+  reconstructed, substituted, transferred, or ambiguous actions.
+- Only two train source files directly referenced by the frozen samples were
+  opened and hashed. No development source reference was exposed or queried.
+- `14077:10` index 0 retained its complete direct-paired inconclusive result.
+  `14031:4` index 2 and `14025:20` index 2 both occur as source candidates but
+  lack direct teacher-versus-current paired statistics. No direction is
+  supported for any of the three cases.
+- The old Stage 6.4/6.9/6.13 evidence for `14025:20` targets index 1, whose
+  action hash differs from current index 2, and was explicitly not transferred.
+- The non-executed future manifest contains all three train cases, but marks
+  only `14031:4` and `14025:20` as needing new confirmation. Model load/score,
+  rollout, dataset/objective, training/tuning, checkpoint, Arena, website,
+  promotion, unsupported-label, and capability counters are all zero.
+- A separate process exactly reproduced all hashes, identities,
+  classifications, aggregates, manifest entries, isolation counters, and
+  forbidden counters.
+- Curated output SHA-256:
+  `b7dc15c779556a972c1b471348cb949bd98d54c1ce1aecb14a3d23cda083681b`;
+  implementation SHA-256:
+  `6200af71c14081418b1abfd1fd45d99347c3f20d601ec355014dbbc931a3ea26`.
+
+Decision:
+
+- Preserve `14077:10` as inconclusive and do not rerun it. Permit only a
+  separate frozen train-only confirmation for `14031:4` index 2 and
+  `14025:20` index 2.
+- Keep development unexposed. Do not build a dataset/objective, train, run
+  Arena, access the website, promote, or claim capability in that confirmation
+  stage.
+
 ## Model A / Shared Self-Play / BC / PPO / DMC
 
 Status: not eligible for website control.
@@ -1677,24 +1719,23 @@ Decision:
 
 ## Current Next Experiment
 
-Name: Stage 6.18 Frozen Three-Train Remaining-Top1 Evidence Audit.
+Name: Stage 6.19 Frozen Two-New-Action Train-Only Counterfactual Confirmation.
 
 Purpose:
 
-- Reproduce only the three train residual targets `14077:10` index 0,
-  `14031:4` index 2, and `14025:20` index 2 from Stage 6.17 without loading or
-  scoring a model.
-- Inspect only directly referenced frozen train source evidence and classify
-  whether each exact teacher-versus-current-top1 ordering already has complete
-  paired support. Keep all three development targets identity-only.
+- Reproduce only `14031:4` index 2 and `14025:20` index 2 from the Stage 6.18
+  new-confirmation manifest and run the unchanged frozen process-isolated
+  counterfactual schedule once.
+- Exclude the already-inconclusive `14077:10` case and all three development
+  targets from mapping, execution, rollout, threshold use, and design use.
 
 Acceptance:
 
-- All three train and three identity-only development targets reproduce by
-  state, action index/order/hash, rank, and physical identity with no
-  missing/duplicate/ambiguous mapping.
-- Existing evidence classifications and any previous-action identity boundary
-  reproduce exactly; unsupported or transferred labels remain zero.
-- Model loading/scoring, rollout, dataset/objective work, training, tuning,
+- Exactly two train cases execute 64/64 candidate rollouts under the unchanged
+  8-determinization, two-profile, two-candidate schedule with no timeout,
+  failure, retry, fallback, missing, duplicate, or extra result.
+- Frozen return statistics and directional gates classify each case; only a
+  fully supported teacher-over-current result may enter a later dataset stage.
+- Excluded train/development cases, dataset/objective work, training, tuning,
   checkpoint changes, Arena, website access, promotion, and capability claims
   remain zero.
