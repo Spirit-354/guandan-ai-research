@@ -58,8 +58,9 @@ failures. Stage 6.14R derived the exact failure path without a new rollout and
 froze a process-isolation equivalence stage. Stage 6.14P then proved exact
 synthetic sequential/process equivalence and authorized one formal parallel
 confirmation. Stage 6.14E completed 96/96 and confirmed two teacher-over-
-current-top1 comparisons while one remained inconclusive; no capability
-evidence exists.
+current-top1 comparisons while one remained inconclusive. Stage 6.15 then
+preserved all 32 v2 pairs and froze a 34-pair v3 dataset containing only those
+two supported additions; no capability evidence exists.
 
 Accepted strong labels:
 
@@ -1521,6 +1522,42 @@ Decision:
 - Do not run another rollout, train, diagnose, run Arena, access the website,
   promote a checkpoint, or claim capability in the dataset stage.
 
+## Stage 6.15 Frozen Remaining-Top1 Corrective Dataset Extension
+
+Status: completed; dataset and independent audit passed without executing the
+objective or producing capability evidence.
+
+Evidence:
+
+- All 14 frozen hashes matched. All 22 embedded teacher samples and all 32 v2
+  pair semantics and ordering remained exact; only the three deterministic
+  weight fields were recomputed.
+- Exactly two Stage 6.14E-supported pipeline-train pairs were added:
+  `13957:14` teacher over current top-1 index 17 and `14038:12` teacher over
+  current top-1 index 3.
+- The one new inconclusive case, three previously inconclusive train cases,
+  and three held-out development cases added zero pairs.
+- The dataset contains 34 pairs across the unchanged 22 states: 30 train pairs
+  across 18 states and four development pairs across four states. Provenance
+  counts are 22 base, six Stage 6.4, four Stage 6.9, and two Stage 6.14E.
+- The state pair-count distribution is 13 single, six double, and three triple
+  states. All within-state sums and both partition-normalized sums equal one.
+- A separate process reconstructed every hash, sample, preserved/new pair,
+  action and physical identity, metric, provenance field, exclusion, weight,
+  and forbidden-operation counter exactly.
+- Dataset v3 SHA-256:
+  `71e90241170882dd97893e71fbe0694368af96525737b55370cd0a60e098ce6f`;
+  manifest SHA-256:
+  `c9b25d75da0fc5966e1f29bcbd50dd471971e16fc9f4a368cda5b5ba2f8d822d`.
+
+Decision:
+
+- Freeze v3 and its manifest as pipeline-only inputs. Permit one separate
+  fixed, from-scratch CPU training smoke on only the 18 train states/30 train
+  pairs, with four development pairs evaluation-only.
+- Do not tune, select among checkpoints, diagnose full legal sets, run Arena,
+  access the website, promote, or claim capability in that training stage.
+
 ## Model A / Shared Self-Play / BC / PPO / DMC
 
 Status: not eligible for website control.
@@ -1556,24 +1593,23 @@ Decision:
 
 ## Current Next Experiment
 
-Name: Stage 6.15 Frozen Remaining-Top1 Corrective Dataset Extension.
+Name: Stage 6.16 Frozen Remaining-Top1 Corrective Training Smoke.
 
 Purpose:
 
-- Preserve all 32 Stage 6.10 v2 pairs and add only the two Stage 6.14E-supported
-  train comparisons for `13957:14` index 17 and `14038:12` index 3.
-- Recompute deterministic state-balanced weights and write new v3 dataset and
-  manifest artifacts without executing the objective.
+- Run exactly one deterministic from-scratch CPU smoke on frozen corrective
+  dataset v3 using seed `20260714`, 20 epochs, six complete states per batch,
+  learning rate `0.001`, and no initialization checkpoint.
+- Use only the 18 train states/30 train pairs for gradients. Keep all four
+  development states/pairs evaluation-only and use the unchanged
+  state-balanced pairwise softplus objective.
 
 Acceptance:
 
-- The new dataset contains exactly 34 pairs: 30 train and four development,
-  across the unchanged 18/4 states; pair-count distribution is 13 single, six
-  double, and three triple states.
-- `13872:4`, the three previously inconclusive train cases, and all three
-  development residual targets add zero pairs.
-- An independent process reproduces every preserved and added pair, weight,
-  split, provenance field, exclusion, hash, and forbidden counter.
-- Rollout, objective execution, model scoring, training, tuning, checkpoint
-  activity, locked-test or website data, Arena, website access, promotion, and
-  capability claims remain zero.
+- Exactly one training run completes with 60 optimizer steps; development
+  gradient uses, extra targets, fine-tuning, searches, tuning, initialization,
+  and checkpoint selection remain zero.
+- A separate process reloads the single final checkpoint and exactly reproduces
+  aggregate and pair-source metrics plus prediction digests.
+- Rollout, full-legal-set diagnosis, locked-test or complete-bundle loads,
+  Arena, website access, promotion, and capability claims remain zero.

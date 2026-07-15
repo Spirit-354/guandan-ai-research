@@ -8,7 +8,7 @@ Branch: `agent/stage5-website-bot-adaptation`
 
 Latest completed stage:
 
-- Stage 6.14E Formal Process-Isolated Three-New-Top1 Confirmation.
+- Stage 6.15 Frozen Remaining-Top1 Corrective Dataset Extension.
 
 Primary program:
 
@@ -234,6 +234,18 @@ Current blocker:
   `13872:4` is inconclusive. Only the two supported train comparisons may
   enter a separate frozen dataset-extension stage. Stage 6 remains incomplete,
   and no Arena or capability evidence is authorized from this result.
+- Stage 6.15 froze corrective dataset v3 with all 32 v2 pair semantics
+  preserved and only the two Stage 6.14E-supported train pairs added. It has
+  34 pairs across the unchanged 22 states: 30 train pairs across 18 states and
+  four evaluation-only development pairs across four states. Source counts are
+  22 base, six Stage 6.4, four Stage 6.9, and two Stage 6.14E pairs. Dataset
+  SHA-256 is
+  `71e90241170882dd97893e71fbe0694368af96525737b55370cd0a60e098ce6f`;
+  manifest SHA-256 is
+  `c9b25d75da0fc5966e1f29bcbd50dd471971e16fc9f4a368cda5b5ba2f8d822d`.
+  The objective remains unexecuted. Stage 6 now requires one separate fixed
+  from-scratch training smoke before any new static diagnosis; no Arena or
+  capability evidence was produced.
 - The eligible extension v5 pool is exhausted: all 277 rollout-eligible states
   were screened, all permitted positive-screen game signals were confirmed or
   exhausted, and three labels passed.
@@ -732,10 +744,10 @@ Acceptance:
 
 Goal: compare candidates against frozen `tempo_baseline`.
 
-Status: Stage 6.14E completed the formal three-case confirmation at 96/96.
-Two teacher-over-current-top1 comparisons passed the frozen gates and one was
-inconclusive. A separate dataset-extension stage is required before any
-training or diagnosis; no improved offline capability evidence exists yet.
+Status: Stage 6.15 froze the 34-pair corrective dataset v3 after preserving all
+32 v2 pair semantics and adding only two supported train comparisons. A
+separate fixed from-scratch training stage is next; no improved offline
+capability evidence exists yet.
 
 Constraints:
 
@@ -1173,6 +1185,28 @@ Stage 6.14E acceptance:
   `450e89f780a33dd543f49f029e735f7fb32e11cd657163c52e6a4301d21f7eb5`;
   formal wrapper SHA-256:
   `972b67ed585e9a96f9e8be55b70d0b6585a7e499f6dc692c2861d5e636b9e55d`.
+
+Stage 6.15 acceptance:
+
+- All 14 frozen hashes matched. All 22 embedded teacher samples and all 32 v2
+  pair semantics and ordering remained exact; only the three deterministic
+  weight fields changed.
+- Exactly two Stage 6.14E-supported train comparisons were added:
+  `13957:14` teacher over action index 17 and `14038:12` teacher over action
+  index 3. The one new inconclusive case, three existing inconclusive train
+  cases, and three held-out development cases added zero pairs.
+- The resulting 34 pairs reproduce exact 30/4 train/development counts,
+  22/6/4/2 provenance counts, unchanged 18/4 state counts, and 13/6/3
+  one/two/three-pair state counts. Every state and partition weight sum is one.
+- A separate process reconstructed every sample hash, pair ID, action hash,
+  physical identity, metric, provenance field, exclusion, weight, output hash,
+  and forbidden-operation counter. Objective execution, rollout, model
+  scoring, training, tuning, checkpoint work, Arena, website activity,
+  promotion, and capability claims were all zero.
+- Frozen dataset v3 SHA-256:
+  `71e90241170882dd97893e71fbe0694368af96525737b55370cd0a60e098ce6f`;
+  manifest SHA-256:
+  `c9b25d75da0fc5966e1f29bcbd50dd471971e16fc9f4a368cda5b5ba2f8d822d`.
 
 Acceptance:
 
