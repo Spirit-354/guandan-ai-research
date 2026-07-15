@@ -60,7 +60,9 @@ synthetic sequential/process equivalence and authorized one formal parallel
 confirmation. Stage 6.14E completed 96/96 and confirmed two teacher-over-
 current-top1 comparisons while one remained inconclusive. Stage 6.15 then
 preserved all 32 v2 pairs and froze a 34-pair v3 dataset containing only those
-two supported additions; no capability evidence exists.
+two supported additions. Stage 6.16 completed one fixed from-scratch smoke on
+its 30 train pairs with exact independent checkpoint reload; no capability
+evidence exists.
 
 Accepted strong labels:
 
@@ -1558,6 +1560,47 @@ Decision:
 - Do not tune, select among checkpoints, diagnose full legal sets, run Arena,
   access the website, promote, or claim capability in that training stage.
 
+## Stage 6.16 Frozen Remaining-Top1 Corrective Training Smoke
+
+Status: completed; deterministic pipeline smoke and independent checkpoint
+audit passed without capability validation.
+
+Evidence:
+
+- All 19 frozen inputs and every v3 sample, pair, split, provenance,
+  exclusion, and weight invariant reproduced exactly before and after training.
+- Exactly one from-scratch CPU run used seed `20260714`, 20 epochs, six states
+  per batch, learning rate `0.001`, no initialization checkpoint, and the
+  unchanged state-balanced pairwise softplus objective.
+- Only the 18 train states/30 pairs entered gradients. The run completed 60
+  optimizer steps, 360 train-state epoch uses, and 600 train-pair epoch uses.
+  All four development states/pairs were evaluation-only.
+- Development gradient uses, extra targets, fine-tuning, objective or threshold
+  tuning, hyperparameter searches, initialization loads, extra configurations,
+  checkpoint selections, and nonfinite values were zero.
+- Final train state-balanced loss was `0.0063847274`. Aggregate, base, Stage
+  6.4, Stage 6.9, and Stage 6.14E pair accuracies were all `1.0`; mean margins
+  were `11.2822`, `13.8454`, `8.2260`, `4.5802`, and `10.7853`.
+- Development state-balanced loss was `0.0100213728`, pair accuracy was `1.0`,
+  and mean margin was `12.8601`. These metrics were not used for tuning or
+  checkpoint selection.
+- A separate process reloaded the final checkpoint and reproduced every
+  aggregate/pair-source metric and prediction digest exactly. All forbidden
+  operation counters remained zero.
+- Curated report:
+  `website_teacher_preference_remaining_corrective_training_v1.json`, SHA-256
+  `cac3ecb0542a7f9aaac2654f73f4e3650422be7eb5990bf4c403f3f082145156`.
+  Ignored checkpoint SHA-256:
+  `8407f897e36b45affc628fbd2fe68dc4c76a5085fad095511c8045bc73ec5aad`.
+
+Decision:
+
+- Keep the checkpoint pipeline-only, unpromoted, and ineligible for capability
+  claims. Perfect frozen-pair fit does not establish full-set behavior.
+- Before any Arena, run only a separate frozen static full-legal-set ranking
+  diagnosis across the same 22 states and 934 recorded action entries. Do not
+  train or tune in that stage.
+
 ## Model A / Shared Self-Play / BC / PPO / DMC
 
 Status: not eligible for website control.
@@ -1593,23 +1636,22 @@ Decision:
 
 ## Current Next Experiment
 
-Name: Stage 6.16 Frozen Remaining-Top1 Corrective Training Smoke.
+Name: Stage 6.17 Frozen Remaining-Top1 Corrective Full-Legal-Set Diagnosis.
 
 Purpose:
 
-- Run exactly one deterministic from-scratch CPU smoke on frozen corrective
-  dataset v3 using seed `20260714`, 20 epochs, six complete states per batch,
-  learning rate `0.001`, and no initialization checkpoint.
-- Use only the 18 train states/30 train pairs for gradients. Keep all four
-  development states/pairs evaluation-only and use the unchanged
-  state-balanced pairwise softplus objective.
+- Load only the frozen Stage 6.16 checkpoint and score all 934 recorded legal
+  action entries across the same 22 teacher states once in original order.
+- Separately replay the frozen 30/18/6/4/2 train and four development pair
+  batches to reproduce every Stage 6.16 metric and prediction digest without
+  mixing replay accounting into full-set scoring.
 
 Acceptance:
 
-- Exactly one training run completes with 60 optimizer steps; development
-  gradient uses, extra targets, fine-tuning, searches, tuning, initialization,
-  and checkpoint selection remain zero.
-- A separate process reloads the single final checkpoint and exactly reproduces
-  aggregate and pair-source metrics plus prediction digests.
-- Rollout, full-legal-set diagnosis, locked-test or complete-bundle loads,
-  Arena, website access, promotion, and capability claims remain zero.
+- Exact 22-state, 934-action, 889/45 train/development accounting passes with
+  all duplicate action entries preserved and no dropped, reconstructed,
+  repeated, invalid, illegal, or nonfinite scores.
+- A separate process reproduces every rank, tie, action-order digest,
+  aggregate, Stage 6.16 metric/digest, and all 6+4+2 corrective mappings.
+- Rollout, training, tuning, checkpoint changes, locked-test or complete-bundle
+  loads, Arena, website access, promotion, and capability claims remain zero.

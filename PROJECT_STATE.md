@@ -8,7 +8,7 @@ Branch: `agent/stage5-website-bot-adaptation`
 
 Latest completed stage:
 
-- Stage 6.15 Frozen Remaining-Top1 Corrective Dataset Extension.
+- Stage 6.16 Frozen Remaining-Top1 Corrective Training Smoke.
 
 Primary program:
 
@@ -184,6 +184,23 @@ Teacher dataset:
   opened only six directly referenced train source files, and independently
   audited every source/action hash, physical identity, evidence classification,
   and Stage 6.9 action-identity boundary without loading or scoring a model.
+- The frozen remaining-top1 corrective dataset is
+  `website_teacher_preference_corrective_dataset_v3.pth`, SHA-256
+  `71e90241170882dd97893e71fbe0694368af96525737b55370cd0a60e098ce6f`.
+  Its manifest SHA-256 is
+  `c9b25d75da0fc5966e1f29bcbd50dd471971e16fc9f4a368cda5b5ba2f8d822d`.
+  It preserves all 32 v2 pair semantics and adds only two Stage
+  6.14E-supported train comparisons, for 30 train and four development pairs.
+- The Stage 6.16 fixed remaining-top1 corrective training report is
+  `website_teacher_preference_remaining_corrective_training_v1.json`, SHA-256
+  `cac3ecb0542a7f9aaac2654f73f4e3650422be7eb5990bf4c403f3f082145156`.
+  Exactly one from-scratch CPU run used the frozen 18 train states/30 pairs;
+  all four development states/pairs were evaluation-only.
+- The ignored remaining-top1 corrective checkpoint is
+  `models_website_teacher_preference_remaining_corrective_v1/website_teacher_preference_remaining_corrective_final.pth`,
+  SHA-256
+  `8407f897e36b45affc628fbd2fe68dc4c76a5085fad095511c8045bc73ec5aad`.
+  It is pipeline-only, unpromoted, and ineligible for capability claims.
 
 Current blocker:
 
@@ -243,9 +260,15 @@ Current blocker:
   `71e90241170882dd97893e71fbe0694368af96525737b55370cd0a60e098ce6f`;
   manifest SHA-256 is
   `c9b25d75da0fc5966e1f29bcbd50dd471971e16fc9f4a368cda5b5ba2f8d822d`.
-  The objective remains unexecuted. Stage 6 now requires one separate fixed
-  from-scratch training smoke before any new static diagnosis; no Arena or
+  The objective remained unexecuted in that dataset stage; no Arena or
   capability evidence was produced.
+- Stage 6.16 completed exactly one fixed from-scratch CPU run on the 18 train
+  states/30 pairs: 20 epochs, 60 optimizer steps, 360 state epoch uses, and
+  600 pair epoch uses. Development gradient uses and every prohibited extra
+  operation were zero. All train source groups and development reached pair
+  accuracy `1.0`, but these are pairwise pipeline diagnostics only. A separate
+  frozen full-legal-set diagnosis is required before any Arena; Stage 6 and
+  capability validation remain incomplete.
 - The eligible extension v5 pool is exhausted: all 277 rollout-eligible states
   were screened, all permitted positive-screen game signals were confirmed or
   exhausted, and three labels passed.
@@ -744,10 +767,10 @@ Acceptance:
 
 Goal: compare candidates against frozen `tempo_baseline`.
 
-Status: Stage 6.15 froze the 34-pair corrective dataset v3 after preserving all
-32 v2 pair semantics and adding only two supported train comparisons. A
-separate fixed from-scratch training stage is next; no improved offline
-capability evidence exists yet.
+Status: Stage 6.16 completed exactly one fixed from-scratch smoke on the
+34-pair corrective dataset v3. Pairwise pipeline metrics and independent
+checkpoint reload passed. A separate frozen full-legal-set diagnosis is next;
+no improved offline capability evidence exists yet.
 
 Constraints:
 
@@ -1207,6 +1230,31 @@ Stage 6.15 acceptance:
   `71e90241170882dd97893e71fbe0694368af96525737b55370cd0a60e098ce6f`;
   manifest SHA-256:
   `c9b25d75da0fc5966e1f29bcbd50dd471971e16fc9f4a368cda5b5ba2f8d822d`.
+
+Stage 6.16 acceptance:
+
+- All 19 frozen hashes and every v3 sample, pair, split, provenance,
+  exclusion, state weight, and partition weight invariant matched before and
+  after training.
+- Exactly one from-scratch CPU run used seed `20260714`, 20 epochs, six states
+  per batch, learning rate `0.001`, no initialization checkpoint, and the
+  unchanged state-balanced pairwise softplus objective. It completed exactly
+  60 optimizer steps, 360 train-state epoch uses, and 600 train-pair epoch
+  uses on only the 18 train states/30 pairs.
+- Development gradient uses, extra targets, fine-tuning, objective or
+  threshold tuning, hyperparameter searches, initialization loads, extra
+  configurations, checkpoint selections, and nonfinite values were zero.
+- Train aggregate, base, Stage 6.4, Stage 6.9, and Stage 6.14E pair accuracies
+  were all `1.0`, with mean margins `11.2822`, `13.8454`, `8.2260`, `4.5802`,
+  and `10.7853`. Development accuracy was `1.0` with mean margin `12.8601`.
+- A separate process reloaded the checkpoint and exactly reproduced every
+  metric and prediction digest. Rollout, full-legal-set diagnosis, locked-test
+  or complete-bundle loads, Arena, website activity, promotion, and capability
+  claims were zero.
+- Curated report SHA-256:
+  `cac3ecb0542a7f9aaac2654f73f4e3650422be7eb5990bf4c403f3f082145156`;
+  ignored checkpoint SHA-256:
+  `8407f897e36b45affc628fbd2fe68dc4c76a5085fad095511c8045bc73ec5aad`.
 
 Acceptance:
 
