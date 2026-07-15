@@ -61,8 +61,9 @@ confirmation. Stage 6.14E completed 96/96 and confirmed two teacher-over-
 current-top1 comparisons while one remained inconclusive. Stage 6.15 then
 preserved all 32 v2 pairs and froze a 34-pair v3 dataset containing only those
 two supported additions. Stage 6.16 completed one fixed from-scratch smoke on
-its 30 train pairs with exact independent checkpoint reload; no capability
-evidence exists.
+its 30 train pairs with exact independent checkpoint reload. Stage 6.17 then
+raised frozen teacher full-set top-1 to 16/22 while leaving three train and
+three held-out development residual states; no capability evidence exists.
 
 Accepted strong labels:
 
@@ -1601,6 +1602,46 @@ Decision:
   diagnosis across the same 22 states and 934 recorded action entries. Do not
   train or tune in that stage.
 
+## Stage 6.17 Frozen Remaining-Top1 Corrective Full-Legal-Set Diagnosis
+
+Status: completed; all 12 corrective states are teacher top-1, but six
+residual states remain and Arena is still disallowed.
+
+Evidence:
+
+- All 24 frozen hashes matched. Exactly 22 states and all 934 recorded action
+  entries were scored once in original order: 18/4 states and 889/45 actions
+  by train/development. All eight duplicate vectors remained in place.
+- Dropped, reconstructed, repeated-score, invalid-dimension, illegal-recorded,
+  nonfinite-Q, state, and action-order errors were zero.
+- The separately accounted frozen-batch replay used 64 pair evaluations/128
+  action-value evaluations and exactly reproduced all six Stage 6.16 metrics
+  and prediction digests outside the 934 full-set score count.
+- Train teacher/behavior/other first-max top-1 counts are `15/0/3`;
+  development counts are `1/0/3`; overall counts are `16/0/6`. Pass top-1
+  remains `0/22`.
+- Overall mean/median teacher rank is `1.7273/1.0`. Six states contain 16
+  actions strictly above teacher, versus nine states/24 actions in Stage 6.12.
+- Teacher outranks all 12 frozen corrective actions. None remains top-1, and
+  all six Stage 6.4, four Stage 6.9, and two Stage 6.14E corrective states now
+  have teacher as first-max full-set top-1.
+- Remaining train residuals are `14077:10` index 0, `14031:4` index 2, and
+  `14025:20` index 2. Development `13992:16`, `14074:9`, and `13871:9`
+  remain held out.
+- A separate process reproduced every rank, tie, action hash/order, aggregate,
+  replay metric/digest, mapping, and forbidden counter exactly.
+- Curated diagnosis:
+  `website_teacher_preference_remaining_corrective_failure_diagnosis_v1.json`,
+  SHA-256
+  `1757016ae33628cca075a9cdfc881cd49be7b63f1078ca3f7288f95c7fa00a68`.
+
+Decision:
+
+- Do not run Arena, promote, or claim capability. First audit existing frozen
+  evidence only for the three remaining train current-top1 actions.
+- Keep all three development targets identity-only. Do not score a model,
+  train, or execute rollout in the evidence-audit stage.
+
 ## Model A / Shared Self-Play / BC / PPO / DMC
 
 Status: not eligible for website control.
@@ -1636,22 +1677,24 @@ Decision:
 
 ## Current Next Experiment
 
-Name: Stage 6.17 Frozen Remaining-Top1 Corrective Full-Legal-Set Diagnosis.
+Name: Stage 6.18 Frozen Three-Train Remaining-Top1 Evidence Audit.
 
 Purpose:
 
-- Load only the frozen Stage 6.16 checkpoint and score all 934 recorded legal
-  action entries across the same 22 teacher states once in original order.
-- Separately replay the frozen 30/18/6/4/2 train and four development pair
-  batches to reproduce every Stage 6.16 metric and prediction digest without
-  mixing replay accounting into full-set scoring.
+- Reproduce only the three train residual targets `14077:10` index 0,
+  `14031:4` index 2, and `14025:20` index 2 from Stage 6.17 without loading or
+  scoring a model.
+- Inspect only directly referenced frozen train source evidence and classify
+  whether each exact teacher-versus-current-top1 ordering already has complete
+  paired support. Keep all three development targets identity-only.
 
 Acceptance:
 
-- Exact 22-state, 934-action, 889/45 train/development accounting passes with
-  all duplicate action entries preserved and no dropped, reconstructed,
-  repeated, invalid, illegal, or nonfinite scores.
-- A separate process reproduces every rank, tie, action-order digest,
-  aggregate, Stage 6.16 metric/digest, and all 6+4+2 corrective mappings.
-- Rollout, training, tuning, checkpoint changes, locked-test or complete-bundle
-  loads, Arena, website access, promotion, and capability claims remain zero.
+- All three train and three identity-only development targets reproduce by
+  state, action index/order/hash, rank, and physical identity with no
+  missing/duplicate/ambiguous mapping.
+- Existing evidence classifications and any previous-action identity boundary
+  reproduce exactly; unsupported or transferred labels remain zero.
+- Model loading/scoring, rollout, dataset/objective work, training, tuning,
+  checkpoint changes, Arena, website access, promotion, and capability claims
+  remain zero.
