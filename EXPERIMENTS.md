@@ -48,8 +48,9 @@ Stage 6.8 found no direct frozen support for the eight residual train
 orderings. Stage 6.9 confirmed four additional teacher-over-residual train
 comparisons, with four inconclusive and no reverse support. Stage 6.10 froze a
 32-pair residual corrective dataset, and Stage 6.11 completed one fixed
-from-scratch pipeline smoke on its 28 train pairs. No capability evidence
-exists.
+from-scratch pipeline smoke on its 28 train pairs. Stage 6.12 raised frozen
+teacher full-set top-1 coverage to 13/22, leaving six train and three held-out
+development residual states. No capability evidence exists.
 
 Accepted strong labels:
 
@@ -1261,6 +1262,51 @@ Decision:
   across the same 22 teacher states and 934 recorded action entries. Reproduce
   Stage 6.11 metrics separately and do not train or tune in that stage.
 
+## Stage 6.12 Frozen Residual Corrective Full-Legal-Set Diagnosis
+
+Status: completed; all ten corrective orderings hold, but nine residual
+full-set states remain and Arena is still disallowed.
+
+Evidence:
+
+- All 11 frozen inputs retained their expected hashes. The Stage 6.11 report
+  still records exactly one training run, 60 steps, zero development training
+  use, exact reload, and false promotion/capability flags.
+- Exactly 22 states and all 934 recorded legal-action entries were scored once:
+  889 train and 45 development. All eight duplicate vectors remained in source
+  order. Dropped, repeated-score, reconstructed, invalid-dimension,
+  illegal-recorded, and nonfinite-Q counts were zero.
+- Train teacher/behavior/other first-max top-1 counts were 12/0/6;
+  development counts were 1/0/3; overall counts were 13/0/9. Pass top-1
+  remained 0/22.
+- Overall mean/median teacher rank was 2.09/1.0. Nine states contained 24
+  entries strictly above teacher: six train and three development. Relative to
+  Stage 6.7, teacher top-1 increased by two, residual states fell by two, and
+  strictly-above entries fell from 28 to 24.
+- Teacher outranked all six Stage 6.4 rejected actions and all four Stage 6.9
+  residual actions. None remained new top-1. Teacher was full-set top-1 in
+  four of the six and three of the four respective states.
+- The separately accounted frozen-batch replay exactly reproduced Stage 6.11
+  train aggregate/base/Stage 6.4/Stage 6.9 and development metrics plus all
+  prediction digests. It used 60 pair/120 action-value evaluations excluded
+  from the 934-entry full-set count.
+- A separate process reproduced every rank, first-max tie, action hash,
+  action-order digest, aggregate, metric digest, and corrective mapping. All
+  forbidden-operation counters were zero.
+- Curated output:
+  `website_teacher_preference_residual_corrective_failure_diagnosis_v1.json`,
+  SHA-256
+  `e8e12f4fd259bc0c2689100d08bdfb3b71662e29c8af0f1e1013fbc6e9573e9f`.
+
+Decision:
+
+- Do not run Arena, promote the checkpoint, or claim capability. Static
+  teacher top-1 coverage remains only 13/22.
+- Audit existing frozen evidence only for the six current pipeline-train top-1
+  actions: `13957:14`, `14077:10`, `14038:12`, `13959:7`, `14025:20`, and
+  `13872:4`. Keep development states `13992:16`, `14074:9`, and `13871:9`
+  identity-only. Do not train or run a new rollout in the audit stage.
+
 ## Model A / Shared Self-Play / BC / PPO / DMC
 
 Status: not eligible for website control.
@@ -1296,22 +1342,23 @@ Decision:
 
 ## Current Next Experiment
 
-Name: Stage 6.12 Frozen Residual Corrective Full-Legal-Set Diagnosis.
+Name: Stage 6.13 Frozen Remaining-Top1 Evidence Audit.
 
 Purpose:
 
-- Score every recorded legal action across the same 22 frozen teacher states
-  with the Stage 6.11 checkpoint, preserving original order and duplicates.
-- Measure teacher rank/top-1 coverage and verify the four new residual
-  constraints without training, tuning, rollout, or Arena.
+- Reproduce the six current pipeline-train top-1 action identities from the
+  frozen Stage 6.12 diagnosis.
+- Audit only their directly referenced existing frozen source evidence before
+  proposing any further confirmation, objective, or Arena.
 
 Acceptance:
 
-- Exactly 22 states and all 934 recorded legal-action entries are scored once;
-  all eight duplicate vectors remain in recorded positions.
-- A separately accounted frozen-batch replay exactly reproduces Stage 6.11
-  aggregate/base/Stage-6.4/Stage-6.9/development metrics and digests.
-- Report teacher/behavior/other first-max top-1 counts, teacher ranks, pass
-  top-1, actions above teacher, and all four residual corrective outcomes.
-- Training, tuning, checkpoint changes, rollout, locked-test or website data,
-  Arena, website access, promotion, and capability claims remain zero.
+- Exactly six train and three identity-only development residual targets
+  reproduce by state, action index/order, 54D hash, and teacher rank.
+- Only source files directly referenced by the six train samples are opened;
+  every opened file hash and candidate-evidence classification is recorded.
+- Development source references, candidate evidence, and objective-design use
+  remain zero.
+- Model scoring, training, tuning, checkpoint changes, rollout, locked-test or
+  website data, Arena, website access, promotion, and capability claims remain
+  zero.

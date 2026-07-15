@@ -8,7 +8,7 @@ Branch: `agent/stage5-website-bot-adaptation`
 
 Latest completed stage:
 
-- Stage 6.11 Frozen Residual Corrective Training Smoke.
+- Stage 6.12 Frozen Residual Corrective Full-Legal-Set Diagnosis.
 
 Primary program:
 
@@ -169,6 +169,13 @@ Teacher dataset:
   SHA-256
   `cdb3c18948c9310c88f52789f2fd5a12326859ff653558a6aebe7eb569393105`.
   It is pipeline-only, unpromoted, and ineligible for capability claims.
+- The Stage 6.12 residual corrective full-legal-set diagnosis is
+  `website_teacher_preference_residual_corrective_failure_diagnosis_v1.json`,
+  SHA-256
+  `e8e12f4fd259bc0c2689100d08bdfb3b71662e29c8af0f1e1013fbc6e9573e9f`.
+  It scored all 934 recorded actions across the same 22 states, reproduced all
+  five Stage 6.11 metric sections exactly, and independently audited every
+  ranking, action hash, aggregate, and 6+4 corrective mapping.
 
 Current blocker:
 
@@ -196,12 +203,15 @@ Current blocker:
   residual action over teacher. Only the four supported train comparisons are
   included in corrective dataset v2; the four inconclusive train cases and
   three development residual targets added zero pairs.
-- Stage 6.11 fit all 28 train pairs and four evaluation-only development pairs,
-  including the four new residual constraints, but pairwise fit is pipeline
-  evidence only. The new checkpoint has not been scored against all 934 frozen
-  legal-action entries, and no improved offline capability has been shown.
-  A separate static full-legal-set diagnosis is required before any Arena can
-  be considered.
+- Stage 6.12 found teacher full-set top-1 in 13/22 states: 12/18 train and 1/4
+  development. Teacher/behavior/other first-max counts are 13/0/9, pass top-1
+  remains 0/22, and 24 action entries across nine states remain strictly above
+  teacher. The six residual train states are `13957:14`, `14077:10`,
+  `14038:12`, `13959:7`, `14025:20`, and `13872:4`; the same three
+  development states remain held out. All ten supervised corrective actions
+  are below teacher and none remains top-1, but this is static pipeline
+  evidence only. Existing frozen evidence for the six current train top-1
+  actions must be audited before any new rollout, objective, or Arena.
 - The eligible extension v5 pool is exhausted: all 277 rollout-eligible states
   were screened, all permitted positive-screen game signals were confirmed or
   exhausted, and three labels passed.
@@ -700,9 +710,9 @@ Acceptance:
 
 Goal: compare candidates against frozen `tempo_baseline`.
 
-Status: Stage 6.11 completed; one fixed residual-corrective pipeline smoke fit
-all frozen pairs, but full-legal-set behavior remains undiagnosed and no
-improved offline capability evidence exists yet.
+Status: Stage 6.12 completed; residual corrective full-set ranking improved to
+13/22 teacher top-1, but six train and three held-out development residual
+top-1 states remain and no improved offline capability evidence exists yet.
 
 Constraints:
 
@@ -977,6 +987,32 @@ Stage 6.11 acceptance:
   `307b92eca7aef2d7fa927dec71f1e2ccd8b87b71d2336c5630f39c24d0a176dd`;
   ignored checkpoint SHA-256:
   `cdb3c18948c9310c88f52789f2fd5a12326859ff653558a6aebe7eb569393105`.
+
+Stage 6.12 acceptance:
+
+- All 11 frozen input hashes remained unchanged. Exactly 22 states and all 934
+  recorded legal-action entries were scored once in original order; all eight
+  duplicate vectors remained in place.
+- Train/development scoring was 889/45 actions. Dropped, repeated-scoring,
+  reconstructed, invalid-dimension, illegal-recorded, and nonfinite-Q counts
+  were zero.
+- Train teacher/behavior/other first-max top-1 counts were 12/0/6;
+  development counts were 1/0/3; overall counts were 13/0/9. Pass top-1 was
+  0/22. Overall mean/median teacher rank was 2.09/1.0, with 24 entries across
+  nine states strictly above teacher.
+- Compared with Stage 6.7, teacher top-1 increased by two, residual states fell
+  from 11 to nine, and strictly-above entries fell from 28 to 24.
+- Teacher outranked all six Stage 6.4 and all four Stage 6.9 rejected actions;
+  none remained top-1. Teacher was full-set top-1 in four of the six and three
+  of the four respective states.
+- A separately accounted replay reproduced train aggregate/base/Stage 6.4/
+  Stage 6.9 and development metrics plus digests exactly: 60 pair evaluations
+  and 120 action-value evaluations excluded from the 934 full-set count.
+- A separate process reproduced every ranking, action hash, action-order
+  digest, aggregate, metric digest, and corrective mapping. Training, tuning,
+  checkpoint changes, rollout, locked-test or website data, Arena, website
+  activity, promotion, and capability claims were zero. Curated SHA-256:
+  `e8e12f4fd259bc0c2689100d08bdfb3b71662e29c8af0f1e1013fbc6e9573e9f`.
 
 Acceptance:
 
