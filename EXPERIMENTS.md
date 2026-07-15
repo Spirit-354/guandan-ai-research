@@ -50,7 +50,9 @@ comparisons, with four inconclusive and no reverse support. Stage 6.10 froze a
 32-pair residual corrective dataset, and Stage 6.11 completed one fixed
 from-scratch pipeline smoke on its 28 train pairs. Stage 6.12 raised frozen
 teacher full-set top-1 coverage to 13/22, leaving six train and three held-out
-development residual states. No capability evidence exists.
+development residual states. Stage 6.13 found no supported ordering for any
+current train top-1 and isolated three actions that still lack a direct paired
+comparison. No capability evidence exists.
 
 Accepted strong labels:
 
@@ -1307,6 +1309,51 @@ Decision:
   `13872:4`. Keep development states `13992:16`, `14074:9`, and `13871:9`
   identity-only. Do not train or run a new rollout in the audit stage.
 
+## Stage 6.13 Frozen Remaining-Top1 Evidence Audit
+
+Status: completed; all six train targets remain evidence-insufficient, with
+only three new actions lacking a direct paired comparison.
+
+Evidence:
+
+- All 11 frozen input hashes remained unchanged. The Stage 6.12 conclusion
+  reproduced exactly without model loading or scoring: 22 states, 934 recorded
+  actions, 13/0/9 teacher/behavior/other top-1, zero pass top-1, exact Stage
+  6.11 metric digests, and zero forbidden operations.
+- Exactly six train and three development targets reproduced by state, original
+  action index/order, 54D hash, teacher index/rank, and physical identity.
+  Missing, duplicate, extra, reconstructed, substituted, and ambiguous
+  mappings were zero.
+- Only the six rollout files directly referenced by train teacher samples were
+  opened and hashed. `13957:14` index 17 and `13872:4` index 19 were not
+  evaluated as source candidates. `14038:12` index 3 had both candidates but
+  no direct paired comparison.
+- `14077:10` index 0, `13959:7` index 5, and `14025:20` index 1 exactly match
+  their Stage 6.9 residual actions; all three frozen direct comparisons remain
+  inconclusive. The Stage 6.9 actions for `13957:14` and `14038:12` differ
+  from the current top-1 and were explicitly not transferred.
+- Supported teacher-over-current and current-over-teacher comparisons were both
+  0/6. Unsupported labels, new datasets/objectives, and executed future cases
+  were zero.
+- Development targets `13992:16`, `14074:9`, and `13871:9` remained
+  identity-only. Their source exposure, candidate inspection,
+  threshold/objective/confirmation-design use, and execution counts were zero.
+- A separate process reproduced every target/source/action hash, physical
+  identity, Stage 6.9 identity boundary, classification, partition aggregate,
+  isolation counter, and forbidden-operation counter.
+- Curated output:
+  `website_teacher_preference_residual_corrective_remaining_evidence_audit_v1.json`,
+  SHA-256
+  `2dff04b2be010a10c3f3e77a144f98d1aeca89a885e21cc98be9c51868b53345`.
+
+Decision:
+
+- Do not run Arena, train, promote, or claim capability. Existing evidence
+  supports no current residual ordering.
+- Permit only a separate frozen confirmation for `13957:14` index 17,
+  `14038:12` index 3, and `13872:4` index 19. Exclude the three already
+  inconclusive train cases and all three development targets from execution.
+
 ## Model A / Shared Self-Play / BC / PPO / DMC
 
 Status: not eligible for website control.
@@ -1342,23 +1389,23 @@ Decision:
 
 ## Current Next Experiment
 
-Name: Stage 6.13 Frozen Remaining-Top1 Evidence Audit.
+Name: Stage 6.14 Frozen Three-New-Top1 Counterfactual Confirmation.
 
 Purpose:
 
-- Reproduce the six current pipeline-train top-1 action identities from the
-  frozen Stage 6.12 diagnosis.
-- Audit only their directly referenced existing frozen source evidence before
-  proposing any further confirmation, objective, or Arena.
+- Execute only the three frozen train actions that Stage 6.13 found to lack a
+  direct teacher-versus-current-top1 comparison.
+- Apply the unchanged Stage 6.9 paired information-set recipe and strong gates
+  without dataset/objective construction, training, or Arena.
 
 Acceptance:
 
-- Exactly six train and three identity-only development residual targets
-  reproduce by state, action index/order, 54D hash, and teacher rank.
-- Only source files directly referenced by the six train samples are opened;
-  every opened file hash and candidate-evidence classification is recorded.
-- Development source references, candidate evidence, and objective-design use
-  remain zero.
-- Model scoring, training, tuning, checkpoint changes, rollout, locked-test or
-  website data, Arena, website access, promotion, and capability claims remain
-  zero.
+- Exactly three train cases map by state, original action index/order, 54D hash,
+  physical identity, and frozen train partition.
+- Exactly 96/96 rollouts complete: three cases, two actions, 16 rollouts per
+  action, split evenly across greedy and frozen-tempo continuations.
+- The three already inconclusive train cases and three development targets have
+  zero executions and rollouts.
+- Dataset/objective construction, training, tuning, checkpoint changes,
+  locked-test or website data, Arena, website access, promotion, and capability
+  claims remain zero.

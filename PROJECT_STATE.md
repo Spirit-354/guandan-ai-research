@@ -8,7 +8,7 @@ Branch: `agent/stage5-website-bot-adaptation`
 
 Latest completed stage:
 
-- Stage 6.12 Frozen Residual Corrective Full-Legal-Set Diagnosis.
+- Stage 6.13 Frozen Remaining-Top1 Evidence Audit.
 
 Primary program:
 
@@ -176,6 +176,14 @@ Teacher dataset:
   It scored all 934 recorded actions across the same 22 states, reproduced all
   five Stage 6.11 metric sections exactly, and independently audited every
   ranking, action hash, aggregate, and 6+4 corrective mapping.
+- The Stage 6.13 remaining-top1 evidence audit is
+  `website_teacher_preference_residual_corrective_remaining_evidence_audit_v1.json`,
+  SHA-256
+  `2dff04b2be010a10c3f3e77a144f98d1aeca89a885e21cc98be9c51868b53345`.
+  It reproduced all six train and three identity-only development targets,
+  opened only six directly referenced train source files, and independently
+  audited every source/action hash, physical identity, evidence classification,
+  and Stage 6.9 action-identity boundary without loading or scoring a model.
 
 Current blocker:
 
@@ -212,6 +220,14 @@ Current blocker:
   are below teacher and none remains top-1, but this is static pipeline
   evidence only. Existing frozen evidence for the six current train top-1
   actions must be audited before any new rollout, objective, or Arena.
+- Stage 6.13 found sufficient direct evidence for 0/6 current train top-1
+  orderings in either direction. `13957:14` and `13872:4` were not evaluated
+  as source candidates; `14038:12` had both candidates but no direct paired
+  statistics. `14077:10`, `13959:7`, and `14025:20` exactly match their
+  Stage 6.9 actions but those direct comparisons were already inconclusive and
+  must not be rerun or promoted into labels. Only the first three new-action
+  cases may enter a separate frozen confirmation; the same three development
+  targets remain identity-only.
 - The eligible extension v5 pool is exhausted: all 277 rollout-eligible states
   were screened, all permitted positive-screen game signals were confirmed or
   exhausted, and three labels passed.
@@ -710,9 +726,9 @@ Acceptance:
 
 Goal: compare candidates against frozen `tempo_baseline`.
 
-Status: Stage 6.12 completed; residual corrective full-set ranking improved to
-13/22 teacher top-1, but six train and three held-out development residual
-top-1 states remain and no improved offline capability evidence exists yet.
+Status: Stage 6.13 completed; all six train residual top-1 actions lack a
+supported ordering, only three new-action cases need direct confirmation, and
+no improved offline capability evidence exists yet.
 
 Constraints:
 
@@ -1013,6 +1029,33 @@ Stage 6.12 acceptance:
   checkpoint changes, rollout, locked-test or website data, Arena, website
   activity, promotion, and capability claims were zero. Curated SHA-256:
   `e8e12f4fd259bc0c2689100d08bdfb3b71662e29c8af0f1e1013fbc6e9573e9f`.
+
+Stage 6.13 acceptance:
+
+- All 11 frozen hashes remained unchanged. The Stage 6.12 22-state/934-action,
+  13/0/9 teacher/behavior/other top-1, zero-pass-top1, exact Stage 6.11 metric,
+  and zero-forbidden-operation conclusions reproduced without model loading or
+  scoring.
+- Exactly six train and three identity-only development targets reproduced by
+  state, original action index/order, 54D hash, teacher index/rank, and physical
+  identity. Missing, duplicate, extra, reconstructed, substituted, and
+  ambiguous mappings were zero.
+- Only the six source files directly referenced by train samples were opened
+  and hashed. Two current top-1 actions were not source candidates, one lacked
+  a direct paired comparison, and three exact Stage 6.9 actions retained their
+  frozen inconclusive classifications.
+- Two Stage 6.9 cases targeted different actions and were explicitly not
+  transferred. Supported teacher-over-current or current-over-teacher
+  orderings were both 0/6; unsupported labels were zero.
+- All three development targets remained identity-only. Development source
+  exposure, candidate inspection, threshold/objective/confirmation-design use,
+  and execution were zero.
+- A separate process reproduced every target/source/action hash, physical
+  identity, classification, aggregate, isolation counter, and forbidden
+  counter. Model scoring, rollout, dataset/objective construction, training,
+  tuning, checkpoint changes, Arena, website activity, promotion, and
+  capability claims were zero. Curated SHA-256:
+  `2dff04b2be010a10c3f3e77a144f98d1aeca89a885e21cc98be9c51868b53345`.
 
 Acceptance:
 
