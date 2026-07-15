@@ -66,7 +66,9 @@ raised frozen teacher full-set top-1 to 16/22 while leaving three train and
 three held-out development residual states. Stage 6.18 found one preserved
 direct-inconclusive train ordering and two exact train actions without direct
 paired statistics. Stage 6.19 completed those two train comparisons, but both
-were inconclusive; no capability evidence exists.
+were inconclusive. Stage 6.20 independently froze the full evidence chain and
+closed Stage 6 as `completed_rejected`; no capability evidence exists and
+Stage 7 is not authorized.
 
 Accepted strong labels:
 
@@ -1726,6 +1728,37 @@ Decision:
   offline-gate evidence and closes the route as passed or rejected without
   model loading/scoring, rollout, Arena, or website activity.
 
+## Stage 6.20 Frozen Stage 6 Final Offline-Gate Disposition Audit
+
+Status: completed-rejected; Stage 6 is closed with a negative offline-gate
+result and Stage 7 remains unauthorized.
+
+Evidence:
+
+- All 32 frozen hashes matched, including the 30 recursively frozen Stage 6.19
+  inputs plus the Stage 6.19 artifact and implementation.
+- The read-only audit exactly reproduced the Stage 6.1 0-20 Arena rejection,
+  the Stage 6.16 pipeline-only checkpoint status, the Stage 6.17 16/22
+  full-set result, the Stage 6.18 three-train/three-development isolation, and
+  Stage 6.19's 64/64 completion with two inconclusive new comparisons and an
+  empty supported manifest.
+- All three current train residuals remain inconclusive. The three development
+  cases retained zero source exposure, execution, and design use.
+- The independent rebuild matched the artifact exactly. Only five named
+  curated JSON files were parsed; semantic model/checkpoint/data loads and all
+  new execution or forbidden-operation counters were zero.
+- Curated disposition SHA-256:
+  `e93450fafe18586ae74662c58a1af2eb40497fdb7128e33e8be4e3b077f4fab5`;
+  implementation SHA-256:
+  `03c2388e5b618a8d0f46faa81537dfccdef963b41a097530f8ba0c354a740491`.
+
+Decision:
+
+- Lock `stage_6_status=completed_rejected`, `offline_gate_passed=false`, and
+  `eligible_offline_candidate_count=0`.
+- Do not enter Stage 7, access the website, promote a checkpoint, or make a
+  capability claim. This route has no automatic executable next stage.
+
 ## Model A / Shared Self-Play / BC / PPO / DMC
 
 Status: not eligible for website control.
@@ -1761,22 +1794,16 @@ Decision:
 
 ## Current Next Experiment
 
-Name: Stage 6.20 Frozen Stage 6 Final Offline-Gate Disposition Audit.
+Name: none authorized.
 
-Purpose:
+Current gate:
 
-- Reproduce the complete frozen Stage 6 evidence chain without loading or
-  scoring a model and determine the final pass/reject disposition.
-- Preserve the Stage 6.1 0-20 Arena rejection, the Stage 6.17 16/22 static
-  ranking, and all three directly inconclusive current train residuals. Do not
-  invent labels or authorize an unevidenced Arena run.
+- Stage 6 is `completed_rejected`; zero frozen candidates passed the offline
+  gate and Stage 7 is not authorized.
+- A future task must explicitly select and freeze a new pre-Stage-7 research
+  route. The current route must not be resumed mechanically.
 
-Acceptance:
+Prohibition:
 
-- All frozen conclusions, hashes, route decisions, residual classifications,
-  and prohibitions reproduce exactly in a small independently audited artifact.
-- The route is marked passed only if an already-frozen candidate satisfied the
-  existing offline gate; otherwise Stage 6 closes as completed-rejected and
-  Stage 7 remains unauthorized.
-- Model load/score, rollout, dataset/objective, training/tuning, checkpoint,
-  Arena, website, promotion, new labels, and capability claims remain zero.
+- Do not automatically execute Stage 7, website Shadow, website play, model
+  control, or any new training/Arena route without a new user-authorized task.

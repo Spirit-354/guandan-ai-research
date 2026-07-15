@@ -8,7 +8,9 @@ Branch: `agent/stage5-website-bot-adaptation`
 
 Latest completed stage:
 
-- Stage 6.19 Frozen Two-New-Action Train-Only Counterfactual Confirmation.
+- Stage 6.20 Frozen Stage 6 Final Offline-Gate Disposition Audit.
+- Stage 6 is closed as `completed_rejected`; this is a negative gate result,
+  not a pass or capability claim.
 
 Primary program:
 
@@ -221,9 +223,23 @@ Teacher dataset:
   `a1f32207255867dd2a59c7f9043c57038aff37f506746c970f8892f1d852e189`.
   It completed the single authorized 64/64 process-isolated rollout schedule;
   both exact comparisons were inconclusive and no supported pair was produced.
+- The Stage 6.20 final disposition is
+  `website_teacher_preference_stage6_final_disposition_v1.json`, SHA-256
+  `e93450fafe18586ae74662c58a1af2eb40497fdb7128e33e8be4e3b077f4fab5`.
+  It freezes 32 exact hashes and closes Stage 6 as `completed_rejected` with
+  zero eligible offline candidates. Stage 7, website control, promotion, and
+  capability claims remain unauthorized.
 
-Current blocker:
+Stage 6 evidence chronology and current blocker:
 
+The first bullet below is the current gate. Later bullets preserve the
+stage-time decisions that led to it and are historical evidence.
+
+- Stage 6 is complete but rejected by its frozen offline gate. No candidate in
+  the frozen route is eligible for Stage 7: `offline_gate_passed=false`,
+  `eligible_offline_candidate_count=0`, and `stage_7_authorized=false`.
+  There is no automatic executable next stage; a future route requires a new
+  explicit user decision and must begin before Stage 7.
 - The Stage 6.1 integrity gate passed, but the early-screen performance gate
   failed at 0 wins and 20 losses. The checkpoint remains rejected from the
   100/200-game screen.
@@ -309,9 +325,9 @@ Current blocker:
   `0.125` with lower bound `-0.12` and greedy/tempo advantages `0.25/0.0`;
   `14025:20` was exactly tied at `0.0/0.0/0.0`. Both are inconclusive, so all
   three current train residual actions now lack a supported direction and no
-  additional corrective pair is authorized. A no-execution final disposition
-  audit is required to close Stage 6 as passed or rejected; Arena remains
-  disallowed meanwhile.
+  additional corrective pair is authorized. Stage 6.20 subsequently froze
+  this evidence and closed Stage 6 as rejected; Arena and Stage 7 remain
+  disallowed.
 - The eligible extension v5 pool is exhausted: all 277 rollout-eligible states
   were screened, all permitted positive-screen game signals were confirmed or
   exhausted, and three labels passed.
@@ -810,11 +826,11 @@ Acceptance:
 
 Goal: compare candidates against frozen `tempo_baseline`.
 
-Status: Stage 6.19 completed the only permitted two-case train confirmation.
-All three current train residual actions are now directly inconclusive, three
-development residuals remain held out, and no new supported corrective pair
-exists. A no-execution final offline-gate disposition audit is next; no
-improved offline capability evidence exists.
+Status: completed-rejected. Stage 6.20 reproduced all 32 frozen hashes and
+closed the gate with zero eligible offline candidates. All three current train
+residual actions are directly inconclusive, the three development residuals
+remain held out, and no improved offline capability evidence exists. Stage 7
+is not authorized.
 
 Constraints:
 
@@ -1371,6 +1387,30 @@ Stage 6.19 acceptance:
   implementation SHA-256:
   `63d0f047d11d4b92b9a3fcdcd9dd2ee68b939e68fafc19513fb3a1527ec41bdb`.
 
+Stage 6.20 acceptance:
+
+- All 32 frozen hashes matched: the 30 recursively frozen Stage 6.19 inputs
+  plus the Stage 6.19 confirmation and implementation.
+- The audit reproduced Stage 6.1 at 0/20 model wins, Stage 6.17 at 16/22
+  teacher first-max top-1 states, Stage 6.18's three train and three held-out
+  development residuals, and Stage 6.19's 64/64 completion with an empty
+  supported manifest.
+- `14077:10` index 0, `14031:4` index 2, and `14025:20` index 2 remain direct
+  inconclusive comparisons. No strong pair, dataset extension, training run,
+  or Arena candidate is authorized.
+- A separate process reconstructed the complete artifact exactly. Only five
+  named curated JSON files were parsed; semantic model, checkpoint, teacher,
+  source-data, locked-test, and complete-website-data loads were zero. All
+  execution and forbidden-operation counters were zero.
+- Final disposition is exactly `stage_6_status=completed_rejected`,
+  `offline_gate_passed=false`, `eligible_offline_candidate_count=0`,
+  `stage_7_authorized=false`, `website_control_authorized=false`, and
+  `capability_claim_allowed=false`.
+- Curated disposition SHA-256:
+  `e93450fafe18586ae74662c58a1af2eb40497fdb7128e33e8be4e3b077f4fab5`;
+  implementation SHA-256:
+  `03c2388e5b618a8d0f46faa81537dfccdef963b41a097530f8ba0c354a740491`.
+
 Acceptance:
 
 - Paired, seat-swapped offline Arena.
@@ -1379,6 +1419,8 @@ Acceptance:
 - Legality, materialization, hand subset, and duplicate-submit counters all zero.
 
 ### Stage 7: Website Shadow Candidate
+
+Status: not authorized; no Stage 6 candidate passed the offline gate.
 
 Goal: run model as observer only on website states.
 
