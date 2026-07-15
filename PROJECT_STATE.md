@@ -8,7 +8,7 @@ Branch: `agent/stage5-website-bot-adaptation`
 
 Latest completed stage:
 
-- Stage 6.14R Frozen Confirmation Timeout Recovery Audit.
+- Stage 6.14P Process-Isolated Determinization Parallel Equivalence.
 
 Primary program:
 
@@ -232,8 +232,10 @@ Current blocker:
   6.14R tracing derived the exact six missing values from three post-deadline
   paired schedule items in `13872:4`. All sequential caches and frozen offline
   optimizations were already active, so another unchanged sequential retry is
-  disallowed. Process-isolated determinization parallelism must pass a separate
-  no-rollout equivalence stage before a final formal confirmation can run.
+  disallowed. Stage 6.14P then proved process-isolated determinization
+  parallelism against the sequential reference with synthetic complete and
+  timeout/failure cases. One formal parallel execution is now permitted; Stage
+  6.14 remains incomplete until it finishes 96/96 and passes independent audit.
 - The eligible extension v5 pool is exhausted: all 277 rollout-eligible states
   were screened, all permitted positive-screen game signals were confirmed or
   exhausted, and three labels passed.
@@ -732,10 +734,10 @@ Acceptance:
 
 Goal: compare candidates against frozen `tempo_baseline`.
 
-Status: Stage 6.14R completed a no-rollout recovery audit after Stage 6.14
-failed at 90/96. The unchanged sequential path is exhausted; a separate
-process-isolated equivalence stage is required before any final formal retry.
-No new comparison is eligible for use, and no improved offline capability
+Status: Stage 6.14P completed process-isolated synthetic equivalence after the
+sequential Stage 6.14 path failed at 90/96. Exactly one formal parallel
+three-case execution is now permitted; no new comparison is eligible until it
+completes 96/96 and passes independent audit. No improved offline capability
 evidence exists yet.
 
 Constraints:
@@ -1116,6 +1118,35 @@ Stage 6.14R acceptance:
   Arena, website activity, promotion, partial labels, and capability claims
   were all zero. Curated audit SHA-256:
   `75115cfc5a9dfa3ecb6ac868d04a2e73d20473cfe3a49c8e805a042028872c0d`.
+
+Stage 6.14P acceptance:
+
+- All 13 frozen hashes matched, including Stage 6.14R and the unchanged Stage
+  6.14 confirmation implementation. The failed confirmation output remained
+  absent and no real rollout executed.
+- The Windows-spawn-safe layer built exactly eight tasks, one per frozen
+  determinization, reconstructing 16 schedule items and 32 candidate calls in
+  teacher/top1 and greedy/tempo order under one common 600-second deadline.
+- Synthetic sequential and real process-isolated executions matched every
+  source-sample hash, determinization seed, action identity, profile, return,
+  failure, 300-step limit, ordered-call digest, raw case aggregate, and frozen
+  Stage 6.9 metric result exactly.
+- Complete and timeout/failure scenarios both matched. Missing/duplicate task,
+  duplicate call, seed mismatch, and deadline mismatch probes all failed
+  closed before metric construction.
+- The production worker path statically proved exact sample/seed restoration,
+  frozen `_simulate_candidate` use, worker-local baseline cache, parent-owned
+  sorting, and unchanged Stage 6.9 metrics. Workers contain no label, threshold,
+  retry, or deadline-extension logic.
+- A separate process recreated both process-pool scenarios and the complete
+  artifact exactly. Real rollout, partial comparison use, dataset/objective
+  construction, model scoring, training, tuning, limit or checkpoint changes,
+  locked-test or complete-bundle loads, Arena, website activity, promotion,
+  partial labels, and capability claims were all zero.
+- Curated equivalence SHA-256:
+  `8e168656c35519aae9054038f0fd31398ac0e9260c419de0534a09bf1f4c59ca`;
+  frozen parallel implementation SHA-256:
+  `f2093a8c348d9d91435209fd9ee258130b18f7de7b4b7758c0656c1d7a70e2e5`.
 
 Acceptance:
 

@@ -55,7 +55,9 @@ current train top-1 and isolated three actions that still lack a direct paired
 comparison. Stage 6.14 then requested the frozen three-case confirmation but
 completed only 90/96 rollouts because `13872:4` timed out with six candidate
 failures. Stage 6.14R derived the exact failure path without a new rollout and
-froze a process-isolation equivalence stage; no capability evidence exists.
+froze a process-isolation equivalence stage. Stage 6.14P then proved exact
+synthetic sequential/process equivalence and authorized one formal parallel
+confirmation; no new comparison or capability evidence exists.
 
 Accepted strong labels:
 
@@ -1441,6 +1443,42 @@ Decision:
 - If process isolation cannot preserve the contract exactly, freeze Stage 6.14
   as infeasible rather than increasing limits or weakening gates.
 
+## Stage 6.14P Process-Isolated Determinization Parallel Equivalence
+
+Status: completed; synthetic equivalence passed without a real rollout.
+
+Evidence:
+
+- All 13 frozen hashes matched, the failed Stage 6.14 confirmation output
+  remained absent, and the real rollout count was zero.
+- Exactly eight Windows-spawn-safe tasks reconstructed one determinization
+  each, producing the frozen 16 schedule items and 32 teacher/top1 candidate
+  calls in greedy/tempo order under one common 600-second deadline.
+- Synthetic sequential and real process-pool paths matched every sample hash,
+  determinization seed, action identity, profile, return, failure, 300-step
+  limit, ordered-call digest, raw aggregate, and frozen Stage 6.9 metric.
+- Complete and timeout/failure scenarios both matched. Missing or duplicate
+  tasks/calls, seed mismatches, and deadline mismatches failed closed before
+  metric construction.
+- A separate process recreated both process-pool scenarios and the curated
+  artifact exactly. Partial comparison use, dataset/objective construction,
+  model scoring, training, tuning, limit or checkpoint changes, locked-test or
+  complete-bundle loads, Arena, website activity, promotion, partial labels,
+  and capability claims were all zero.
+- Curated equivalence:
+  `website_teacher_preference_residual_corrective_remaining_parallel_equivalence_v1.json`,
+  SHA-256
+  `8e168656c35519aae9054038f0fd31398ac0e9260c419de0534a09bf1f4c59ca`.
+  Frozen parallel implementation SHA-256:
+  `f2093a8c348d9d91435209fd9ee258130b18f7de7b4b7758c0656c1d7a70e2e5`.
+
+Decision:
+
+- Permit exactly one separate formal process-isolated confirmation for the
+  three Stage 6.14 train cases. Do not use a sequential fallback or retry.
+- Stage 6.14 remains incomplete until that run finishes 96/96 with zero
+  timeout/failure and passes an independent audit.
+
 ## Model A / Shared Self-Play / BC / PPO / DMC
 
 Status: not eligible for website control.
@@ -1476,22 +1514,24 @@ Decision:
 
 ## Current Next Experiment
 
-Name: Stage 6.14P Process-Isolated Determinization Parallel Equivalence.
+Name: Stage 6.14E Formal Process-Isolated Three-New-Top1 Confirmation.
 
 Purpose:
 
-- Build only the process-isolated scheduling/equivalence layer needed to run
-  the eight determinizations concurrently while preserving every frozen
-  Stage 6.9 input, action, seed, continuation, return, limit, order, and gate.
-- Use synthetic/instrumented tests only; do not execute a real rollout.
+- Use the accepted Stage 6.14P layer for exactly one formal execution of only
+  `13957:14` index 17, `14038:12` index 3, and `13872:4` index 19.
+- Preserve the frozen Stage 6.9 recipe and write the original Stage 6.14
+  curated output only after all three cases complete and validate.
 
 Acceptance:
 
-- Exactly eight determinization tasks reproduce the frozen 16-item schedule and
-  32 candidate calls per case in original result order.
-- Synthetic sequential and process-isolated executions match every seed,
-  action role, profile, return, failure, and aggregate, with one common
-  600-second parent deadline and no worker-owned threshold logic.
-- Real rollout, threshold/deadline changes, dataset/objective construction,
-  model scoring, training, tuning, checkpoint changes, locked-test or website
-  data, Arena, website access, promotion, and capability claims remain zero.
+- Exactly 96/96 candidate rollouts complete: 32 per case, 48 greedy and 48
+  tempo, with zero timeout, failure, missing/duplicate result, retry, or
+  sequential fallback.
+- The three excluded train cases and all three development cases have zero
+  mapping, execution, and rollout counts.
+- A separate audit reproduces all hashes, identities, seeds, returns, metrics,
+  directions, arithmetic, isolation counters, and forbidden-operation counts.
+- Dataset/objective construction, model scoring, training, tuning, checkpoint
+  changes, locked-test or website data, Arena, website access, promotion, and
+  capability claims remain zero.
