@@ -57,7 +57,9 @@ completed only 90/96 rollouts because `13872:4` timed out with six candidate
 failures. Stage 6.14R derived the exact failure path without a new rollout and
 froze a process-isolation equivalence stage. Stage 6.14P then proved exact
 synthetic sequential/process equivalence and authorized one formal parallel
-confirmation; no new comparison or capability evidence exists.
+confirmation. Stage 6.14E completed 96/96 and confirmed two teacher-over-
+current-top1 comparisons while one remained inconclusive; no capability
+evidence exists.
 
 Accepted strong labels:
 
@@ -1479,6 +1481,46 @@ Decision:
 - Stage 6.14 remains incomplete until that run finishes 96/96 with zero
   timeout/failure and passes an independent audit.
 
+## Stage 6.14E Formal Process-Isolated Three-New-Top1 Confirmation
+
+Status: completed; the single authorized formal execution and independent
+audit passed.
+
+Evidence:
+
+- All ten frozen input and implementation hashes matched before and after the
+  run. Exactly the three permitted train targets mapped by frozen state,
+  action order/index, 54D hash, and physical identity.
+- Twenty-four isolated determinization tasks reconstructed 48 schedule items
+  and completed exactly 96/96 candidate rollouts: 32 per case and 48/48 by
+  greedy/tempo profile. Timeout, candidate failure, retry, and sequential
+  fallback counts were zero.
+- `13957:14` supported teacher over current top-1 with advantage `1.0`, 95%
+  lower bound `0.4939301761`, and greedy/tempo advantages `1.25/0.75`.
+- `14038:12` supported teacher over current top-1 with advantage `0.75`, 95%
+  lower bound `0.26`, and greedy/tempo advantages `0.25/1.25`.
+- `13872:4` remained inconclusive with advantage `0.25`, lower bound `-0.24`,
+  and greedy/tempo advantages `0.25/0.25`; it produced no supported label.
+- The three excluded train cases and all three development cases retained zero
+  source mappings, executions, and rollouts. All forbidden-operation counts
+  were zero.
+- A separate process reproduced all hashes, mappings, seeds, returns, metrics,
+  directions, aggregates, executor metadata, isolation, and forbidden counts.
+- Curated confirmation:
+  `website_teacher_preference_residual_corrective_remaining_train_confirmation_v1.json`,
+  SHA-256
+  `450e89f780a33dd543f49f029e735f7fb32e11cd657163c52e6a4301d21f7eb5`.
+  Formal wrapper SHA-256:
+  `972b67ed585e9a96f9e8be55b70d0b6585a7e499f6dc692c2861d5e636b9e55d`.
+
+Decision:
+
+- Permit only the two supported train comparisons to enter a separate frozen
+  corrective dataset extension. Exclude `13872:4`, the three previously
+  inconclusive train cases, and all three development targets.
+- Do not run another rollout, train, diagnose, run Arena, access the website,
+  promote a checkpoint, or claim capability in the dataset stage.
+
 ## Model A / Shared Self-Play / BC / PPO / DMC
 
 Status: not eligible for website control.
@@ -1514,24 +1556,24 @@ Decision:
 
 ## Current Next Experiment
 
-Name: Stage 6.14E Formal Process-Isolated Three-New-Top1 Confirmation.
+Name: Stage 6.15 Frozen Remaining-Top1 Corrective Dataset Extension.
 
 Purpose:
 
-- Use the accepted Stage 6.14P layer for exactly one formal execution of only
-  `13957:14` index 17, `14038:12` index 3, and `13872:4` index 19.
-- Preserve the frozen Stage 6.9 recipe and write the original Stage 6.14
-  curated output only after all three cases complete and validate.
+- Preserve all 32 Stage 6.10 v2 pairs and add only the two Stage 6.14E-supported
+  train comparisons for `13957:14` index 17 and `14038:12` index 3.
+- Recompute deterministic state-balanced weights and write new v3 dataset and
+  manifest artifacts without executing the objective.
 
 Acceptance:
 
-- Exactly 96/96 candidate rollouts complete: 32 per case, 48 greedy and 48
-  tempo, with zero timeout, failure, missing/duplicate result, retry, or
-  sequential fallback.
-- The three excluded train cases and all three development cases have zero
-  mapping, execution, and rollout counts.
-- A separate audit reproduces all hashes, identities, seeds, returns, metrics,
-  directions, arithmetic, isolation counters, and forbidden-operation counts.
-- Dataset/objective construction, model scoring, training, tuning, checkpoint
-  changes, locked-test or website data, Arena, website access, promotion, and
+- The new dataset contains exactly 34 pairs: 30 train and four development,
+  across the unchanged 18/4 states; pair-count distribution is 13 single, six
+  double, and three triple states.
+- `13872:4`, the three previously inconclusive train cases, and all three
+  development residual targets add zero pairs.
+- An independent process reproduces every preserved and added pair, weight,
+  split, provenance field, exclusion, hash, and forbidden counter.
+- Rollout, objective execution, model scoring, training, tuning, checkpoint
+  activity, locked-test or website data, Arena, website access, promotion, and
   capability claims remain zero.

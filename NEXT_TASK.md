@@ -2,97 +2,94 @@
 
 ## Single Next Stage
 
-Run Stage 6.14E: formal process-isolated three-new-top1 confirmation.
+Run Stage 6.15: frozen remaining-top1 corrective dataset extension.
 
-Stage 6.14P proved that one task per determinization preserves the frozen Stage
-6.9 sequential semantics exactly. Execute exactly one formal process-isolated
-run for only these train cases:
+Stage 6.14E completed the single formal confirmation at 96/96. Only
+`13957:14` current top-1 index 17 and `14038:12` current top-1 index 3 passed
+the frozen teacher-direction gates. `13872:4` index 19 remained inconclusive.
 
-- `13957:14`, current top-1 action index 17;
-- `14038:12`, current top-1 action index 3;
-- `13872:4`, current top-1 action index 19.
-
-Each case must compare only the frozen teacher action and current top-1 action,
-using 16 rollouts per action: greedy/tempo eight each over eight shared
-determinizations. The formal total is exactly 96 candidate rollouts, split
-48/48 by profile. Use eight isolated tasks per case and restore results to the
-original order before the unchanged Stage 6.9 metrics and gates run.
-
-Do not use a sequential fallback or retry. Do not change the actions, physical
-materialization, hidden-card sampler, seed scheme, continuation policies,
-`MAX_ROLLOUT_STEPS=300`, `MAX_SECONDS_PER_CASE=600`, return definition,
-confidence arithmetic, thresholds, or directional gates. If any worker,
-deadline, identity, completeness, or audit gate fails, write no curated result
-and stop Stage 6.14.
+Build one new v3 corrective preference dataset and manifest by preserving all
+32 Stage 6.10 v2 pair semantics and adding only the two supported Stage 6.14E
+train comparisons. Recompute deterministic state-balanced weights after those
+two additions. This stage is dataset construction and independent audit only;
+do not execute the objective or train.
 
 ## Frozen Inputs
 
-- Stage 6.14P equivalence artifact:
-  `website_teacher_preference_residual_corrective_remaining_parallel_equivalence_v1.json`,
+- Stage 6.14E confirmation:
+  `website_teacher_preference_residual_corrective_remaining_train_confirmation_v1.json`,
   SHA-256
-  `8e168656c35519aae9054038f0fd31398ac0e9260c419de0534a09bf1f4c59ca`.
-- Stage 6.14P implementation:
-  `website_teacher_preference_residual_corrective_remaining_parallel_equivalence.py`,
+  `450e89f780a33dd543f49f029e735f7fb32e11cd657163c52e6a4301d21f7eb5`.
+- Stage 6.14E formal wrapper:
+  `website_teacher_preference_residual_corrective_remaining_parallel_confirmation.py`,
   SHA-256
-  `f2093a8c348d9d91435209fd9ee258130b18f7de7b4b7758c0656c1d7a70e2e5`.
-- Stage 6.14R recovery audit:
-  `website_teacher_preference_residual_corrective_remaining_timeout_recovery_audit_v1.json`,
-  SHA-256
-  `75115cfc5a9dfa3ecb6ac868d04a2e73d20473cfe3a49c8e805a042028872c0d`.
-- Stage 6.13 evidence audit:
-  `website_teacher_preference_residual_corrective_remaining_evidence_audit_v1.json`,
-  SHA-256
-  `2dff04b2be010a10c3f3e77a144f98d1aeca89a885e21cc98be9c51868b53345`.
-- Stage 6.9 execution/gate authority:
-  `website_teacher_preference_corrective_residual_train_confirmation_v1.json`,
-  SHA-256
-  `352cd0dfe0a4c958ba0555b776326a2b58470a980aef461ed49d4c59a7474c7a`.
-- The teacher v6, 18/4 split, physical source partition, Stage 6.12 diagnosis,
-  Stage 6.1 Arena rejection, and unchanged Stage 6.14 confirmation hashes must
-  match the values recursively verified by Stage 6.14P.
-- The intended output
-  `website_teacher_preference_residual_corrective_remaining_train_confirmation_v1.json`
-  must be absent before execution and written only after full acceptance.
+  `972b67ed585e9a96f9e8be55b70d0b6585a7e499f6dc692c2861d5e636b9e55d`.
+- Frozen v2 corrective dataset:
+  `website_teacher_preference_corrective_dataset_v2.pth`, SHA-256
+  `40024f7c064f0ebb7999c4ac0f7bc85d77b759a23956cbe596756763d4009d4d`.
+- Frozen v2 manifest:
+  `website_teacher_preference_corrective_dataset_v2_manifest.json`, SHA-256
+  `ce5141f6254218d9230b15117a88d3c5e6bd374839bcf5fc77b393e2599ec353`.
+- Teacher v6, frozen 18/4 split, Stage 6.13 evidence audit, Stage 6.12
+  diagnosis, Stage 6.9 confirmation, Stage 6.1 rejection, Stage 6.14P
+  equivalence, and physical train/development source retain the hashes recorded
+  by the accepted Stage 6.14E evidence.
+- New outputs must be unused before construction:
+  `website_teacher_preference_corrective_dataset_v3.pth` and
+  `website_teacher_preference_corrective_dataset_v3_manifest.json`.
 
 ## Required Work
 
-1. Re-read the canonical handoffs and verify Git state, every frozen hash, the
-   accepted parallel artifact, and the output-path precondition.
-2. Add only a small formal wrapper around the accepted process-isolated
-   executor and frozen Stage 6.14 context, materialization, metrics, gates, and
-   one-shot writer. Do not modify either frozen implementation.
-3. Run one formal execution. Require exactly 24 determinization tasks, 48
-   schedule items, and 96/96 completed candidate calls with zero timeout or
-   failure. Do not rerun if it fails.
-4. Independently audit the curated output in a separate process, including all
-   mappings, physical identities, raw action order/index, 54D hashes, seeds,
-   returns, arithmetic, directions, exclusions, task accounting, and forbidden
-   counters.
+1. Re-read all canonical handoffs; verify Git state, frozen hashes, exact
+   Stage 6.14E supported manifest, and both unused output paths.
+2. Reuse the Stage 6.10 dataset semantics and builder pattern. Preserve every
+   v2 sample and pair field exactly except the three deterministic weight
+   fields that must be recomputed for all pairs.
+3. Add exactly two pipeline-train pairs: teacher preferred over the current
+   top-1 action for `13957:14` index 17 and `14038:12` index 3, with exact
+   action hashes, physical identities, source metrics, and Stage 6.14E
+   provenance.
+4. Write one v3 dataset and one small manifest, then independently reload and
+   reconstruct both in a separate process.
 5. Update `PROJECT_STATE.md`, `EXPERIMENTS.md`, `NEXT_TASK.md`, and the durable
-   progress document; run focused and full regressions plus credential and diff
+   progress document; run focused and full tests plus credential and diff
    checks; commit and push.
 
-## Isolation and Prohibited Work
+## Dataset Contract
 
-- Train cases `14077:10` index 0, `13959:7` index 5, and `14025:20` index 1,
-  plus development cases `13992:16`, `14074:9`, and `13871:9`, must have zero
-  mappings, executions, and rollouts.
-- Do not use partial Stage 6.14 directions or any failed result.
-- Dataset/objective construction, model scoring, training, tuning, checkpoint
-  changes, locked-test or complete-bundle loads, Arena, website access, Shadow
-  or model-controlled play, promotion, partial labels, and capability claims
-  must all remain zero.
+- Exactly 34 pairs across the unchanged 22 states: 30 pipeline train across 18
+  states and four pipeline development across four states.
+- Pair provenance counts: 22 frozen base, six Stage 6.4 corrective, four Stage
+  6.9 residual corrective, and two Stage 6.14E remaining-top1 corrective.
+- State pair-count distribution: 13 states with one pair, six with two pairs,
+  and three with three pairs.
+- Within each state, all pair weights are equal and sum to exactly one.
+  Partition-normalized weights sum to exactly one for train and one for
+  development.
+- The frozen objective remains state-balanced pairwise
+  `softplus(Q_rejected-Q_preferred)` and is recorded but not executed.
+
+## Exclusions and Prohibited Work
+
+- `13872:4` index 19, train cases `14077:10` index 0, `13959:7` index 5, and
+  `14025:20` index 1, plus development cases `13992:16`, `14074:9`, and
+  `13871:9`, must add zero pairs.
+- Do not run another rollout, score a model, execute an objective, train,
+  fine-tune, tune a threshold or hyperparameter, select or modify a checkpoint,
+  load locked test or the complete website bundle, run Arena, access the
+  website, start Shadow or model-controlled play, promote, or claim capability.
 
 ## Acceptance Criteria
 
-- All frozen hashes and exact target identities match; excluded identities are
-  absent from formal mapping and execution.
-- Exactly 96/96 candidate rollouts complete, with 32 per target and 48/48
-  greedy/tempo accounting; timeout, failure, missing, duplicate, extra,
-  substituted, retry, and sequential-fallback counts are zero.
-- The unchanged Stage 6.9 metrics and gates alone determine each direction.
-- An independent process reproduces the curated evidence and all isolation and
-  forbidden counters.
+- All frozen hashes match and all 32 v2 pair semantics are preserved exactly.
+- Exactly two supported train pairs are added; unsupported, inconclusive,
+  development, duplicate, extra, substituted, and ambiguous additions are
+  zero.
+- The 34/30/4 pair/split counts, 13/6/3 state pair-count distribution, and all
+  state/partition weight sums reproduce exactly.
+- An independent process reproduces every sample hash, pair ID, action hash,
+  physical identity, metric, provenance field, exclusion, weight, output hash,
+  and forbidden-operation counter.
 - Credential occurrences in new tracked/curated files are zero.
-- Handoffs, focused tests, full tests, conventional commit, and push succeed.
-- Only after all conditions pass may the active Stage 6.14 Goal be completed.
+- Handoffs, focused tests, full tests, conventional commit, and push succeed
+  before Stage 6.15 is accepted.

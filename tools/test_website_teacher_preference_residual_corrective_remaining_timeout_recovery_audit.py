@@ -127,7 +127,12 @@ class TimeoutRecoveryAuditTests(unittest.TestCase):
         self.assertFalse(boundary["process_isolation_used_by_confirmation"])
 
     def test_build_result_forbids_rollout_and_partial_comparison_use(self) -> None:
-        result = recovery.build_result()
+        with tempfile.TemporaryDirectory() as directory, mock.patch.object(
+            recovery,
+            "CONFIRMATION_OUTPUT_PATH",
+            Path(directory) / "unused-confirmation.json",
+        ):
+            result = recovery.build_result()
         self.assertEqual(result["status"], "completed")
         self.assertFalse(result["recovery_decision"]["unchanged_sequential_retry_allowed"])
         self.assertEqual(
@@ -142,8 +147,13 @@ class TimeoutRecoveryAuditTests(unittest.TestCase):
         with tempfile.TemporaryDirectory() as directory:
             output = Path(directory) / "audit.json"
             output.write_text("{}", encoding="utf-8")
-            with self.assertRaisesRegex(RuntimeError, "already exists"):
-                recovery.ensure_output_state(output)
+            with mock.patch.object(
+                recovery,
+                "CONFIRMATION_OUTPUT_PATH",
+                Path(directory) / "unused-confirmation.json",
+            ):
+                with self.assertRaisesRegex(RuntimeError, "already exists"):
+                    recovery.ensure_output_state(output)
 
 
 if __name__ == "__main__":

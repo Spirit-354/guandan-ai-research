@@ -130,7 +130,12 @@ class ParallelEquivalenceTests(unittest.TestCase):
             parallel.validate_and_order_results(self.tasks, deadline_changed)
 
     def test_equivalence_builder_never_calls_real_simulation(self) -> None:
+        frozen_hashes = parallel.load_json(parallel.OUTPUT_PATH)["frozen_inputs"][
+            "sha256"
+        ]
         with mock.patch.object(
+            parallel, "verify_frozen_inputs", return_value=frozen_hashes
+        ), mock.patch.object(
             information_set,
             "_simulate_candidate",
             side_effect=AssertionError("real simulation must remain unused"),
@@ -147,8 +152,13 @@ class ParallelEquivalenceTests(unittest.TestCase):
         with tempfile.TemporaryDirectory() as directory:
             output = Path(directory) / "equivalence.json"
             output.write_text("{}", encoding="utf-8")
-            with self.assertRaisesRegex(RuntimeError, "already exists"):
-                parallel.ensure_unused_output(output)
+            with mock.patch.object(
+                parallel.confirmation,
+                "OUTPUT_PATH",
+                Path(directory) / "unused-confirmation.json",
+            ):
+                with self.assertRaisesRegex(RuntimeError, "already exists"):
+                    parallel.ensure_unused_output(output)
 
 
 if __name__ == "__main__":

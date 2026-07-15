@@ -8,7 +8,7 @@ Branch: `agent/stage5-website-bot-adaptation`
 
 Latest completed stage:
 
-- Stage 6.14P Process-Isolated Determinization Parallel Equivalence.
+- Stage 6.14E Formal Process-Isolated Three-New-Top1 Confirmation.
 
 Primary program:
 
@@ -228,14 +228,12 @@ Current blocker:
   must not be rerun or promoted into labels. Only the first three new-action
   cases may enter a separate frozen confirmation; the same three development
   targets remain identity-only.
-- Stage 6.14 completed only 90/96 requested candidate rollouts. Static Stage
-  6.14R tracing derived the exact six missing values from three post-deadline
-  paired schedule items in `13872:4`. All sequential caches and frozen offline
-  optimizations were already active, so another unchanged sequential retry is
-  disallowed. Stage 6.14P then proved process-isolated determinization
-  parallelism against the sequential reference with synthetic complete and
-  timeout/failure cases. One formal parallel execution is now permitted; Stage
-  6.14 remains incomplete until it finishes 96/96 and passes independent audit.
+- Stage 6.14E completed the single authorized process-isolated execution at
+  96/96 with zero timeout, candidate failure, retry, or sequential fallback.
+  `13957:14` and `14038:12` support teacher over the current top-1;
+  `13872:4` is inconclusive. Only the two supported train comparisons may
+  enter a separate frozen dataset-extension stage. Stage 6 remains incomplete,
+  and no Arena or capability evidence is authorized from this result.
 - The eligible extension v5 pool is exhausted: all 277 rollout-eligible states
   were screened, all permitted positive-screen game signals were confirmed or
   exhausted, and three labels passed.
@@ -734,11 +732,10 @@ Acceptance:
 
 Goal: compare candidates against frozen `tempo_baseline`.
 
-Status: Stage 6.14P completed process-isolated synthetic equivalence after the
-sequential Stage 6.14 path failed at 90/96. Exactly one formal parallel
-three-case execution is now permitted; no new comparison is eligible until it
-completes 96/96 and passes independent audit. No improved offline capability
-evidence exists yet.
+Status: Stage 6.14E completed the formal three-case confirmation at 96/96.
+Two teacher-over-current-top1 comparisons passed the frozen gates and one was
+inconclusive. A separate dataset-extension stage is required before any
+training or diagnosis; no improved offline capability evidence exists yet.
 
 Constraints:
 
@@ -1147,6 +1144,35 @@ Stage 6.14P acceptance:
   `8e168656c35519aae9054038f0fd31398ac0e9260c419de0534a09bf1f4c59ca`;
   frozen parallel implementation SHA-256:
   `f2093a8c348d9d91435209fd9ee258130b18f7de7b4b7758c0656c1d7a70e2e5`.
+
+Stage 6.14E acceptance:
+
+- All ten frozen data and implementation hashes matched before and after the
+  single formal execution. Exactly the three permitted train targets mapped by
+  state, original action index/order, 54D hash, and physical identity.
+- Exactly 24 process-isolated determinization tasks restored 48 schedule items
+  and completed 96/96 candidate rollouts: 32 per case and 48/48 greedy/tempo.
+  Timeout, candidate failure, missing/duplicate result, retry, and sequential
+  fallback counts were zero.
+- `13957:14` supported teacher over current top-1 with advantage `1.0`, 95%
+  lower bound `0.4939301761`, and greedy/tempo advantages `1.25/0.75`.
+  `14038:12` supported teacher over current top-1 with advantage `0.75`, lower
+  bound `0.26`, and greedy/tempo advantages `0.25/1.25`.
+- `13872:4` was inconclusive: advantage `0.25`, lower bound `-0.24`, and
+  greedy/tempo advantages `0.25/0.25`. It did not become a label.
+- The three already-inconclusive train cases and all three development cases
+  retained zero source mappings, executions, and rollouts. Dataset/objective
+  construction, model scoring, training, tuning, checkpoint activity,
+  locked-test or complete-bundle loads, Arena, website activity, promotion,
+  unsupported labels, and capability claims were all zero.
+- A separate process independently reproduced every input/action hash,
+  physical mapping, determinization seed, paired return, mean, variance,
+  confidence bound, profile advantage, direction, aggregate, executor hash,
+  isolation counter, and forbidden counter.
+- Curated confirmation SHA-256:
+  `450e89f780a33dd543f49f029e735f7fb32e11cd657163c52e6a4301d21f7eb5`;
+  formal wrapper SHA-256:
+  `972b67ed585e9a96f9e8be55b70d0b6585a7e499f6dc692c2861d5e636b9e55d`.
 
 Acceptance:
 
