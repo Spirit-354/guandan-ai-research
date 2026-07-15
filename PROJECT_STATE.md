@@ -8,7 +8,7 @@ Branch: `agent/stage5-website-bot-adaptation`
 
 Latest completed stage:
 
-- Stage 6.13 Frozen Remaining-Top1 Evidence Audit.
+- Stage 6.14R Frozen Confirmation Timeout Recovery Audit.
 
 Primary program:
 
@@ -228,6 +228,12 @@ Current blocker:
   must not be rerun or promoted into labels. Only the first three new-action
   cases may enter a separate frozen confirmation; the same three development
   targets remain identity-only.
+- Stage 6.14 completed only 90/96 requested candidate rollouts. Static Stage
+  6.14R tracing derived the exact six missing values from three post-deadline
+  paired schedule items in `13872:4`. All sequential caches and frozen offline
+  optimizations were already active, so another unchanged sequential retry is
+  disallowed. Process-isolated determinization parallelism must pass a separate
+  no-rollout equivalence stage before a final formal confirmation can run.
 - The eligible extension v5 pool is exhausted: all 277 rollout-eligible states
   were screened, all permitted positive-screen game signals were confirmed or
   exhausted, and three labels passed.
@@ -726,10 +732,11 @@ Acceptance:
 
 Goal: compare candidates against frozen `tempo_baseline`.
 
-Status: Stage 6.14 attempted but not accepted; the three-case confirmation
-requested 96 rollouts but completed only 90 because `13872:4` hit the frozen
-case deadline with six candidate failures. No new comparison is eligible for
-use, and no improved offline capability evidence exists yet.
+Status: Stage 6.14R completed a no-rollout recovery audit after Stage 6.14
+failed at 90/96. The unchanged sequential path is exhausted; a separate
+process-isolated equivalence stage is required before any final formal retry.
+No new comparison is eligible for use, and no improved offline capability
+evidence exists yet.
 
 Constraints:
 
@@ -1083,6 +1090,32 @@ Stage 6.14 attempted, acceptance not met:
   changes, locked-test or complete-bundle loads, Arena, website activity,
   promotion, and capability claims remained zero. Stage 6.14 and Stage 6 are
   not complete, and the active Goal must remain incomplete.
+
+Stage 6.14R acceptance:
+
+- Twelve frozen data, implementation, and handoff hashes matched. The intended
+  Stage 6.14 curated confirmation output remained absent throughout the audit.
+- Static tracing proved that the frozen `execute_case` shares one absolute
+  600-second deadline across all 16 schedule items and both actions, while
+  `_simulate_candidate` converts every post-deadline call to
+  `case_time_budget_exhausted`.
+- The first two supported classifications require 64 complete candidate values.
+  Therefore 90 total completions leave 26 values, or 13 paired schedule items,
+  in `13872:4`; the final three items produce exactly six candidate failures.
+- The formal confirmation already installed every existing sequential offline
+  optimization and enabled the complete-visible-state baseline action cache.
+  No unused semantics-preserving sequential toggle exists.
+- Existing repository process-isolation infrastructure was identified but is
+  not used by the confirmation. A single no-rollout next stage was frozen to
+  prove determinization-parallel process isolation before any final retry.
+- An independent process reproduced the complete curated recovery audit and
+  every hash, deadline trace, arithmetic derivation, optimization boundary,
+  next-stage decision, and forbidden-operation counter exactly.
+- New rollout, model scoring, dataset/objective construction, training, tuning,
+  limit changes, checkpoint activity, locked-test or complete-bundle loads,
+  Arena, website activity, promotion, partial labels, and capability claims
+  were all zero. Curated audit SHA-256:
+  `75115cfc5a9dfa3ecb6ac868d04a2e73d20473cfe3a49c8e805a042028872c0d`.
 
 Acceptance:
 

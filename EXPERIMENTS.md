@@ -54,7 +54,8 @@ development residual states. Stage 6.13 found no supported ordering for any
 current train top-1 and isolated three actions that still lack a direct paired
 comparison. Stage 6.14 then requested the frozen three-case confirmation but
 completed only 90/96 rollouts because `13872:4` timed out with six candidate
-failures. No capability evidence exists.
+failures. Stage 6.14R derived the exact failure path without a new rollout and
+froze a process-isolation equivalence stage; no capability evidence exists.
 
 Accepted strong labels:
 
@@ -1398,6 +1399,48 @@ Decision:
 - Stage 6.14 and Stage 6 remain incomplete; the active Goal must not be marked
   complete.
 
+## Stage 6.14R Frozen Confirmation Timeout Recovery Audit
+
+Status: completed; exact timeout path derived without executing a rollout.
+
+Evidence:
+
+- Twelve frozen data, code, and failure-handoff hashes matched, and the intended
+  Stage 6.14 confirmation output remained absent.
+- The frozen confirmation establishes one absolute 600-second deadline for the
+  entire case. Every `_simulate_candidate` continuation step checks it, and
+  every later call returns `case_time_budget_exhausted` while the fixed schedule
+  continues.
+- The two supported-looking cases necessarily contain 64 complete candidate
+  values because the frozen gate requires all 16 pairs. The 90 total therefore
+  leave 26 values, or 13 pairs, in `13872:4`; its final three paired schedule
+  items account for exactly six missing candidate values.
+- Stage 6.14 already installs the frozen Arena offline optimizations and enables
+  the complete-visible-state baseline action cache. No additional existing
+  sequential optimization toggle was found.
+- The repository already uses process isolation elsewhere, but the confirmation
+  path does not. The audit froze one next stage to prove that one task per
+  determinization can recreate identical hidden assignments, per-action seeds,
+  continuation behavior, returns, schedule order, common deadline, and gates.
+- A separate process reconstructed the complete artifact exactly. New rollout,
+  model scoring, dataset/objective construction, training, tuning, limit or
+  checkpoint changes, locked-test or website data, Arena, website activity,
+  promotion, partial labels, and capability claims were all zero.
+- Curated audit:
+  `website_teacher_preference_residual_corrective_remaining_timeout_recovery_audit_v1.json`,
+  SHA-256
+  `75115cfc5a9dfa3ecb6ac868d04a2e73d20473cfe3a49c8e805a042028872c0d`.
+
+Decision:
+
+- Do not run another unchanged sequential confirmation and do not use the two
+  partial supported-looking directions.
+- Permit only a separate no-rollout process-isolation equivalence stage. A
+  formal retry remains forbidden until every frozen semantic invariant is
+  proven and independently audited.
+- If process isolation cannot preserve the contract exactly, freeze Stage 6.14
+  as infeasible rather than increasing limits or weakening gates.
+
 ## Model A / Shared Self-Play / BC / PPO / DMC
 
 Status: not eligible for website control.
@@ -1433,21 +1476,22 @@ Decision:
 
 ## Current Next Experiment
 
-Name: Stage 6.14R Frozen Confirmation Timeout Recovery Audit.
+Name: Stage 6.14P Process-Isolated Determinization Parallel Equivalence.
 
 Purpose:
 
-- Diagnose the confirmed `13872:4` timeout and six candidate failures without
-  executing a new rollout or changing the frozen Stage 6.9 semantics or gates.
-- Determine whether an existing semantics-preserving offline optimization can
-  complete the unchanged recipe, or freeze the confirmation as infeasible.
+- Build only the process-isolated scheduling/equivalence layer needed to run
+  the eight determinizations concurrently while preserving every frozen
+  Stage 6.9 input, action, seed, continuation, return, limit, order, and gate.
+- Use synthetic/instrumented tests only; do not execute a real rollout.
 
 Acceptance:
 
-- The 90/96, one-timeout, six-failure observation and absent curated output are
-  reproduced from code and terminal evidence without new rollout execution.
-- The exact deadline/failure path and any safe existing optimization boundary
-  are documented and covered by focused tests.
-- New rollouts, threshold/deadline changes, dataset/objective construction,
+- Exactly eight determinization tasks reproduce the frozen 16-item schedule and
+  32 candidate calls per case in original result order.
+- Synthetic sequential and process-isolated executions match every seed,
+  action role, profile, return, failure, and aggregate, with one common
+  600-second parent deadline and no worker-owned threshold logic.
+- Real rollout, threshold/deadline changes, dataset/objective construction,
   model scoring, training, tuning, checkpoint changes, locked-test or website
   data, Arena, website access, promotion, and capability claims remain zero.

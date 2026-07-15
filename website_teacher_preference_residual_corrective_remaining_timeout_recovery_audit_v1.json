@@ -1,0 +1,148 @@
+{
+  "schema_version": "website_teacher_preference_residual_corrective_remaining_timeout_recovery_audit_v1",
+  "status": "completed",
+  "frozen_inputs": {
+    "paths": {
+      "stage_6_13_audit": "website_teacher_preference_residual_corrective_remaining_evidence_audit_v1.json",
+      "stage_6_12_diagnosis": "website_teacher_preference_residual_corrective_failure_diagnosis_v1.json",
+      "stage_6_9_confirmation": "website_teacher_preference_corrective_residual_train_confirmation_v1.json",
+      "teacher_dataset": "website_information_set_teacher_dataset_v6.pth",
+      "split_manifest": "website_teacher_preference_split_v1.json",
+      "source_train_development_dataset": "website_danzero_shadow_extension_v5.train_dev.pth",
+      "stage_6_1_arena": "website_teacher_preference_arena_smoke20_v1.json",
+      "stage_6_14_confirmation_implementation": "website_teacher_preference_residual_corrective_remaining_confirmation.py",
+      "stage_6_9_execution_implementation": "website_teacher_preference_unpaired_confirmation.py",
+      "information_set_implementation": "website_information_set.py",
+      "offline_optimization_implementation": "play_research_adaptive.py",
+      "stage_6_14_timeout_progress": "docs\\progress\\2026-07-15-stage6-14-three-top1-confirmation-timeout.md"
+    },
+    "sha256": {
+      "stage_6_13_audit": "2dff04b2be010a10c3f3e77a144f98d1aeca89a885e21cc98be9c51868b53345",
+      "stage_6_12_diagnosis": "e8e12f4fd259bc0c2689100d08bdfb3b71662e29c8af0f1e1013fbc6e9573e9f",
+      "stage_6_9_confirmation": "352cd0dfe0a4c958ba0555b776326a2b58470a980aef461ed49d4c59a7474c7a",
+      "teacher_dataset": "a74416e6facb28a1bc64563eba90cb33d460dc9e59cc2109518da142465e15f8",
+      "split_manifest": "5a15e514dc9bc51d77d300837151d9f1a49250f42885cc7940725bcbe4d35107",
+      "source_train_development_dataset": "e5e220c3c770116ca9d01478e98e610dd6309a0f3d6c17088a8328f62b47174b",
+      "stage_6_1_arena": "aa45da9de202194102fe8d11e612ad3eb4b51177fd910b9a7948836afd2a1fe6",
+      "stage_6_14_confirmation_implementation": "e509ebc50f9fef9a159435d582561e72ac36083f059a0781539ec797c709bf55",
+      "stage_6_9_execution_implementation": "d3933e16afdc45bb60d6badff8db35aadf8214910ad752abf3f46274ebb23915",
+      "information_set_implementation": "35334c14d96faf9c4d7fdc93890afcba9ec6bc26f78fcca66e7af53ddae36e66",
+      "offline_optimization_implementation": "fdeb8993bb28a73616de012f5a6422f0c774923e868464ccb62c96abd04fdd1e",
+      "stage_6_14_timeout_progress": "67382f92cdb3559d8eb6dd50a36fff695e007bde829276207eed76a5aeb04f6b"
+    }
+  },
+  "failed_confirmation": {
+    "source_path": "docs\\progress\\2026-07-15-stage6-14-three-top1-confirmation-timeout.md",
+    "source_sha256": "67382f92cdb3559d8eb6dd50a36fff695e007bde829276207eed76a5aeb04f6b",
+    "terminal_accounting": {
+      "requested_rollouts": 96,
+      "completed_rollouts": 90,
+      "continuation_profile_rollout_counts": {
+        "greedy_bot": 48,
+        "tempo_baseline": 48
+      },
+      "timeout_case_count": 1,
+      "candidate_failure_count": 6
+    },
+    "case_directions": [
+      {
+        "game_id": "13957",
+        "turn_index": 14,
+        "directional_classification": "teacher_over_residual_supported"
+      },
+      {
+        "game_id": "14038",
+        "turn_index": 12,
+        "directional_classification": "teacher_over_residual_supported"
+      },
+      {
+        "game_id": "13872",
+        "turn_index": 4,
+        "directional_classification": "inconclusive"
+      }
+    ],
+    "curated_confirmation_output_exists": false
+  },
+  "deadline_failure_path": {
+    "case_deadline_seconds": 600.0,
+    "rollout_max_steps": 300,
+    "schedule_items_per_case": 16,
+    "candidate_actions_per_schedule_item": 2,
+    "deadline_scope": "single_absolute_deadline_shared_by_entire_case",
+    "deadline_checked_before_each_continuation_step": true,
+    "deadline_failure_reason": "case_time_budget_exhausted",
+    "schedule_continues_after_deadline": true,
+    "supported_direction_requires_complete_16_pairs": true,
+    "first_two_supported_cases_completed_candidate_values": 64,
+    "third_case_completed_candidate_values": 26,
+    "third_case_completed_pairs": 13,
+    "third_case_missing_schedule_items": 3,
+    "third_case_missing_candidate_values": 6,
+    "derived_candidate_failure_count_matches_terminal": true
+  },
+  "optimization_boundary": {
+    "offline_optimization_installer_already_active": true,
+    "installed_engine_patch_names": [
+      "choose_all_out_if_possible",
+      "choose_non_bomb_follow",
+      "choose_bomb_to_set_up_finish",
+      "choose_lead_bomb_to_set_up_finish",
+      "exact_remaining_groups",
+      "_legal_play_options_cached"
+    ],
+    "baseline_visible_state_action_cache_already_active": true,
+    "baseline_cache_equivalence_checker_exists": true,
+    "additional_existing_sequential_optimization_toggle_found": false,
+    "existing_process_isolation_infrastructure_found": true,
+    "process_isolation_used_by_confirmation": false,
+    "unchanged_sequential_path_can_meet_600_second_gate": false,
+    "sequential_path_infeasibility_reason": "all existing semantics-preserving caches are already active and the same frozen case still reaches the absolute 600-second deadline"
+  },
+  "recovery_decision": {
+    "unchanged_sequential_retry_allowed": false,
+    "deadline_or_rollout_limit_change_allowed": false,
+    "partial_comparison_use_allowed": false,
+    "frozen_next_stage": "stage_6_14p_process_isolated_determinization_parallel_equivalence",
+    "next_stage_rollout_execution_allowed": false,
+    "next_stage_required_proof": [
+      "one task per determinization recreates the same hidden-card assignment from the frozen seed",
+      "teacher and current-top1 simulations receive independent deep copies and identical per-action seeds",
+      "greedy and frozen-tempo continuation actions and returns are unchanged",
+      "result order is restored to the frozen 16-item schedule before metric computation",
+      "the common absolute 600-second case deadline and all gates remain unchanged"
+    ],
+    "formal_confirmation_retry_condition": "all process-isolation equivalence tests and an independent static audit pass in a separate stage",
+    "fallback_if_equivalence_unproven": "freeze Stage 6.14 as infeasible under the unchanged contract"
+  },
+  "integrity": {
+    "confirmation_output_absent": true,
+    "new_rollout_executed": false,
+    "model_loaded_or_scored": false,
+    "locked_test_or_complete_bundle_loaded": false,
+    "partial_comparison_used": false,
+    "integrity_failure_count": 0
+  },
+  "forbidden_operation_counts": {
+    "new_rollout_runs": 0,
+    "model_scoring_runs": 0,
+    "dataset_constructions": 0,
+    "objective_constructions": 0,
+    "training_runs": 0,
+    "fine_tuning_runs": 0,
+    "hyperparameter_tuning_runs": 0,
+    "threshold_tuning_runs": 0,
+    "deadline_or_rollout_limit_changes": 0,
+    "checkpoint_selections": 0,
+    "checkpoint_modifications": 0,
+    "complete_website_dataset_loads": 0,
+    "locked_test_loads": 0,
+    "arena_games": 0,
+    "website_shadow_games": 0,
+    "website_games": 0,
+    "model_controlled_website_actions": 0,
+    "checkpoint_promotions": 0,
+    "capability_claims": 0,
+    "partial_or_unsupported_labels": 0
+  },
+  "interpretation_scope": "static Stage 6.14 timeout recovery audit only; no rollout, model, dataset, objective, training, Arena, website, or capability evidence"
+}
