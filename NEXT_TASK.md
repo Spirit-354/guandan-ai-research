@@ -2,117 +2,108 @@
 
 ## Single Next Stage
 
-Run Stage 6.19: frozen two-new-action train-only counterfactual confirmation.
+Run Stage 6.20: frozen Stage 6 final offline-gate disposition audit.
 
-Stage 6.18 found that `14031:4` index 2 and `14025:20` index 2 are present in
-their frozen source candidates but lack direct teacher-versus-current-top1
-paired statistics. Execute the unchanged frozen process-isolated confirmation
-schedule exactly once for only those two train cases. Do not rerun the already
-inconclusive `14077:10` case and do not expose development evidence.
+Stage 6.19 completed the last permitted train-only comparison and found both
+new actions inconclusive. All three current train residual actions now have
+direct inconclusive evidence, the three development residuals remain held out,
+and the supported-comparison manifest is empty. Perform one no-execution audit
+that freezes the complete Stage 6 evidence chain and closes Stage 6 as
+completed-rejected. Do not run another Arena or begin Stage 7.
 
 ## Frozen Inputs
 
-- Stage 6.18 audit:
-  `website_teacher_preference_remaining_corrective_final_evidence_audit_v1.json`,
+- Stage 6.19 confirmation:
+  `website_teacher_preference_remaining_corrective_final_train_confirmation_v1.json`,
   SHA-256
-  `b7dc15c779556a972c1b471348cb949bd98d54c1ce1aecb14a3d23cda083681b`.
-- Stage 6.18 implementation:
-  `website_teacher_preference_remaining_corrective_evidence_audit.py`, SHA-256
-  `6200af71c14081418b1abfd1fd45d99347c3f20d601ec355014dbbc931a3ea26`.
-- Recursively freeze all 28 hashes recorded by Stage 6.18, including Stage
-  6.17 diagnosis/implementation, Stage 6.16 report/checkpoint, teacher v6,
-  split, source train/development data, and all prior evidence.
-- Accepted Stage 6.14P process-isolation authority:
-  `website_teacher_preference_residual_corrective_remaining_parallel_equivalence_v1.json`,
+  `a1f32207255867dd2a59c7f9043c57038aff37f506746c970f8892f1d852e189`.
+- Stage 6.19 implementation:
+  `website_teacher_preference_remaining_corrective_final_parallel_confirmation.py`,
   SHA-256
-  `8e168656c35519aae9054038f0fd31398ac0e9260c419de0534a09bf1f4c59ca`,
-  and implementation SHA-256
-  `f2093a8c348d9d91435209fd9ee258130b18f7de7b4b7758c0656c1d7a70e2e5`.
-- Stage 6.14E formal wrapper pattern:
-  `website_teacher_preference_residual_corrective_remaining_parallel_confirmation.py`,
-  SHA-256
-  `972b67ed585e9a96f9e8be55b70d0b6585a7e499f6dc692c2861d5e636b9e55d`.
-- The new curated output path must be unused before construction:
-  `website_teacher_preference_remaining_corrective_final_train_confirmation_v1.json`.
+  `63d0f047d11d4b92b9a3fcdcd9dd2ee68b939e68fafc19513fb3a1527ec41bdb`.
+- Recursively freeze all 30 hashes recorded by Stage 6.19, including Stage
+  6.18/6.17 evidence and implementations, Stage 6.16 report/checkpoint, Stage
+  6.14P/E executor authority/evidence, Stage 6.13/6.12/6.9/6.4 evidence,
+  teacher v6, split, source train/development data, and Stage 6.1 Arena.
+- The new curated output path must be unused:
+  `website_teacher_preference_stage6_final_disposition_v1.json`.
 
-## Exact Executed Targets
+## Required Reproduction
 
-- `14031:4`, teacher index 1 versus current top-1 index 2, current action
-  SHA-256
-  `44eb6c47c92f2c639293a75a2e4825abf2478d706ca7b45f31e8e9a4afc6bb42`.
-- `14025:20`, teacher index 0 versus current top-1 index 2, current action
-  SHA-256
-  `8b631095d2fc255edfa14d27e864858829b4f70d910d347d1bff89e38eb903a9`.
-
-## Exact Exclusions
-
-- Previously direct-inconclusive train target: `14077:10` index 0.
-- Development identity-only targets: `13992:16`, `14074:9`, and `13871:9`.
-- All other teacher states and actions.
-
-Excluded cases must have zero source mapping, execution, rollout, threshold
-use, objective use, and confirmation-design use.
+1. Stage 6.1 remains the only completed paired Arena screen for its frozen
+   candidate: 20/20 games, model/baseline wins 0/20, continuation false,
+   promotion false, and capability false.
+2. The current remaining-corrective checkpoint remains pipeline-only and
+   unpromoted. Stage 6.17 scored 22 states/934 actions with teacher first-max
+   top-1 in 16/22: train 15/18 and development 1/4; pass top-1 was 0/22.
+3. Stage 6.18 isolated exactly three current train residual actions and three
+   identity-only development residuals with zero evidence transfer.
+4. Direct current-action conclusions are all inconclusive:
+   - `14077:10` index 0, preserved from Stage 6.9;
+   - `14031:4` index 2, Stage 6.19;
+   - `14025:20` index 2, Stage 6.19.
+5. Stage 6.19 completed 16 isolated tasks, 32 schedule items, and 64/64
+   rollouts with zero failure/retry/fallback, and its supported manifest is
+   empty.
+6. No further strong corrective pair, dataset extension, training run, or
+   Arena candidate is authorized by frozen evidence.
 
 ## Required Work
 
 1. Re-read all canonical handoffs; verify Git state, every frozen hash, exact
-   two-case executed manifest, exact exclusions, and unused output path.
-2. Reuse the accepted Stage 6.14P process-isolated executor and Stage 6.14E
-   formal wrapper pattern with only the smallest target/count adaptation. Do
-   not change action identity, information-set sampling, seeds, continuation
-   policies, rollout limits, return definition, statistics, thresholds, or
-   directional gates.
-3. For each permitted case, run exactly eight frozen determinizations, two
-   candidates, two continuation profiles, and two rollouts per profile:
-   32 candidate rollouts per case and 64 total. Workers execute simulation
-   only; the parent validates identities and computes all metrics and labels.
-4. Fail closed on timeout, candidate failure, retry, sequential fallback,
-   missing/duplicate/extra task or result, identity mismatch, nonfinite value,
-   or frozen-input drift. A failed or partial run is not accepted and must not
-   become a curated output.
-5. Record per-candidate rollout count, mean return, return variance, exact
-   teacher-minus-current advantage, 95% lower bound, both continuation-profile
-   advantages, failure reasons, and directional classification under the
-   unchanged gates.
-6. Write the curated output once only after 64/64 success, then independently
-   reconstruct hashes, schedules, returns, statistics, classifications,
-   isolation, and forbidden counters in a separate process.
-7. Update handoffs/progress, run focused and full tests plus credential/diff
-   checks, commit, and push.
+   conclusions above, and the unused output path.
+2. Implement the smallest read-only disposition auditor. It may load only the
+   named curated JSON evidence and inspect recorded hashes/metrics; it must not
+   load a model/checkpoint, teacher/source dataset, locked test, or complete
+   website bundle.
+3. Reproduce the Stage 6 route chronology, candidate identities, executed and
+   prohibited counts, residual classifications, supported-pair count, and all
+   pass/reject booleans without scoring, simulation, or new statistical design.
+4. Record the final disposition exactly as:
+   - `stage_6_status = completed_rejected`;
+   - `offline_gate_passed = false`;
+   - `eligible_offline_candidate_count = 0`;
+   - `stage_7_authorized = false`;
+   - `website_control_authorized = false`;
+   - `capability_claim_allowed = false`.
+5. Independently reconstruct the complete small artifact in a separate
+   process, update handoffs/progress, run focused and full tests plus
+   credential/diff checks, commit, and push.
 
 ## Interpretation Contract
 
-- A direction is supported only when the unchanged frozen rollout-count,
-  variance, mean-advantage, positive-confidence, and both continuation-profile
-  gates all pass.
-- Inconclusive cases remain excluded from future strong labels.
-- Only a supported teacher-over-current comparison may be proposed for a
-  separate later dataset stage. This stage does not build or train on it.
-- A supported current-over-teacher comparison is evidence against adding the
-  teacher ordering and must not be reversed or relabeled.
+- “Completed-rejected” means Stage 6 work is closed with a negative gate
+  result; it does not mean the model passed, improved, or is deployable.
+- Inconclusive train comparisons must not be converted into teacher or current
+  action labels. Held-out development cases remain unused.
+- The current checkpoint must not receive an Arena run merely because the
+  corrective evidence route is exhausted. No frozen decision authorized it.
+- Stage 7 and website control remain blocked until a future user-authorized
+  route produces a candidate that actually passes the required offline gate.
 
 ## Prohibited Work
 
-- Do not execute or inspect source evidence for `14077:10` or any development
-  target. Do not transfer evidence between different action hashes.
-- Do not define/build a dataset or objective, train, fine-tune, tune, search,
-  select or modify a checkpoint, load locked test or the complete website
-  bundle, run Arena/Shadow/website play, start model control, promote, or claim
-  capability.
-- Do not change `tempo_baseline`, website protocol, Elo semantics, frozen
-  thresholds, information-set sampling, schedules, seeds, or return semantics.
+- Do not load/score a model or checkpoint; do not load teacher/source data,
+  locked test, or the complete website bundle.
+- Do not run rollout, simulation, Arena, Shadow, website play, model control,
+  data collection, dataset/objective construction, training, fine-tuning,
+  tuning, search, checkpoint selection/modification, promotion, or new labels.
+- Do not change `tempo_baseline`, protocol, Elo semantics, thresholds,
+  information-set rules, prior artifacts, or any earlier conclusion.
+- Do not enter or execute Stage 7 in this stage.
 
 ## Acceptance Criteria
 
-- All frozen hashes and exact target/action identities reproduce; exactly two
-  permitted train cases and no excluded case execute.
-- Exactly 16 isolated determinization tasks, 32 schedule items, and 64/64
-  candidate rollouts complete: 32 per case, balanced by candidate and profile.
-- Timeout, failure, retry, sequential fallback, missing, duplicate, extra,
-  mapping, identity, nonfinite, and partial-output counts are zero.
-- Every statistic, failure reason, and directional classification reproduces
-  independently under the unchanged gates. Exclusion and forbidden-operation
-  counters are all zero.
+- All 32 unique frozen hashes (30 recursive plus Stage 6.19 output and
+  implementation) and every required recorded conclusion reproduce exactly.
+- The disposition artifact is written once and independently reconstructed;
+  missing/duplicate/extra/inconsistent evidence and unsupported inference
+  counts are zero.
+- Model/checkpoint/data loads, rollout/simulation, Arena, dataset/objective,
+  training/tuning, website, promotion, new-label, capability-claim, and Stage
+  7 execution counters are all zero.
+- Handoffs explicitly state that Stage 6 is completed-rejected, Stage 7 is not
+  authorized, and there is no automatic executable next stage.
 - Credential occurrences in new tracked/curated files are zero.
-- Handoffs, focused tests, full tests, conventional commit, and push succeed
-  before Stage 6.19 is accepted.
+- Focused tests, full tests, conventional commit, and push succeed before Stage
+  6.20 or Stage 6 is marked complete.

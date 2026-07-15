@@ -8,7 +8,7 @@ Branch: `agent/stage5-website-bot-adaptation`
 
 Latest completed stage:
 
-- Stage 6.18 Frozen Three-Train Remaining-Top1 Evidence Audit.
+- Stage 6.19 Frozen Two-New-Action Train-Only Counterfactual Confirmation.
 
 Primary program:
 
@@ -215,6 +215,12 @@ Teacher dataset:
   It inspected only the two directly referenced train source files, preserved
   one direct inconclusive comparison, identified two exact actions that lack
   paired statistics, and kept all three development targets identity-only.
+- The Stage 6.19 final train-only confirmation is
+  `website_teacher_preference_remaining_corrective_final_train_confirmation_v1.json`,
+  SHA-256
+  `a1f32207255867dd2a59c7f9043c57038aff37f506746c970f8892f1d852e189`.
+  It completed the single authorized 64/64 process-isolated rollout schedule;
+  both exact comparisons were inconclusive and no supported pair was produced.
 
 Current blocker:
 
@@ -298,6 +304,14 @@ Current blocker:
   and was not transferred. Only those two new-action cases may enter a
   separate frozen train-only confirmation; all development exposure remains
   zero and Arena remains disallowed.
+- Stage 6.19 completed 64/64 rollouts with zero timeout, candidate failure,
+  retry, or sequential fallback. `14031:4` teacher-minus-current advantage was
+  `0.125` with lower bound `-0.12` and greedy/tempo advantages `0.25/0.0`;
+  `14025:20` was exactly tied at `0.0/0.0/0.0`. Both are inconclusive, so all
+  three current train residual actions now lack a supported direction and no
+  additional corrective pair is authorized. A no-execution final disposition
+  audit is required to close Stage 6 as passed or rejected; Arena remains
+  disallowed meanwhile.
 - The eligible extension v5 pool is exhausted: all 277 rollout-eligible states
   were screened, all permitted positive-screen game signals were confirmed or
   exhausted, and three labels passed.
@@ -796,11 +810,11 @@ Acceptance:
 
 Goal: compare candidates against frozen `tempo_baseline`.
 
-Status: Stage 6.18 completed the frozen train-only evidence audit. One exact
-train action remains directly inconclusive and two exact train actions lack
-paired statistics; three development residuals remain held out. A separate
-two-case train-only confirmation is next; no improved offline capability
-evidence exists yet.
+Status: Stage 6.19 completed the only permitted two-case train confirmation.
+All three current train residual actions are now directly inconclusive, three
+development residuals remain held out, and no new supported corrective pair
+exists. A no-execution final offline-gate disposition audit is next; no
+improved offline capability evidence exists.
 
 Constraints:
 
@@ -1331,6 +1345,31 @@ Stage 6.18 acceptance:
   `b7dc15c779556a972c1b471348cb949bd98d54c1ce1aecb14a3d23cda083681b`;
   implementation SHA-256:
   `6200af71c14081418b1abfd1fd45d99347c3f20d601ec355014dbbc931a3ea26`.
+
+Stage 6.19 acceptance:
+
+- All 30 unique frozen hashes matched. Exactly `14031:4` index 2 and
+  `14025:20` index 2 mapped to train source samples; `14077:10`, three
+  development targets, and 16 other teacher states had zero source mappings,
+  execution, rollout, or design use.
+- The single authorized process-isolated execution completed 16 worker tasks,
+  32 schedule items, and 64/64 candidate rollouts, balanced 32/32 by
+  greedy/tempo profile. Timeout, candidate failure, retry, sequential
+  fallback, missing, duplicate, extra, and partial-output counts were zero.
+- `14031:4` was inconclusive: teacher/current means `0.875/0.75`, advantage
+  `0.125`, lower bound `-0.12`, variances `0.25/0.4666666667`, and
+  greedy/tempo advantages `0.25/0.0`.
+- `14025:20` was inconclusive: both means were `1.0`, both variances and the
+  advantage/lower bound were `0.0`, and both profile advantages were `0.0`.
+- A separate process reproduced every frozen/action hash, physical mapping,
+  task/schedule identity, seed, return, mean, variance, confidence bound,
+  profile advantage, direction, exclusion, aggregate, and forbidden counter.
+  Dataset/objective, model scoring, training/tuning, checkpoint, Arena,
+  website, promotion, unsupported-label, and capability counters were zero.
+- Curated confirmation SHA-256:
+  `a1f32207255867dd2a59c7f9043c57038aff37f506746c970f8892f1d852e189`;
+  implementation SHA-256:
+  `63d0f047d11d4b92b9a3fcdcd9dd2ee68b939e68fafc19513fb3a1527ec41bdb`.
 
 Acceptance:
 

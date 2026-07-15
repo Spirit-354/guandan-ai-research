@@ -1,0 +1,907 @@
+{
+  "schema_version": "website_teacher_preference_remaining_corrective_final_train_confirmation_v1",
+  "status": "completed",
+  "frozen_inputs": {
+    "sha256": {
+      "stage_6_13_audit": "2dff04b2be010a10c3f3e77a144f98d1aeca89a885e21cc98be9c51868b53345",
+      "stage_6_12_diagnosis": "e8e12f4fd259bc0c2689100d08bdfb3b71662e29c8af0f1e1013fbc6e9573e9f",
+      "stage_6_9_confirmation": "352cd0dfe0a4c958ba0555b776326a2b58470a980aef461ed49d4c59a7474c7a",
+      "teacher_dataset": "a74416e6facb28a1bc64563eba90cb33d460dc9e59cc2109518da142465e15f8",
+      "split_manifest": "5a15e514dc9bc51d77d300837151d9f1a49250f42885cc7940725bcbe4d35107",
+      "source_train_development_dataset": "e5e220c3c770116ca9d01478e98e610dd6309a0f3d6c17088a8328f62b47174b",
+      "stage_6_1_arena": "aa45da9de202194102fe8d11e612ad3eb4b51177fd910b9a7948836afd2a1fe6",
+      "stage_6_14p_parallel_equivalence": "8e168656c35519aae9054038f0fd31398ac0e9260c419de0534a09bf1f4c59ca",
+      "stage_6_14p_parallel_implementation": "f2093a8c348d9d91435209fd9ee258130b18f7de7b4b7758c0656c1d7a70e2e5",
+      "stage_6_14_confirmation_implementation": "e509ebc50f9fef9a159435d582561e72ac36083f059a0781539ec797c709bf55",
+      "stage_6_14e_confirmation": "450e89f780a33dd543f49f029e735f7fb32e11cd657163c52e6a4301d21f7eb5",
+      "stage_6_14e_formal_implementation": "972b67ed585e9a96f9e8be55b70d0b6585a7e499f6dc692c2861d5e636b9e55d",
+      "corrective_dataset_v2": "40024f7c064f0ebb7999c4ac0f7bc85d77b759a23956cbe596756763d4009d4d",
+      "corrective_dataset_v2_manifest": "ce5141f6254218d9230b15117a88d3c5e6bd374839bcf5fc77b393e2599ec353",
+      "corrective_dataset_v3": "71e90241170882dd97893e71fbe0694368af96525737b55370cd0a60e098ce6f",
+      "corrective_manifest_v3": "c9b25d75da0fc5966e1f29bcbd50dd471971e16fc9f4a368cda5b5ba2f8d822d",
+      "stage_6_15_dataset_builder": "df44cdc1c1e45ddea310324393b2ec0d1693523480b3f78ef4bf70fd369a8d97",
+      "stage_6_11_recipe_authority": "307b92eca7aef2d7fa927dec71f1e2ccd8b87b71d2336c5630f39c24d0a176dd",
+      "stage_6_11_implementation": "cc1c6263644635da01822f9ce8f231610b997d7ddbac932ba19efb24a905f00c",
+      "stage_6_16_training_report": "cac3ecb0542a7f9aaac2654f73f4e3650422be7eb5990bf4c403f3f082145156",
+      "stage_6_16_checkpoint": "8407f897e36b45affc628fbd2fe68dc4c76a5085fad095511c8045bc73ec5aad",
+      "stage_6_16_implementation": "8f3c74b272228cb0423aa192187d64028c4b7bce2f23dd74d12d811c55f76ded",
+      "stage_6_12_implementation": "75af0c847a49484059c103fe12f8db1f4fb447cb04c2161ed1ffe913dea8e008",
+      "stage_6_12_evidence": "e8e12f4fd259bc0c2689100d08bdfb3b71662e29c8af0f1e1013fbc6e9573e9f",
+      "stage_6_17_diagnosis": "1757016ae33628cca075a9cdfc881cd49be7b63f1078ca3f7288f95c7fa00a68",
+      "stage_6_17_implementation": "9231c25d24ee773c0fc376c4e2bb55c6a746897e8d95be2a351fd0c0b6fa85e1",
+      "stage_6_13_implementation": "f49975ace9a3eefd6fa93fafb838463f0b4c2690438856214809ada9d6b31687",
+      "stage_6_4_confirmation": "8e17377b5a1523d9f0a47af7218d687e062a3ade671c57f387eb4c1a0888cfae",
+      "stage_6_18_audit": "b7dc15c779556a972c1b471348cb949bd98d54c1ce1aecb14a3d23cda083681b",
+      "stage_6_18_implementation": "6200af71c14081418b1abfd1fd45d99347c3f20d601ec355014dbbc931a3ea26"
+    }
+  },
+  "source_dataset": {
+    "path": "website_danzero_shadow_extension_v5.train_dev.pth",
+    "sha256": "e5e220c3c770116ca9d01478e98e610dd6309a0f3d6c17088a8328f62b47174b",
+    "partition_role": "train_development",
+    "contains_locked_test_samples": false,
+    "loaded_once": true
+  },
+  "confirmation_contract": {
+    "evaluated_pipeline_partition": "pipeline_train",
+    "evaluated_action_roles": [
+      "teacher",
+      "current_top1"
+    ],
+    "actions_per_case": 2,
+    "rollouts_per_action": 16,
+    "continuation_profiles": [
+      "greedy_bot",
+      "tempo_baseline"
+    ],
+    "rollouts_per_action_per_profile": 8,
+    "shared_determinizations_across_actions": true,
+    "shared_determinizations_across_continuation_profiles": true,
+    "hidden_card_sampling_method": "uniform_physical_assignment_given_public_counts_v1",
+    "determinization_seed_scheme": "sha256_game_id_turn_index_determinization_index_v1",
+    "minimum_advantage": 0.15,
+    "maximum_candidate_return_variance": 0.5,
+    "confidence_z_value": 1.96,
+    "thresholds_tuned_in_this_stage": false,
+    "evaluated_case_count": 2
+  },
+  "target_reproduction": {
+    "expected_pipeline_train_case_count": 2,
+    "reproduced_pipeline_train_case_count": 2,
+    "excluded_direct_inconclusive_train_case_count": 1,
+    "pipeline_development_heldout_count": 3,
+    "other_teacher_state_exclusion_count": 16,
+    "missing_target_count": 0,
+    "duplicate_target_count": 0,
+    "extra_target_count": 0,
+    "reconstructed_action_count": 0,
+    "substituted_action_count": 0,
+    "transferred_action_count": 0,
+    "ambiguous_action_mapping_count": 0,
+    "non_train_source_mapping_count": 0,
+    "information_set_inconsistent_mapping_count": 0
+  },
+  "excluded_direct_inconclusive_train": [
+    {
+      "game_id": "14077",
+      "turn_index": 10,
+      "pipeline_partition": "pipeline_train",
+      "top1_action_index": 0,
+      "top1_action_sha256": "a7aaaf7c156c09ab5ad0b8c5d33bb6bb60cd85766562f597d1b89c9be31d053c",
+      "evidence_classification": "direct_paired_comparison_inconclusive",
+      "source_sample_mapping_count": 0,
+      "case_execution_count": 0,
+      "rollout_count": 0,
+      "threshold_objective_or_confirmation_design_use_count": 0
+    }
+  ],
+  "pipeline_development_heldout": [
+    {
+      "game_id": "13992",
+      "turn_index": 16,
+      "pipeline_partition": "pipeline_development",
+      "legal_action_count": 10,
+      "legal_action_order_sha256": "eea6f645847d3628e6ae917a8892266e44ad17dbd36fe75213a1d5d03042ff3b",
+      "teacher_action_index": 9,
+      "teacher_action_sha256": "0eb54a917a601da211462db8732b7da735c49c01680a6e0c4f9be9632c725dde",
+      "teacher_rank": 4,
+      "top1_action_index": 7,
+      "top1_action_sha256": "a98870e1dc8a5f20d49b6c84af9842e2836e4206bd9cb15f55355fdeaa082b16",
+      "top1_same_vector_recorded_indices": [
+        7
+      ],
+      "top1_physical_cards_website": [
+        "H6",
+        "HT",
+        "HT",
+        "CT"
+      ],
+      "teacher_physical_cards_website": [
+        "H6",
+        "H7",
+        "H9",
+        "HT",
+        "HJ"
+      ],
+      "physical_identity_derivation": "decoded_from_frozen_physical_action_54",
+      "source_sample_mapping_count": 0,
+      "case_execution_count": 0,
+      "rollout_count": 0,
+      "threshold_objective_or_confirmation_design_use_count": 0
+    },
+    {
+      "game_id": "14074",
+      "turn_index": 9,
+      "pipeline_partition": "pipeline_development",
+      "legal_action_count": 17,
+      "legal_action_order_sha256": "c4e61989b6e58b5fce4c3c12905585dfbbcc2a3b5c749573b0de84ba6fbcd6ed",
+      "teacher_action_index": 0,
+      "teacher_action_sha256": "8b631095d2fc255edfa14d27e864858829b4f70d910d347d1bff89e38eb903a9",
+      "teacher_rank": 6,
+      "top1_action_index": 9,
+      "top1_action_sha256": "ddb74d891debbd87a8b831fafbb033463b89bd6c0b04575eda14b69e28ce9ecd",
+      "top1_same_vector_recorded_indices": [
+        9
+      ],
+      "top1_physical_cards_website": [
+        "DQ",
+        "DQ"
+      ],
+      "teacher_physical_cards_website": [
+        "D5"
+      ],
+      "physical_identity_derivation": "decoded_from_frozen_physical_action_54",
+      "source_sample_mapping_count": 0,
+      "case_execution_count": 0,
+      "rollout_count": 0,
+      "threshold_objective_or_confirmation_design_use_count": 0
+    },
+    {
+      "game_id": "13871",
+      "turn_index": 9,
+      "pipeline_partition": "pipeline_development",
+      "legal_action_count": 12,
+      "legal_action_order_sha256": "db00b62774d949022e0e873ef0f213fa94af0491bb63a14e2797a02420506d6e",
+      "teacher_action_index": 2,
+      "teacher_action_sha256": "c1d443ee9bd0fb09716a6d64820ef73f55e482aee02a0b28e32b20b04a683712",
+      "teacher_rank": 5,
+      "top1_action_index": 10,
+      "top1_action_sha256": "15b33787374be514c26620c84f095dd12eb39f03ce77dd30e748e95797648a0e",
+      "top1_same_vector_recorded_indices": [
+        10
+      ],
+      "top1_physical_cards_website": [
+        "H3",
+        "S3",
+        "D3",
+        "D3",
+        "HQ"
+      ],
+      "teacher_physical_cards_website": [
+        "H3",
+        "S3",
+        "D3",
+        "D3"
+      ],
+      "physical_identity_derivation": "decoded_from_frozen_physical_action_54",
+      "source_sample_mapping_count": 0,
+      "case_execution_count": 0,
+      "rollout_count": 0,
+      "threshold_objective_or_confirmation_design_use_count": 0
+    }
+  ],
+  "other_teacher_states_excluded": [
+    {
+      "game_id": "13868",
+      "turn_index": 10,
+      "source_sample_mapping_count": 0,
+      "case_execution_count": 0,
+      "rollout_count": 0,
+      "threshold_objective_or_confirmation_design_use_count": 0
+    },
+    {
+      "game_id": "13872",
+      "turn_index": 4,
+      "source_sample_mapping_count": 0,
+      "case_execution_count": 0,
+      "rollout_count": 0,
+      "threshold_objective_or_confirmation_design_use_count": 0
+    },
+    {
+      "game_id": "13879",
+      "turn_index": 6,
+      "source_sample_mapping_count": 0,
+      "case_execution_count": 0,
+      "rollout_count": 0,
+      "threshold_objective_or_confirmation_design_use_count": 0
+    },
+    {
+      "game_id": "13865",
+      "turn_index": 8,
+      "source_sample_mapping_count": 0,
+      "case_execution_count": 0,
+      "rollout_count": 0,
+      "threshold_objective_or_confirmation_design_use_count": 0
+    },
+    {
+      "game_id": "13882",
+      "turn_index": 10,
+      "source_sample_mapping_count": 0,
+      "case_execution_count": 0,
+      "rollout_count": 0,
+      "threshold_objective_or_confirmation_design_use_count": 0
+    },
+    {
+      "game_id": "13861",
+      "turn_index": 10,
+      "source_sample_mapping_count": 0,
+      "case_execution_count": 0,
+      "rollout_count": 0,
+      "threshold_objective_or_confirmation_design_use_count": 0
+    },
+    {
+      "game_id": "13958",
+      "turn_index": 12,
+      "source_sample_mapping_count": 0,
+      "case_execution_count": 0,
+      "rollout_count": 0,
+      "threshold_objective_or_confirmation_design_use_count": 0
+    },
+    {
+      "game_id": "13959",
+      "turn_index": 7,
+      "source_sample_mapping_count": 0,
+      "case_execution_count": 0,
+      "rollout_count": 0,
+      "threshold_objective_or_confirmation_design_use_count": 0
+    },
+    {
+      "game_id": "13957",
+      "turn_index": 14,
+      "source_sample_mapping_count": 0,
+      "case_execution_count": 0,
+      "rollout_count": 0,
+      "threshold_objective_or_confirmation_design_use_count": 0
+    },
+    {
+      "game_id": "13960",
+      "turn_index": 15,
+      "source_sample_mapping_count": 0,
+      "case_execution_count": 0,
+      "rollout_count": 0,
+      "threshold_objective_or_confirmation_design_use_count": 0
+    },
+    {
+      "game_id": "14000",
+      "turn_index": 5,
+      "source_sample_mapping_count": 0,
+      "case_execution_count": 0,
+      "rollout_count": 0,
+      "threshold_objective_or_confirmation_design_use_count": 0
+    },
+    {
+      "game_id": "14022",
+      "turn_index": 16,
+      "source_sample_mapping_count": 0,
+      "case_execution_count": 0,
+      "rollout_count": 0,
+      "threshold_objective_or_confirmation_design_use_count": 0
+    },
+    {
+      "game_id": "14038",
+      "turn_index": 12,
+      "source_sample_mapping_count": 0,
+      "case_execution_count": 0,
+      "rollout_count": 0,
+      "threshold_objective_or_confirmation_design_use_count": 0
+    },
+    {
+      "game_id": "14044",
+      "turn_index": 9,
+      "source_sample_mapping_count": 0,
+      "case_execution_count": 0,
+      "rollout_count": 0,
+      "threshold_objective_or_confirmation_design_use_count": 0
+    },
+    {
+      "game_id": "14045",
+      "turn_index": 5,
+      "source_sample_mapping_count": 0,
+      "case_execution_count": 0,
+      "rollout_count": 0,
+      "threshold_objective_or_confirmation_design_use_count": 0
+    },
+    {
+      "game_id": "14058",
+      "turn_index": 22,
+      "source_sample_mapping_count": 0,
+      "case_execution_count": 0,
+      "rollout_count": 0,
+      "threshold_objective_or_confirmation_design_use_count": 0
+    }
+  ],
+  "case_results": [
+    {
+      "game_id": "14031",
+      "turn_index": 4,
+      "pipeline_partition": "pipeline_train",
+      "legal_action_count": 3,
+      "legal_action_order_sha256": "53fb44f95ecbfc7dcdc48c7c1a2aef87b0864b48a99cb8f3af703d503954a3ba",
+      "case_seconds": 33.14875920000486,
+      "case_timed_out": false,
+      "candidate_results": [
+        {
+          "role": "teacher",
+          "action_index": 1,
+          "action_sha256": "364be86515cc84afcbe05e4d5f5f1b0b52b7303b175868bbb4765dc6679e4230",
+          "action_id": 52,
+          "physical_cards": [
+            "黑桃5",
+            "红桃5",
+            "红桃5",
+            "梅花5"
+          ],
+          "physical_cards_website": [
+            "S5",
+            "H5",
+            "H5",
+            "C5"
+          ],
+          "action_type": "4_bomb",
+          "is_bomb": true,
+          "requested_rollout_count": 16,
+          "completed_rollout_count": 16,
+          "completion_rate": 1.0,
+          "mean_return": 0.875,
+          "return_variance": 0.25,
+          "failure_count": 0,
+          "failures": []
+        },
+        {
+          "role": "residual",
+          "action_index": 2,
+          "action_sha256": "44eb6c47c92f2c639293a75a2e4825abf2478d706ca7b45f31e8e9a4afc6bb42",
+          "action_id": 57,
+          "physical_cards": [
+            "黑桃10",
+            "方块10",
+            "梅花10",
+            "梅花10"
+          ],
+          "physical_cards_website": [
+            "ST",
+            "DT",
+            "CT",
+            "CT"
+          ],
+          "action_type": "4_bomb",
+          "is_bomb": true,
+          "requested_rollout_count": 16,
+          "completed_rollout_count": 16,
+          "completion_rate": 1.0,
+          "mean_return": 0.75,
+          "return_variance": 0.4666666666666667,
+          "failure_count": 0,
+          "failures": []
+        }
+      ],
+      "paired_rollouts": [
+        {
+          "rollout_index": 0,
+          "continuation_profile": "greedy_bot",
+          "determinization_index": 0,
+          "determinization_seed": 11792983471378251616,
+          "teacher_return": 1.0,
+          "residual_return": -1.0,
+          "teacher_minus_residual_return": 2.0
+        },
+        {
+          "rollout_index": 1,
+          "continuation_profile": "tempo_baseline",
+          "determinization_index": 0,
+          "determinization_seed": 11792983471378251616,
+          "teacher_return": -1.0,
+          "residual_return": -1.0,
+          "teacher_minus_residual_return": 0.0
+        },
+        {
+          "rollout_index": 2,
+          "continuation_profile": "greedy_bot",
+          "determinization_index": 1,
+          "determinization_seed": 13158846024791730147,
+          "teacher_return": 1.0,
+          "residual_return": 1.0,
+          "teacher_minus_residual_return": 0.0
+        },
+        {
+          "rollout_index": 3,
+          "continuation_profile": "tempo_baseline",
+          "determinization_index": 1,
+          "determinization_seed": 13158846024791730147,
+          "teacher_return": 1.0,
+          "residual_return": 1.0,
+          "teacher_minus_residual_return": 0.0
+        },
+        {
+          "rollout_index": 4,
+          "continuation_profile": "greedy_bot",
+          "determinization_index": 2,
+          "determinization_seed": 16239941016184887212,
+          "teacher_return": 1.0,
+          "residual_return": 1.0,
+          "teacher_minus_residual_return": 0.0
+        },
+        {
+          "rollout_index": 5,
+          "continuation_profile": "tempo_baseline",
+          "determinization_index": 2,
+          "determinization_seed": 16239941016184887212,
+          "teacher_return": 1.0,
+          "residual_return": 1.0,
+          "teacher_minus_residual_return": 0.0
+        },
+        {
+          "rollout_index": 6,
+          "continuation_profile": "greedy_bot",
+          "determinization_index": 3,
+          "determinization_seed": 5175909698195751013,
+          "teacher_return": 1.0,
+          "residual_return": 1.0,
+          "teacher_minus_residual_return": 0.0
+        },
+        {
+          "rollout_index": 7,
+          "continuation_profile": "tempo_baseline",
+          "determinization_index": 3,
+          "determinization_seed": 5175909698195751013,
+          "teacher_return": 1.0,
+          "residual_return": 1.0,
+          "teacher_minus_residual_return": 0.0
+        },
+        {
+          "rollout_index": 8,
+          "continuation_profile": "greedy_bot",
+          "determinization_index": 4,
+          "determinization_seed": 699401588427101220,
+          "teacher_return": 1.0,
+          "residual_return": 1.0,
+          "teacher_minus_residual_return": 0.0
+        },
+        {
+          "rollout_index": 9,
+          "continuation_profile": "tempo_baseline",
+          "determinization_index": 4,
+          "determinization_seed": 699401588427101220,
+          "teacher_return": 1.0,
+          "residual_return": 1.0,
+          "teacher_minus_residual_return": 0.0
+        },
+        {
+          "rollout_index": 10,
+          "continuation_profile": "greedy_bot",
+          "determinization_index": 5,
+          "determinization_seed": 8258472294050691032,
+          "teacher_return": 1.0,
+          "residual_return": 1.0,
+          "teacher_minus_residual_return": 0.0
+        },
+        {
+          "rollout_index": 11,
+          "continuation_profile": "tempo_baseline",
+          "determinization_index": 5,
+          "determinization_seed": 8258472294050691032,
+          "teacher_return": 1.0,
+          "residual_return": 1.0,
+          "teacher_minus_residual_return": 0.0
+        },
+        {
+          "rollout_index": 12,
+          "continuation_profile": "greedy_bot",
+          "determinization_index": 6,
+          "determinization_seed": 17210934960115271645,
+          "teacher_return": 1.0,
+          "residual_return": 1.0,
+          "teacher_minus_residual_return": 0.0
+        },
+        {
+          "rollout_index": 13,
+          "continuation_profile": "tempo_baseline",
+          "determinization_index": 6,
+          "determinization_seed": 17210934960115271645,
+          "teacher_return": 1.0,
+          "residual_return": 1.0,
+          "teacher_minus_residual_return": 0.0
+        },
+        {
+          "rollout_index": 14,
+          "continuation_profile": "greedy_bot",
+          "determinization_index": 7,
+          "determinization_seed": 10378738533991766677,
+          "teacher_return": 1.0,
+          "residual_return": 1.0,
+          "teacher_minus_residual_return": 0.0
+        },
+        {
+          "rollout_index": 15,
+          "continuation_profile": "tempo_baseline",
+          "determinization_index": 7,
+          "determinization_seed": 10378738533991766677,
+          "teacher_return": 1.0,
+          "residual_return": 1.0,
+          "teacher_minus_residual_return": 0.0
+        }
+      ],
+      "metrics": {
+        "paired_count": 16,
+        "teacher_mean_return": 0.875,
+        "teacher_return_variance": 0.25,
+        "residual_mean_return": 0.75,
+        "residual_return_variance": 0.4666666666666667,
+        "teacher_minus_residual_advantage": 0.125,
+        "residual_minus_teacher_advantage": -0.125,
+        "paired_return_variance": 0.25,
+        "teacher_minus_residual_95_lower_bound": -0.12,
+        "teacher_over_residual_confidence": 0.44,
+        "residual_minus_teacher_95_lower_bound": -0.37,
+        "residual_over_teacher_confidence": 0.315,
+        "continuation_policy_advantages": {
+          "greedy_bot": {
+            "paired_count": 8,
+            "teacher_minus_residual_mean_advantage": 0.25,
+            "residual_minus_teacher_mean_advantage": -0.25,
+            "paired_return_variance": 0.5
+          },
+          "tempo_baseline": {
+            "paired_count": 8,
+            "teacher_minus_residual_mean_advantage": 0.0,
+            "residual_minus_teacher_mean_advantage": -0.0,
+            "paired_return_variance": 0.0
+          }
+        },
+        "teacher_over_residual_supported": false,
+        "teacher_over_residual_failure_reasons": [
+          "mean_advantage_below_frozen_threshold",
+          "advantage_95_lower_bound_not_positive",
+          "continuation_profile_advantage_below_frozen_threshold"
+        ],
+        "residual_over_teacher_supported": false,
+        "residual_over_teacher_failure_reasons": [
+          "mean_advantage_below_frozen_threshold",
+          "advantage_95_lower_bound_not_positive",
+          "continuation_profile_advantage_below_frozen_threshold"
+        ],
+        "directional_classification": "inconclusive"
+      }
+    },
+    {
+      "game_id": "14025",
+      "turn_index": 20,
+      "pipeline_partition": "pipeline_train",
+      "legal_action_count": 4,
+      "legal_action_order_sha256": "b483f81eb0e369f159599261d1faa88108b86323048780fcbb78d78d379043bf",
+      "case_seconds": 2.452770799980499,
+      "case_timed_out": false,
+      "candidate_results": [
+        {
+          "role": "teacher",
+          "action_index": 0,
+          "action_sha256": "a5645e7a3fa0866cde8842c4dab96567507c3d1a3c028b816bc63f6966367b70",
+          "action_id": 0,
+          "physical_cards": [],
+          "physical_cards_website": [],
+          "action_type": "None",
+          "is_bomb": false,
+          "requested_rollout_count": 16,
+          "completed_rollout_count": 16,
+          "completion_rate": 1.0,
+          "mean_return": 1.0,
+          "return_variance": 0.0,
+          "failure_count": 0,
+          "failures": []
+        },
+        {
+          "role": "residual",
+          "action_index": 2,
+          "action_sha256": "8b631095d2fc255edfa14d27e864858829b4f70d910d347d1bff89e38eb903a9",
+          "action_id": 4,
+          "physical_cards": [
+            "方块5"
+          ],
+          "physical_cards_website": [
+            "D5"
+          ],
+          "action_type": "single",
+          "is_bomb": false,
+          "requested_rollout_count": 16,
+          "completed_rollout_count": 16,
+          "completion_rate": 1.0,
+          "mean_return": 1.0,
+          "return_variance": 0.0,
+          "failure_count": 0,
+          "failures": []
+        }
+      ],
+      "paired_rollouts": [
+        {
+          "rollout_index": 0,
+          "continuation_profile": "greedy_bot",
+          "determinization_index": 0,
+          "determinization_seed": 834396195376053506,
+          "teacher_return": 1.0,
+          "residual_return": 1.0,
+          "teacher_minus_residual_return": 0.0
+        },
+        {
+          "rollout_index": 1,
+          "continuation_profile": "tempo_baseline",
+          "determinization_index": 0,
+          "determinization_seed": 834396195376053506,
+          "teacher_return": 1.0,
+          "residual_return": 1.0,
+          "teacher_minus_residual_return": 0.0
+        },
+        {
+          "rollout_index": 2,
+          "continuation_profile": "greedy_bot",
+          "determinization_index": 1,
+          "determinization_seed": 2640656495888077421,
+          "teacher_return": 1.0,
+          "residual_return": 1.0,
+          "teacher_minus_residual_return": 0.0
+        },
+        {
+          "rollout_index": 3,
+          "continuation_profile": "tempo_baseline",
+          "determinization_index": 1,
+          "determinization_seed": 2640656495888077421,
+          "teacher_return": 1.0,
+          "residual_return": 1.0,
+          "teacher_minus_residual_return": 0.0
+        },
+        {
+          "rollout_index": 4,
+          "continuation_profile": "greedy_bot",
+          "determinization_index": 2,
+          "determinization_seed": 446168022057114209,
+          "teacher_return": 1.0,
+          "residual_return": 1.0,
+          "teacher_minus_residual_return": 0.0
+        },
+        {
+          "rollout_index": 5,
+          "continuation_profile": "tempo_baseline",
+          "determinization_index": 2,
+          "determinization_seed": 446168022057114209,
+          "teacher_return": 1.0,
+          "residual_return": 1.0,
+          "teacher_minus_residual_return": 0.0
+        },
+        {
+          "rollout_index": 6,
+          "continuation_profile": "greedy_bot",
+          "determinization_index": 3,
+          "determinization_seed": 8157820967774593940,
+          "teacher_return": 1.0,
+          "residual_return": 1.0,
+          "teacher_minus_residual_return": 0.0
+        },
+        {
+          "rollout_index": 7,
+          "continuation_profile": "tempo_baseline",
+          "determinization_index": 3,
+          "determinization_seed": 8157820967774593940,
+          "teacher_return": 1.0,
+          "residual_return": 1.0,
+          "teacher_minus_residual_return": 0.0
+        },
+        {
+          "rollout_index": 8,
+          "continuation_profile": "greedy_bot",
+          "determinization_index": 4,
+          "determinization_seed": 15601149489726723060,
+          "teacher_return": 1.0,
+          "residual_return": 1.0,
+          "teacher_minus_residual_return": 0.0
+        },
+        {
+          "rollout_index": 9,
+          "continuation_profile": "tempo_baseline",
+          "determinization_index": 4,
+          "determinization_seed": 15601149489726723060,
+          "teacher_return": 1.0,
+          "residual_return": 1.0,
+          "teacher_minus_residual_return": 0.0
+        },
+        {
+          "rollout_index": 10,
+          "continuation_profile": "greedy_bot",
+          "determinization_index": 5,
+          "determinization_seed": 4576500543664186788,
+          "teacher_return": 1.0,
+          "residual_return": 1.0,
+          "teacher_minus_residual_return": 0.0
+        },
+        {
+          "rollout_index": 11,
+          "continuation_profile": "tempo_baseline",
+          "determinization_index": 5,
+          "determinization_seed": 4576500543664186788,
+          "teacher_return": 1.0,
+          "residual_return": 1.0,
+          "teacher_minus_residual_return": 0.0
+        },
+        {
+          "rollout_index": 12,
+          "continuation_profile": "greedy_bot",
+          "determinization_index": 6,
+          "determinization_seed": 7106703435788941035,
+          "teacher_return": 1.0,
+          "residual_return": 1.0,
+          "teacher_minus_residual_return": 0.0
+        },
+        {
+          "rollout_index": 13,
+          "continuation_profile": "tempo_baseline",
+          "determinization_index": 6,
+          "determinization_seed": 7106703435788941035,
+          "teacher_return": 1.0,
+          "residual_return": 1.0,
+          "teacher_minus_residual_return": 0.0
+        },
+        {
+          "rollout_index": 14,
+          "continuation_profile": "greedy_bot",
+          "determinization_index": 7,
+          "determinization_seed": 3341732185158137318,
+          "teacher_return": 1.0,
+          "residual_return": 1.0,
+          "teacher_minus_residual_return": 0.0
+        },
+        {
+          "rollout_index": 15,
+          "continuation_profile": "tempo_baseline",
+          "determinization_index": 7,
+          "determinization_seed": 3341732185158137318,
+          "teacher_return": 1.0,
+          "residual_return": 1.0,
+          "teacher_minus_residual_return": 0.0
+        }
+      ],
+      "metrics": {
+        "paired_count": 16,
+        "teacher_mean_return": 1.0,
+        "teacher_return_variance": 0.0,
+        "residual_mean_return": 1.0,
+        "residual_return_variance": 0.0,
+        "teacher_minus_residual_advantage": 0.0,
+        "residual_minus_teacher_advantage": -0.0,
+        "paired_return_variance": 0.0,
+        "teacher_minus_residual_95_lower_bound": 0.0,
+        "teacher_over_residual_confidence": 0.5,
+        "residual_minus_teacher_95_lower_bound": -0.0,
+        "residual_over_teacher_confidence": 0.5,
+        "continuation_policy_advantages": {
+          "greedy_bot": {
+            "paired_count": 8,
+            "teacher_minus_residual_mean_advantage": 0.0,
+            "residual_minus_teacher_mean_advantage": -0.0,
+            "paired_return_variance": 0.0
+          },
+          "tempo_baseline": {
+            "paired_count": 8,
+            "teacher_minus_residual_mean_advantage": 0.0,
+            "residual_minus_teacher_mean_advantage": -0.0,
+            "paired_return_variance": 0.0
+          }
+        },
+        "teacher_over_residual_supported": false,
+        "teacher_over_residual_failure_reasons": [
+          "mean_advantage_below_frozen_threshold",
+          "advantage_95_lower_bound_not_positive",
+          "continuation_profile_advantage_below_frozen_threshold"
+        ],
+        "residual_over_teacher_supported": false,
+        "residual_over_teacher_failure_reasons": [
+          "mean_advantage_below_frozen_threshold",
+          "advantage_95_lower_bound_not_positive",
+          "continuation_profile_advantage_below_frozen_threshold"
+        ],
+        "directional_classification": "inconclusive"
+      }
+    }
+  ],
+  "requested_total_rollouts": 64,
+  "completed_rollouts": 64,
+  "rollout_completion_rate": 1.0,
+  "continuation_profile_rollout_counts": {
+    "greedy_bot": 32,
+    "tempo_baseline": 32
+  },
+  "timeout_case_count": 0,
+  "candidate_failure_count": 0,
+  "directional_classification_counts": {
+    "teacher_over_residual_supported": 0,
+    "residual_over_teacher_supported": 0,
+    "inconclusive": 2
+  },
+  "supported_comparison_manifest": [],
+  "supported_comparison_manifest_executed_as_training": false,
+  "dataset_constructed": false,
+  "new_objective_defined": false,
+  "formal_execution_accounting": {
+    "authorized_execution_count": 1,
+    "extra_execution_attempt_count": 0,
+    "retry_count": 0,
+    "sequential_fallback_count": 0,
+    "partial_curated_output_count": 0
+  },
+  "integrity": {
+    "executed_source_mapping_count": 2,
+    "excluded_train_source_mapping_count": 0,
+    "excluded_train_case_execution_count": 0,
+    "excluded_train_rollout_count": 0,
+    "pipeline_development_source_mapping_count": 0,
+    "pipeline_development_case_execution_count": 0,
+    "pipeline_development_rollout_count": 0,
+    "other_teacher_state_source_mapping_count": 0,
+    "other_teacher_state_case_execution_count": 0,
+    "other_teacher_state_rollout_count": 0,
+    "locked_test_loaded": false,
+    "complete_website_dataset_loaded": false,
+    "opponent_or_teammate_true_hands_used": false,
+    "future_information_used": false,
+    "common_determinizations_verified": true,
+    "integrity_failure_count": 0
+  },
+  "parallel_execution": {
+    "schema_version": "website_teacher_preference_remaining_corrective_final_train_confirmation_v1",
+    "executor": "execute_parallel_case_with_eight_determinization_tasks_v1",
+    "process_isolated": true,
+    "worker_task_count_per_case": 8,
+    "total_worker_task_count": 16,
+    "schedule_item_count_per_case": 16,
+    "total_schedule_item_count": 32,
+    "candidate_call_count_per_case": 32,
+    "total_candidate_call_count": 64,
+    "common_parent_deadline_seconds": 600.0,
+    "max_rollout_steps": 300,
+    "sequential_fallback_count": 0,
+    "retry_count": 0,
+    "worker_label_or_gate_logic": false,
+    "parent_metric_and_gate_owner": "frozen_stage_6_9",
+    "parallel_artifact_sha256": "8e168656c35519aae9054038f0fd31398ac0e9260c419de0534a09bf1f4c59ca",
+    "parallel_implementation_sha256": "f2093a8c348d9d91435209fd9ee258130b18f7de7b4b7758c0656c1d7a70e2e5",
+    "formal_pattern_sha256": "972b67ed585e9a96f9e8be55b70d0b6585a7e499f6dc692c2861d5e636b9e55d"
+  },
+  "forbidden_operation_counts": {
+    "model_scoring_runs": 0,
+    "dataset_constructions": 0,
+    "new_objective_definitions": 0,
+    "training_runs": 0,
+    "fine_tuning_runs": 0,
+    "hyperparameter_tuning_runs": 0,
+    "threshold_tuning_runs": 0,
+    "checkpoint_selections": 0,
+    "checkpoint_modifications": 0,
+    "complete_website_dataset_loads": 0,
+    "locked_test_loads": 0,
+    "arena_games": 0,
+    "website_shadow_games": 0,
+    "website_games": 0,
+    "model_controlled_website_actions": 0,
+    "excluded_train_source_mappings": 0,
+    "excluded_train_case_executions": 0,
+    "pipeline_development_source_mappings": 0,
+    "pipeline_development_case_executions": 0,
+    "other_teacher_state_source_mappings": 0,
+    "other_teacher_state_case_executions": 0,
+    "extra_formal_execution_attempts": 0,
+    "sequential_fallbacks": 0,
+    "retries": 0,
+    "partial_curated_outputs": 0,
+    "unsupported_ordering_labels": 0,
+    "checkpoint_promotions": 0,
+    "capability_claims": 0
+  },
+  "interpretation_scope": "two frozen pipeline-train current-top1 counterfactual comparisons only; no dataset, objective, model scoring, training, Arena, website, promotion, or capability claim"
+}
