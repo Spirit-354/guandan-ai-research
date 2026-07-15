@@ -1,0 +1,1489 @@
+{
+  "schema_version": "website_teacher_preference_residual_corrective_remaining_parallel_equivalence_v1",
+  "status": "completed",
+  "frozen_inputs": {
+    "paths": {
+      "stage_6_13_audit": "website_teacher_preference_residual_corrective_remaining_evidence_audit_v1.json",
+      "stage_6_12_diagnosis": "website_teacher_preference_residual_corrective_failure_diagnosis_v1.json",
+      "stage_6_9_confirmation": "website_teacher_preference_corrective_residual_train_confirmation_v1.json",
+      "teacher_dataset": "website_information_set_teacher_dataset_v6.pth",
+      "split_manifest": "website_teacher_preference_split_v1.json",
+      "source_train_development_dataset": "website_danzero_shadow_extension_v5.train_dev.pth",
+      "stage_6_1_arena": "website_teacher_preference_arena_smoke20_v1.json",
+      "stage_6_14_confirmation_implementation": "website_teacher_preference_residual_corrective_remaining_confirmation.py",
+      "stage_6_9_execution_implementation": "website_teacher_preference_unpaired_confirmation.py",
+      "information_set_implementation": "website_information_set.py",
+      "offline_optimization_implementation": "play_research_adaptive.py",
+      "stage_6_14_timeout_progress": "docs\\progress\\2026-07-15-stage6-14-three-top1-confirmation-timeout.md",
+      "stage_6_14r_recovery_audit": "website_teacher_preference_residual_corrective_remaining_timeout_recovery_audit_v1.json"
+    },
+    "sha256": {
+      "stage_6_13_audit": "2dff04b2be010a10c3f3e77a144f98d1aeca89a885e21cc98be9c51868b53345",
+      "stage_6_12_diagnosis": "e8e12f4fd259bc0c2689100d08bdfb3b71662e29c8af0f1e1013fbc6e9573e9f",
+      "stage_6_9_confirmation": "352cd0dfe0a4c958ba0555b776326a2b58470a980aef461ed49d4c59a7474c7a",
+      "teacher_dataset": "a74416e6facb28a1bc64563eba90cb33d460dc9e59cc2109518da142465e15f8",
+      "split_manifest": "5a15e514dc9bc51d77d300837151d9f1a49250f42885cc7940725bcbe4d35107",
+      "source_train_development_dataset": "e5e220c3c770116ca9d01478e98e610dd6309a0f3d6c17088a8328f62b47174b",
+      "stage_6_1_arena": "aa45da9de202194102fe8d11e612ad3eb4b51177fd910b9a7948836afd2a1fe6",
+      "stage_6_14_confirmation_implementation": "e509ebc50f9fef9a159435d582561e72ac36083f059a0781539ec797c709bf55",
+      "stage_6_9_execution_implementation": "d3933e16afdc45bb60d6badff8db35aadf8214910ad752abf3f46274ebb23915",
+      "information_set_implementation": "35334c14d96faf9c4d7fdc93890afcba9ec6bc26f78fcca66e7af53ddae36e66",
+      "offline_optimization_implementation": "fdeb8993bb28a73616de012f5a6422f0c774923e868464ccb62c96abd04fdd1e",
+      "stage_6_14_timeout_progress": "67382f92cdb3559d8eb6dd50a36fff695e007bde829276207eed76a5aeb04f6b",
+      "stage_6_14r_recovery_audit": "75115cfc5a9dfa3ecb6ac868d04a2e73d20473cfe3a49c8e805a042028872c0d"
+    }
+  },
+  "parallel_contract": {
+    "worker_task_count_per_case": 8,
+    "one_task_per_determinization": true,
+    "determinization_indices": [
+      0,
+      1,
+      2,
+      3,
+      4,
+      5,
+      6,
+      7
+    ],
+    "schedule_items_per_case": 16,
+    "candidate_calls_per_case": 32,
+    "candidate_role_order": [
+      "teacher",
+      "top1"
+    ],
+    "profile_order_per_determinization": [
+      "greedy_bot",
+      "tempo_baseline"
+    ],
+    "common_parent_deadline_seconds": 600.0,
+    "max_rollout_steps": 300,
+    "worker_label_or_gate_logic": false,
+    "parent_metric_function": "frozen_stage_6_9_directional_metrics",
+    "result_order": "rollout_index_then_teacher_top1",
+    "fail_closed": true
+  },
+  "synthetic_equivalence": {
+    "complete": {
+      "task_count": 8,
+      "schedule_item_count": 16,
+      "candidate_call_count": 32,
+      "task_manifest_sha256": "8f32368806f57c75151cc11e47dff2f94b537cd032c842809c1480afbe94cca3",
+      "ordered_call_sha256": "6ddbb859560545bfc391f4178d6b82ead610bc9cd9c24cbfd9e224b1eea80edc",
+      "aggregate_sha256": "1a01a6fac23022e7d5f2918c88d78d21c58a4cb0ef9446f5ee1435bde1b92970",
+      "sequential_process_calls_exact": true,
+      "sequential_process_aggregate_exact": true,
+      "process_isolation_verified": true,
+      "all_worker_processes_differ_from_parent": true,
+      "completed_candidate_call_count": 32,
+      "failed_candidate_call_count": 0,
+      "directional_classification": "inconclusive",
+      "calls": [
+        {
+          "rollout_index": 0,
+          "continuation_profile": "greedy_bot",
+          "determinization_index": 0,
+          "determinization_seed": 14076974450800268457,
+          "role": "teacher",
+          "action_index": 1,
+          "action_sha256": "teacher-action-sha256",
+          "case_deadline_monotonic": 987654.0,
+          "max_rollout_steps": 300,
+          "return": 1.0,
+          "failure": null
+        },
+        {
+          "rollout_index": 0,
+          "continuation_profile": "greedy_bot",
+          "determinization_index": 0,
+          "determinization_seed": 14076974450800268457,
+          "role": "top1",
+          "action_index": 7,
+          "action_sha256": "top1-action-sha256",
+          "case_deadline_monotonic": 987654.0,
+          "max_rollout_steps": 300,
+          "return": -1.0,
+          "failure": null
+        },
+        {
+          "rollout_index": 1,
+          "continuation_profile": "tempo_baseline",
+          "determinization_index": 0,
+          "determinization_seed": 14076974450800268457,
+          "role": "teacher",
+          "action_index": 1,
+          "action_sha256": "teacher-action-sha256",
+          "case_deadline_monotonic": 987654.0,
+          "max_rollout_steps": 300,
+          "return": -1.0,
+          "failure": null
+        },
+        {
+          "rollout_index": 1,
+          "continuation_profile": "tempo_baseline",
+          "determinization_index": 0,
+          "determinization_seed": 14076974450800268457,
+          "role": "top1",
+          "action_index": 7,
+          "action_sha256": "top1-action-sha256",
+          "case_deadline_monotonic": 987654.0,
+          "max_rollout_steps": 300,
+          "return": 1.0,
+          "failure": null
+        },
+        {
+          "rollout_index": 2,
+          "continuation_profile": "greedy_bot",
+          "determinization_index": 1,
+          "determinization_seed": 5719380636767870108,
+          "role": "teacher",
+          "action_index": 1,
+          "action_sha256": "teacher-action-sha256",
+          "case_deadline_monotonic": 987654.0,
+          "max_rollout_steps": 300,
+          "return": -1.0,
+          "failure": null
+        },
+        {
+          "rollout_index": 2,
+          "continuation_profile": "greedy_bot",
+          "determinization_index": 1,
+          "determinization_seed": 5719380636767870108,
+          "role": "top1",
+          "action_index": 7,
+          "action_sha256": "top1-action-sha256",
+          "case_deadline_monotonic": 987654.0,
+          "max_rollout_steps": 300,
+          "return": 1.0,
+          "failure": null
+        },
+        {
+          "rollout_index": 3,
+          "continuation_profile": "tempo_baseline",
+          "determinization_index": 1,
+          "determinization_seed": 5719380636767870108,
+          "role": "teacher",
+          "action_index": 1,
+          "action_sha256": "teacher-action-sha256",
+          "case_deadline_monotonic": 987654.0,
+          "max_rollout_steps": 300,
+          "return": 1.0,
+          "failure": null
+        },
+        {
+          "rollout_index": 3,
+          "continuation_profile": "tempo_baseline",
+          "determinization_index": 1,
+          "determinization_seed": 5719380636767870108,
+          "role": "top1",
+          "action_index": 7,
+          "action_sha256": "top1-action-sha256",
+          "case_deadline_monotonic": 987654.0,
+          "max_rollout_steps": 300,
+          "return": -1.0,
+          "failure": null
+        },
+        {
+          "rollout_index": 4,
+          "continuation_profile": "greedy_bot",
+          "determinization_index": 2,
+          "determinization_seed": 1717490524533945920,
+          "role": "teacher",
+          "action_index": 1,
+          "action_sha256": "teacher-action-sha256",
+          "case_deadline_monotonic": 987654.0,
+          "max_rollout_steps": 300,
+          "return": 1.0,
+          "failure": null
+        },
+        {
+          "rollout_index": 4,
+          "continuation_profile": "greedy_bot",
+          "determinization_index": 2,
+          "determinization_seed": 1717490524533945920,
+          "role": "top1",
+          "action_index": 7,
+          "action_sha256": "top1-action-sha256",
+          "case_deadline_monotonic": 987654.0,
+          "max_rollout_steps": 300,
+          "return": -1.0,
+          "failure": null
+        },
+        {
+          "rollout_index": 5,
+          "continuation_profile": "tempo_baseline",
+          "determinization_index": 2,
+          "determinization_seed": 1717490524533945920,
+          "role": "teacher",
+          "action_index": 1,
+          "action_sha256": "teacher-action-sha256",
+          "case_deadline_monotonic": 987654.0,
+          "max_rollout_steps": 300,
+          "return": -1.0,
+          "failure": null
+        },
+        {
+          "rollout_index": 5,
+          "continuation_profile": "tempo_baseline",
+          "determinization_index": 2,
+          "determinization_seed": 1717490524533945920,
+          "role": "top1",
+          "action_index": 7,
+          "action_sha256": "top1-action-sha256",
+          "case_deadline_monotonic": 987654.0,
+          "max_rollout_steps": 300,
+          "return": 1.0,
+          "failure": null
+        },
+        {
+          "rollout_index": 6,
+          "continuation_profile": "greedy_bot",
+          "determinization_index": 3,
+          "determinization_seed": 14827225098210790520,
+          "role": "teacher",
+          "action_index": 1,
+          "action_sha256": "teacher-action-sha256",
+          "case_deadline_monotonic": 987654.0,
+          "max_rollout_steps": 300,
+          "return": -1.0,
+          "failure": null
+        },
+        {
+          "rollout_index": 6,
+          "continuation_profile": "greedy_bot",
+          "determinization_index": 3,
+          "determinization_seed": 14827225098210790520,
+          "role": "top1",
+          "action_index": 7,
+          "action_sha256": "top1-action-sha256",
+          "case_deadline_monotonic": 987654.0,
+          "max_rollout_steps": 300,
+          "return": 1.0,
+          "failure": null
+        },
+        {
+          "rollout_index": 7,
+          "continuation_profile": "tempo_baseline",
+          "determinization_index": 3,
+          "determinization_seed": 14827225098210790520,
+          "role": "teacher",
+          "action_index": 1,
+          "action_sha256": "teacher-action-sha256",
+          "case_deadline_monotonic": 987654.0,
+          "max_rollout_steps": 300,
+          "return": 1.0,
+          "failure": null
+        },
+        {
+          "rollout_index": 7,
+          "continuation_profile": "tempo_baseline",
+          "determinization_index": 3,
+          "determinization_seed": 14827225098210790520,
+          "role": "top1",
+          "action_index": 7,
+          "action_sha256": "top1-action-sha256",
+          "case_deadline_monotonic": 987654.0,
+          "max_rollout_steps": 300,
+          "return": -1.0,
+          "failure": null
+        },
+        {
+          "rollout_index": 8,
+          "continuation_profile": "greedy_bot",
+          "determinization_index": 4,
+          "determinization_seed": 12836922672141474983,
+          "role": "teacher",
+          "action_index": 1,
+          "action_sha256": "teacher-action-sha256",
+          "case_deadline_monotonic": 987654.0,
+          "max_rollout_steps": 300,
+          "return": 1.0,
+          "failure": null
+        },
+        {
+          "rollout_index": 8,
+          "continuation_profile": "greedy_bot",
+          "determinization_index": 4,
+          "determinization_seed": 12836922672141474983,
+          "role": "top1",
+          "action_index": 7,
+          "action_sha256": "top1-action-sha256",
+          "case_deadline_monotonic": 987654.0,
+          "max_rollout_steps": 300,
+          "return": -1.0,
+          "failure": null
+        },
+        {
+          "rollout_index": 9,
+          "continuation_profile": "tempo_baseline",
+          "determinization_index": 4,
+          "determinization_seed": 12836922672141474983,
+          "role": "teacher",
+          "action_index": 1,
+          "action_sha256": "teacher-action-sha256",
+          "case_deadline_monotonic": 987654.0,
+          "max_rollout_steps": 300,
+          "return": -1.0,
+          "failure": null
+        },
+        {
+          "rollout_index": 9,
+          "continuation_profile": "tempo_baseline",
+          "determinization_index": 4,
+          "determinization_seed": 12836922672141474983,
+          "role": "top1",
+          "action_index": 7,
+          "action_sha256": "top1-action-sha256",
+          "case_deadline_monotonic": 987654.0,
+          "max_rollout_steps": 300,
+          "return": 1.0,
+          "failure": null
+        },
+        {
+          "rollout_index": 10,
+          "continuation_profile": "greedy_bot",
+          "determinization_index": 5,
+          "determinization_seed": 1042174106803272630,
+          "role": "teacher",
+          "action_index": 1,
+          "action_sha256": "teacher-action-sha256",
+          "case_deadline_monotonic": 987654.0,
+          "max_rollout_steps": 300,
+          "return": -1.0,
+          "failure": null
+        },
+        {
+          "rollout_index": 10,
+          "continuation_profile": "greedy_bot",
+          "determinization_index": 5,
+          "determinization_seed": 1042174106803272630,
+          "role": "top1",
+          "action_index": 7,
+          "action_sha256": "top1-action-sha256",
+          "case_deadline_monotonic": 987654.0,
+          "max_rollout_steps": 300,
+          "return": 1.0,
+          "failure": null
+        },
+        {
+          "rollout_index": 11,
+          "continuation_profile": "tempo_baseline",
+          "determinization_index": 5,
+          "determinization_seed": 1042174106803272630,
+          "role": "teacher",
+          "action_index": 1,
+          "action_sha256": "teacher-action-sha256",
+          "case_deadline_monotonic": 987654.0,
+          "max_rollout_steps": 300,
+          "return": 1.0,
+          "failure": null
+        },
+        {
+          "rollout_index": 11,
+          "continuation_profile": "tempo_baseline",
+          "determinization_index": 5,
+          "determinization_seed": 1042174106803272630,
+          "role": "top1",
+          "action_index": 7,
+          "action_sha256": "top1-action-sha256",
+          "case_deadline_monotonic": 987654.0,
+          "max_rollout_steps": 300,
+          "return": -1.0,
+          "failure": null
+        },
+        {
+          "rollout_index": 12,
+          "continuation_profile": "greedy_bot",
+          "determinization_index": 6,
+          "determinization_seed": 14260123972480067564,
+          "role": "teacher",
+          "action_index": 1,
+          "action_sha256": "teacher-action-sha256",
+          "case_deadline_monotonic": 987654.0,
+          "max_rollout_steps": 300,
+          "return": 1.0,
+          "failure": null
+        },
+        {
+          "rollout_index": 12,
+          "continuation_profile": "greedy_bot",
+          "determinization_index": 6,
+          "determinization_seed": 14260123972480067564,
+          "role": "top1",
+          "action_index": 7,
+          "action_sha256": "top1-action-sha256",
+          "case_deadline_monotonic": 987654.0,
+          "max_rollout_steps": 300,
+          "return": -1.0,
+          "failure": null
+        },
+        {
+          "rollout_index": 13,
+          "continuation_profile": "tempo_baseline",
+          "determinization_index": 6,
+          "determinization_seed": 14260123972480067564,
+          "role": "teacher",
+          "action_index": 1,
+          "action_sha256": "teacher-action-sha256",
+          "case_deadline_monotonic": 987654.0,
+          "max_rollout_steps": 300,
+          "return": -1.0,
+          "failure": null
+        },
+        {
+          "rollout_index": 13,
+          "continuation_profile": "tempo_baseline",
+          "determinization_index": 6,
+          "determinization_seed": 14260123972480067564,
+          "role": "top1",
+          "action_index": 7,
+          "action_sha256": "top1-action-sha256",
+          "case_deadline_monotonic": 987654.0,
+          "max_rollout_steps": 300,
+          "return": 1.0,
+          "failure": null
+        },
+        {
+          "rollout_index": 14,
+          "continuation_profile": "greedy_bot",
+          "determinization_index": 7,
+          "determinization_seed": 1236626159863176682,
+          "role": "teacher",
+          "action_index": 1,
+          "action_sha256": "teacher-action-sha256",
+          "case_deadline_monotonic": 987654.0,
+          "max_rollout_steps": 300,
+          "return": -1.0,
+          "failure": null
+        },
+        {
+          "rollout_index": 14,
+          "continuation_profile": "greedy_bot",
+          "determinization_index": 7,
+          "determinization_seed": 1236626159863176682,
+          "role": "top1",
+          "action_index": 7,
+          "action_sha256": "top1-action-sha256",
+          "case_deadline_monotonic": 987654.0,
+          "max_rollout_steps": 300,
+          "return": 1.0,
+          "failure": null
+        },
+        {
+          "rollout_index": 15,
+          "continuation_profile": "tempo_baseline",
+          "determinization_index": 7,
+          "determinization_seed": 1236626159863176682,
+          "role": "teacher",
+          "action_index": 1,
+          "action_sha256": "teacher-action-sha256",
+          "case_deadline_monotonic": 987654.0,
+          "max_rollout_steps": 300,
+          "return": 1.0,
+          "failure": null
+        },
+        {
+          "rollout_index": 15,
+          "continuation_profile": "tempo_baseline",
+          "determinization_index": 7,
+          "determinization_seed": 1236626159863176682,
+          "role": "top1",
+          "action_index": 7,
+          "action_sha256": "top1-action-sha256",
+          "case_deadline_monotonic": 987654.0,
+          "max_rollout_steps": 300,
+          "return": -1.0,
+          "failure": null
+        }
+      ],
+      "aggregate": {
+        "game_id": "synthetic",
+        "turn_index": 4,
+        "pipeline_partition": "pipeline_train",
+        "legal_action_count": 2,
+        "legal_action_order_sha256": "synthetic-order-sha256",
+        "case_seconds": 0.0,
+        "case_timed_out": false,
+        "candidate_results": [
+          {
+            "role": "teacher",
+            "action_index": 1,
+            "action_sha256": "teacher-action-sha256",
+            "action_id": 11,
+            "physical_cards": [
+              "S3"
+            ],
+            "physical_cards_website": [
+              "S3"
+            ],
+            "requested_rollout_count": 16,
+            "completed_rollout_count": 16,
+            "completion_rate": 1.0,
+            "mean_return": 0.0,
+            "return_variance": 1.0666666666666667,
+            "failure_count": 0,
+            "failures": []
+          },
+          {
+            "role": "top1",
+            "action_index": 7,
+            "action_sha256": "top1-action-sha256",
+            "action_id": 17,
+            "physical_cards": [
+              "H4"
+            ],
+            "physical_cards_website": [
+              "H4"
+            ],
+            "requested_rollout_count": 16,
+            "completed_rollout_count": 16,
+            "completion_rate": 1.0,
+            "mean_return": 0.0,
+            "return_variance": 1.0666666666666667,
+            "failure_count": 0,
+            "failures": []
+          }
+        ],
+        "paired_rollouts": [
+          {
+            "rollout_index": 0,
+            "continuation_profile": "greedy_bot",
+            "determinization_index": 0,
+            "determinization_seed": 14076974450800268457,
+            "teacher_return": 1.0,
+            "top1_return": -1.0,
+            "teacher_minus_top1_return": 2.0
+          },
+          {
+            "rollout_index": 1,
+            "continuation_profile": "tempo_baseline",
+            "determinization_index": 0,
+            "determinization_seed": 14076974450800268457,
+            "teacher_return": -1.0,
+            "top1_return": 1.0,
+            "teacher_minus_top1_return": -2.0
+          },
+          {
+            "rollout_index": 2,
+            "continuation_profile": "greedy_bot",
+            "determinization_index": 1,
+            "determinization_seed": 5719380636767870108,
+            "teacher_return": -1.0,
+            "top1_return": 1.0,
+            "teacher_minus_top1_return": -2.0
+          },
+          {
+            "rollout_index": 3,
+            "continuation_profile": "tempo_baseline",
+            "determinization_index": 1,
+            "determinization_seed": 5719380636767870108,
+            "teacher_return": 1.0,
+            "top1_return": -1.0,
+            "teacher_minus_top1_return": 2.0
+          },
+          {
+            "rollout_index": 4,
+            "continuation_profile": "greedy_bot",
+            "determinization_index": 2,
+            "determinization_seed": 1717490524533945920,
+            "teacher_return": 1.0,
+            "top1_return": -1.0,
+            "teacher_minus_top1_return": 2.0
+          },
+          {
+            "rollout_index": 5,
+            "continuation_profile": "tempo_baseline",
+            "determinization_index": 2,
+            "determinization_seed": 1717490524533945920,
+            "teacher_return": -1.0,
+            "top1_return": 1.0,
+            "teacher_minus_top1_return": -2.0
+          },
+          {
+            "rollout_index": 6,
+            "continuation_profile": "greedy_bot",
+            "determinization_index": 3,
+            "determinization_seed": 14827225098210790520,
+            "teacher_return": -1.0,
+            "top1_return": 1.0,
+            "teacher_minus_top1_return": -2.0
+          },
+          {
+            "rollout_index": 7,
+            "continuation_profile": "tempo_baseline",
+            "determinization_index": 3,
+            "determinization_seed": 14827225098210790520,
+            "teacher_return": 1.0,
+            "top1_return": -1.0,
+            "teacher_minus_top1_return": 2.0
+          },
+          {
+            "rollout_index": 8,
+            "continuation_profile": "greedy_bot",
+            "determinization_index": 4,
+            "determinization_seed": 12836922672141474983,
+            "teacher_return": 1.0,
+            "top1_return": -1.0,
+            "teacher_minus_top1_return": 2.0
+          },
+          {
+            "rollout_index": 9,
+            "continuation_profile": "tempo_baseline",
+            "determinization_index": 4,
+            "determinization_seed": 12836922672141474983,
+            "teacher_return": -1.0,
+            "top1_return": 1.0,
+            "teacher_minus_top1_return": -2.0
+          },
+          {
+            "rollout_index": 10,
+            "continuation_profile": "greedy_bot",
+            "determinization_index": 5,
+            "determinization_seed": 1042174106803272630,
+            "teacher_return": -1.0,
+            "top1_return": 1.0,
+            "teacher_minus_top1_return": -2.0
+          },
+          {
+            "rollout_index": 11,
+            "continuation_profile": "tempo_baseline",
+            "determinization_index": 5,
+            "determinization_seed": 1042174106803272630,
+            "teacher_return": 1.0,
+            "top1_return": -1.0,
+            "teacher_minus_top1_return": 2.0
+          },
+          {
+            "rollout_index": 12,
+            "continuation_profile": "greedy_bot",
+            "determinization_index": 6,
+            "determinization_seed": 14260123972480067564,
+            "teacher_return": 1.0,
+            "top1_return": -1.0,
+            "teacher_minus_top1_return": 2.0
+          },
+          {
+            "rollout_index": 13,
+            "continuation_profile": "tempo_baseline",
+            "determinization_index": 6,
+            "determinization_seed": 14260123972480067564,
+            "teacher_return": -1.0,
+            "top1_return": 1.0,
+            "teacher_minus_top1_return": -2.0
+          },
+          {
+            "rollout_index": 14,
+            "continuation_profile": "greedy_bot",
+            "determinization_index": 7,
+            "determinization_seed": 1236626159863176682,
+            "teacher_return": -1.0,
+            "top1_return": 1.0,
+            "teacher_minus_top1_return": -2.0
+          },
+          {
+            "rollout_index": 15,
+            "continuation_profile": "tempo_baseline",
+            "determinization_index": 7,
+            "determinization_seed": 1236626159863176682,
+            "teacher_return": 1.0,
+            "top1_return": -1.0,
+            "teacher_minus_top1_return": 2.0
+          }
+        ],
+        "metrics": {
+          "paired_count": 16,
+          "teacher_mean_return": 0.0,
+          "teacher_return_variance": 1.0666666666666667,
+          "top1_mean_return": 0.0,
+          "top1_return_variance": 1.0666666666666667,
+          "teacher_minus_top1_advantage": 0.0,
+          "paired_return_variance": 4.266666666666667,
+          "teacher_minus_top1_95_lower_bound": -1.0121396478088716,
+          "teacher_over_top1_confidence": 0.0,
+          "continuation_policy_advantages": {
+            "greedy_bot": {
+              "paired_count": 8,
+              "teacher_minus_top1_mean_advantage": 0.0,
+              "paired_return_variance": 4.571428571428571
+            },
+            "tempo_baseline": {
+              "paired_count": 8,
+              "teacher_minus_top1_mean_advantage": 0.0,
+              "paired_return_variance": 4.571428571428571
+            }
+          },
+          "teacher_over_top1_supported": false,
+          "teacher_over_top1_failure_reasons": [
+            "mean_advantage_below_frozen_threshold",
+            "candidate_return_variance_above_frozen_threshold",
+            "advantage_95_lower_bound_not_positive",
+            "continuation_profile_advantage_below_frozen_threshold"
+          ],
+          "top1_over_teacher_supported": false,
+          "top1_over_teacher_failure_reasons": [
+            "mean_advantage_below_frozen_threshold",
+            "candidate_return_variance_above_frozen_threshold",
+            "advantage_95_lower_bound_not_positive",
+            "continuation_profile_advantage_below_frozen_threshold"
+          ],
+          "directional_classification": "inconclusive"
+        }
+      },
+      "fail_closed_probes": {
+        "missing_task": {
+          "rejected": true,
+          "reason": "parallel result task count mismatch"
+        },
+        "duplicate_task": {
+          "rejected": true,
+          "reason": "parallel result task identities are missing or duplicated"
+        },
+        "seed_mismatch": {
+          "rejected": true,
+          "reason": "parallel result call determinization_seed mismatch"
+        },
+        "deadline_mismatch": {
+          "rejected": true,
+          "reason": "parallel result call case_deadline_monotonic mismatch"
+        },
+        "duplicate_call": {
+          "rejected": true,
+          "reason": "parallel result call identity is duplicated"
+        }
+      }
+    },
+    "timeout_failure": {
+      "task_count": 8,
+      "schedule_item_count": 16,
+      "candidate_call_count": 32,
+      "task_manifest_sha256": "56009b69a7c2a9d3521fe8a4d478d89b4b19c67f7ca185cc32686bf62b170028",
+      "ordered_call_sha256": "6a5997a16d1ec84edef7a8e3b596446e9c2727a1c6a368745b0c2c36a7dac47c",
+      "aggregate_sha256": "6a0c612dd32585aad50efb19d4af5d1d074309fa00fbd6869cf0333d05309e8f",
+      "sequential_process_calls_exact": true,
+      "sequential_process_aggregate_exact": true,
+      "process_isolation_verified": true,
+      "all_worker_processes_differ_from_parent": true,
+      "completed_candidate_call_count": 30,
+      "failed_candidate_call_count": 2,
+      "directional_classification": "inconclusive",
+      "calls": [
+        {
+          "rollout_index": 0,
+          "continuation_profile": "greedy_bot",
+          "determinization_index": 0,
+          "determinization_seed": 14076974450800268457,
+          "role": "teacher",
+          "action_index": 1,
+          "action_sha256": "teacher-action-sha256",
+          "case_deadline_monotonic": 987654.0,
+          "max_rollout_steps": 300,
+          "return": 1.0,
+          "failure": null
+        },
+        {
+          "rollout_index": 0,
+          "continuation_profile": "greedy_bot",
+          "determinization_index": 0,
+          "determinization_seed": 14076974450800268457,
+          "role": "top1",
+          "action_index": 7,
+          "action_sha256": "top1-action-sha256",
+          "case_deadline_monotonic": 987654.0,
+          "max_rollout_steps": 300,
+          "return": -1.0,
+          "failure": null
+        },
+        {
+          "rollout_index": 1,
+          "continuation_profile": "tempo_baseline",
+          "determinization_index": 0,
+          "determinization_seed": 14076974450800268457,
+          "role": "teacher",
+          "action_index": 1,
+          "action_sha256": "teacher-action-sha256",
+          "case_deadline_monotonic": 987654.0,
+          "max_rollout_steps": 300,
+          "return": -1.0,
+          "failure": null
+        },
+        {
+          "rollout_index": 1,
+          "continuation_profile": "tempo_baseline",
+          "determinization_index": 0,
+          "determinization_seed": 14076974450800268457,
+          "role": "top1",
+          "action_index": 7,
+          "action_sha256": "top1-action-sha256",
+          "case_deadline_monotonic": 987654.0,
+          "max_rollout_steps": 300,
+          "return": 1.0,
+          "failure": null
+        },
+        {
+          "rollout_index": 2,
+          "continuation_profile": "greedy_bot",
+          "determinization_index": 1,
+          "determinization_seed": 5719380636767870108,
+          "role": "teacher",
+          "action_index": 1,
+          "action_sha256": "teacher-action-sha256",
+          "case_deadline_monotonic": 987654.0,
+          "max_rollout_steps": 300,
+          "return": -1.0,
+          "failure": null
+        },
+        {
+          "rollout_index": 2,
+          "continuation_profile": "greedy_bot",
+          "determinization_index": 1,
+          "determinization_seed": 5719380636767870108,
+          "role": "top1",
+          "action_index": 7,
+          "action_sha256": "top1-action-sha256",
+          "case_deadline_monotonic": 987654.0,
+          "max_rollout_steps": 300,
+          "return": 1.0,
+          "failure": null
+        },
+        {
+          "rollout_index": 3,
+          "continuation_profile": "tempo_baseline",
+          "determinization_index": 1,
+          "determinization_seed": 5719380636767870108,
+          "role": "teacher",
+          "action_index": 1,
+          "action_sha256": "teacher-action-sha256",
+          "case_deadline_monotonic": 987654.0,
+          "max_rollout_steps": 300,
+          "return": 1.0,
+          "failure": null
+        },
+        {
+          "rollout_index": 3,
+          "continuation_profile": "tempo_baseline",
+          "determinization_index": 1,
+          "determinization_seed": 5719380636767870108,
+          "role": "top1",
+          "action_index": 7,
+          "action_sha256": "top1-action-sha256",
+          "case_deadline_monotonic": 987654.0,
+          "max_rollout_steps": 300,
+          "return": -1.0,
+          "failure": null
+        },
+        {
+          "rollout_index": 4,
+          "continuation_profile": "greedy_bot",
+          "determinization_index": 2,
+          "determinization_seed": 1717490524533945920,
+          "role": "teacher",
+          "action_index": 1,
+          "action_sha256": "teacher-action-sha256",
+          "case_deadline_monotonic": 987654.0,
+          "max_rollout_steps": 300,
+          "return": 1.0,
+          "failure": null
+        },
+        {
+          "rollout_index": 4,
+          "continuation_profile": "greedy_bot",
+          "determinization_index": 2,
+          "determinization_seed": 1717490524533945920,
+          "role": "top1",
+          "action_index": 7,
+          "action_sha256": "top1-action-sha256",
+          "case_deadline_monotonic": 987654.0,
+          "max_rollout_steps": 300,
+          "return": -1.0,
+          "failure": null
+        },
+        {
+          "rollout_index": 5,
+          "continuation_profile": "tempo_baseline",
+          "determinization_index": 2,
+          "determinization_seed": 1717490524533945920,
+          "role": "teacher",
+          "action_index": 1,
+          "action_sha256": "teacher-action-sha256",
+          "case_deadline_monotonic": 987654.0,
+          "max_rollout_steps": 300,
+          "return": -1.0,
+          "failure": null
+        },
+        {
+          "rollout_index": 5,
+          "continuation_profile": "tempo_baseline",
+          "determinization_index": 2,
+          "determinization_seed": 1717490524533945920,
+          "role": "top1",
+          "action_index": 7,
+          "action_sha256": "top1-action-sha256",
+          "case_deadline_monotonic": 987654.0,
+          "max_rollout_steps": 300,
+          "return": 1.0,
+          "failure": null
+        },
+        {
+          "rollout_index": 6,
+          "continuation_profile": "greedy_bot",
+          "determinization_index": 3,
+          "determinization_seed": 14827225098210790520,
+          "role": "teacher",
+          "action_index": 1,
+          "action_sha256": "teacher-action-sha256",
+          "case_deadline_monotonic": 987654.0,
+          "max_rollout_steps": 300,
+          "return": -1.0,
+          "failure": null
+        },
+        {
+          "rollout_index": 6,
+          "continuation_profile": "greedy_bot",
+          "determinization_index": 3,
+          "determinization_seed": 14827225098210790520,
+          "role": "top1",
+          "action_index": 7,
+          "action_sha256": "top1-action-sha256",
+          "case_deadline_monotonic": 987654.0,
+          "max_rollout_steps": 300,
+          "return": 1.0,
+          "failure": null
+        },
+        {
+          "rollout_index": 7,
+          "continuation_profile": "tempo_baseline",
+          "determinization_index": 3,
+          "determinization_seed": 14827225098210790520,
+          "role": "teacher",
+          "action_index": 1,
+          "action_sha256": "teacher-action-sha256",
+          "case_deadline_monotonic": 987654.0,
+          "max_rollout_steps": 300,
+          "return": 1.0,
+          "failure": null
+        },
+        {
+          "rollout_index": 7,
+          "continuation_profile": "tempo_baseline",
+          "determinization_index": 3,
+          "determinization_seed": 14827225098210790520,
+          "role": "top1",
+          "action_index": 7,
+          "action_sha256": "top1-action-sha256",
+          "case_deadline_monotonic": 987654.0,
+          "max_rollout_steps": 300,
+          "return": -1.0,
+          "failure": null
+        },
+        {
+          "rollout_index": 8,
+          "continuation_profile": "greedy_bot",
+          "determinization_index": 4,
+          "determinization_seed": 12836922672141474983,
+          "role": "teacher",
+          "action_index": 1,
+          "action_sha256": "teacher-action-sha256",
+          "case_deadline_monotonic": 987654.0,
+          "max_rollout_steps": 300,
+          "return": 1.0,
+          "failure": null
+        },
+        {
+          "rollout_index": 8,
+          "continuation_profile": "greedy_bot",
+          "determinization_index": 4,
+          "determinization_seed": 12836922672141474983,
+          "role": "top1",
+          "action_index": 7,
+          "action_sha256": "top1-action-sha256",
+          "case_deadline_monotonic": 987654.0,
+          "max_rollout_steps": 300,
+          "return": -1.0,
+          "failure": null
+        },
+        {
+          "rollout_index": 9,
+          "continuation_profile": "tempo_baseline",
+          "determinization_index": 4,
+          "determinization_seed": 12836922672141474983,
+          "role": "teacher",
+          "action_index": 1,
+          "action_sha256": "teacher-action-sha256",
+          "case_deadline_monotonic": 987654.0,
+          "max_rollout_steps": 300,
+          "return": -1.0,
+          "failure": null
+        },
+        {
+          "rollout_index": 9,
+          "continuation_profile": "tempo_baseline",
+          "determinization_index": 4,
+          "determinization_seed": 12836922672141474983,
+          "role": "top1",
+          "action_index": 7,
+          "action_sha256": "top1-action-sha256",
+          "case_deadline_monotonic": 987654.0,
+          "max_rollout_steps": 300,
+          "return": 1.0,
+          "failure": null
+        },
+        {
+          "rollout_index": 10,
+          "continuation_profile": "greedy_bot",
+          "determinization_index": 5,
+          "determinization_seed": 1042174106803272630,
+          "role": "teacher",
+          "action_index": 1,
+          "action_sha256": "teacher-action-sha256",
+          "case_deadline_monotonic": 987654.0,
+          "max_rollout_steps": 300,
+          "return": -1.0,
+          "failure": null
+        },
+        {
+          "rollout_index": 10,
+          "continuation_profile": "greedy_bot",
+          "determinization_index": 5,
+          "determinization_seed": 1042174106803272630,
+          "role": "top1",
+          "action_index": 7,
+          "action_sha256": "top1-action-sha256",
+          "case_deadline_monotonic": 987654.0,
+          "max_rollout_steps": 300,
+          "return": 1.0,
+          "failure": null
+        },
+        {
+          "rollout_index": 11,
+          "continuation_profile": "tempo_baseline",
+          "determinization_index": 5,
+          "determinization_seed": 1042174106803272630,
+          "role": "teacher",
+          "action_index": 1,
+          "action_sha256": "teacher-action-sha256",
+          "case_deadline_monotonic": 987654.0,
+          "max_rollout_steps": 300,
+          "return": 1.0,
+          "failure": null
+        },
+        {
+          "rollout_index": 11,
+          "continuation_profile": "tempo_baseline",
+          "determinization_index": 5,
+          "determinization_seed": 1042174106803272630,
+          "role": "top1",
+          "action_index": 7,
+          "action_sha256": "top1-action-sha256",
+          "case_deadline_monotonic": 987654.0,
+          "max_rollout_steps": 300,
+          "return": -1.0,
+          "failure": null
+        },
+        {
+          "rollout_index": 12,
+          "continuation_profile": "greedy_bot",
+          "determinization_index": 6,
+          "determinization_seed": 14260123972480067564,
+          "role": "teacher",
+          "action_index": 1,
+          "action_sha256": "teacher-action-sha256",
+          "case_deadline_monotonic": 987654.0,
+          "max_rollout_steps": 300,
+          "return": 1.0,
+          "failure": null
+        },
+        {
+          "rollout_index": 12,
+          "continuation_profile": "greedy_bot",
+          "determinization_index": 6,
+          "determinization_seed": 14260123972480067564,
+          "role": "top1",
+          "action_index": 7,
+          "action_sha256": "top1-action-sha256",
+          "case_deadline_monotonic": 987654.0,
+          "max_rollout_steps": 300,
+          "return": -1.0,
+          "failure": null
+        },
+        {
+          "rollout_index": 13,
+          "continuation_profile": "tempo_baseline",
+          "determinization_index": 6,
+          "determinization_seed": 14260123972480067564,
+          "role": "teacher",
+          "action_index": 1,
+          "action_sha256": "teacher-action-sha256",
+          "case_deadline_monotonic": 987654.0,
+          "max_rollout_steps": 300,
+          "return": -1.0,
+          "failure": null
+        },
+        {
+          "rollout_index": 13,
+          "continuation_profile": "tempo_baseline",
+          "determinization_index": 6,
+          "determinization_seed": 14260123972480067564,
+          "role": "top1",
+          "action_index": 7,
+          "action_sha256": "top1-action-sha256",
+          "case_deadline_monotonic": 987654.0,
+          "max_rollout_steps": 300,
+          "return": 1.0,
+          "failure": null
+        },
+        {
+          "rollout_index": 14,
+          "continuation_profile": "greedy_bot",
+          "determinization_index": 7,
+          "determinization_seed": 1236626159863176682,
+          "role": "teacher",
+          "action_index": 1,
+          "action_sha256": "teacher-action-sha256",
+          "case_deadline_monotonic": 987654.0,
+          "max_rollout_steps": 300,
+          "return": -1.0,
+          "failure": null
+        },
+        {
+          "rollout_index": 14,
+          "continuation_profile": "greedy_bot",
+          "determinization_index": 7,
+          "determinization_seed": 1236626159863176682,
+          "role": "top1",
+          "action_index": 7,
+          "action_sha256": "top1-action-sha256",
+          "case_deadline_monotonic": 987654.0,
+          "max_rollout_steps": 300,
+          "return": 1.0,
+          "failure": null
+        },
+        {
+          "rollout_index": 15,
+          "continuation_profile": "tempo_baseline",
+          "determinization_index": 7,
+          "determinization_seed": 1236626159863176682,
+          "role": "teacher",
+          "action_index": 1,
+          "action_sha256": "teacher-action-sha256",
+          "case_deadline_monotonic": 987654.0,
+          "max_rollout_steps": 300,
+          "return": null,
+          "failure": {
+            "reason": "case_time_budget_exhausted",
+            "steps": 0
+          }
+        },
+        {
+          "rollout_index": 15,
+          "continuation_profile": "tempo_baseline",
+          "determinization_index": 7,
+          "determinization_seed": 1236626159863176682,
+          "role": "top1",
+          "action_index": 7,
+          "action_sha256": "top1-action-sha256",
+          "case_deadline_monotonic": 987654.0,
+          "max_rollout_steps": 300,
+          "return": null,
+          "failure": {
+            "reason": "case_time_budget_exhausted",
+            "steps": 0
+          }
+        }
+      ],
+      "aggregate": {
+        "game_id": "synthetic",
+        "turn_index": 4,
+        "pipeline_partition": "pipeline_train",
+        "legal_action_count": 2,
+        "legal_action_order_sha256": "synthetic-order-sha256",
+        "case_seconds": 0.0,
+        "case_timed_out": true,
+        "candidate_results": [
+          {
+            "role": "teacher",
+            "action_index": 1,
+            "action_sha256": "teacher-action-sha256",
+            "action_id": 11,
+            "physical_cards": [
+              "S3"
+            ],
+            "physical_cards_website": [
+              "S3"
+            ],
+            "requested_rollout_count": 16,
+            "completed_rollout_count": 15,
+            "completion_rate": 0.9375,
+            "mean_return": -0.06666666666666667,
+            "return_variance": 1.0666666666666667,
+            "failure_count": 1,
+            "failures": [
+              {
+                "reason": "case_time_budget_exhausted",
+                "steps": 0
+              }
+            ]
+          },
+          {
+            "role": "top1",
+            "action_index": 7,
+            "action_sha256": "top1-action-sha256",
+            "action_id": 17,
+            "physical_cards": [
+              "H4"
+            ],
+            "physical_cards_website": [
+              "H4"
+            ],
+            "requested_rollout_count": 16,
+            "completed_rollout_count": 15,
+            "completion_rate": 0.9375,
+            "mean_return": 0.06666666666666667,
+            "return_variance": 1.0666666666666667,
+            "failure_count": 1,
+            "failures": [
+              {
+                "reason": "case_time_budget_exhausted",
+                "steps": 0
+              }
+            ]
+          }
+        ],
+        "paired_rollouts": [
+          {
+            "rollout_index": 0,
+            "continuation_profile": "greedy_bot",
+            "determinization_index": 0,
+            "determinization_seed": 14076974450800268457,
+            "teacher_return": 1.0,
+            "top1_return": -1.0,
+            "teacher_minus_top1_return": 2.0
+          },
+          {
+            "rollout_index": 1,
+            "continuation_profile": "tempo_baseline",
+            "determinization_index": 0,
+            "determinization_seed": 14076974450800268457,
+            "teacher_return": -1.0,
+            "top1_return": 1.0,
+            "teacher_minus_top1_return": -2.0
+          },
+          {
+            "rollout_index": 2,
+            "continuation_profile": "greedy_bot",
+            "determinization_index": 1,
+            "determinization_seed": 5719380636767870108,
+            "teacher_return": -1.0,
+            "top1_return": 1.0,
+            "teacher_minus_top1_return": -2.0
+          },
+          {
+            "rollout_index": 3,
+            "continuation_profile": "tempo_baseline",
+            "determinization_index": 1,
+            "determinization_seed": 5719380636767870108,
+            "teacher_return": 1.0,
+            "top1_return": -1.0,
+            "teacher_minus_top1_return": 2.0
+          },
+          {
+            "rollout_index": 4,
+            "continuation_profile": "greedy_bot",
+            "determinization_index": 2,
+            "determinization_seed": 1717490524533945920,
+            "teacher_return": 1.0,
+            "top1_return": -1.0,
+            "teacher_minus_top1_return": 2.0
+          },
+          {
+            "rollout_index": 5,
+            "continuation_profile": "tempo_baseline",
+            "determinization_index": 2,
+            "determinization_seed": 1717490524533945920,
+            "teacher_return": -1.0,
+            "top1_return": 1.0,
+            "teacher_minus_top1_return": -2.0
+          },
+          {
+            "rollout_index": 6,
+            "continuation_profile": "greedy_bot",
+            "determinization_index": 3,
+            "determinization_seed": 14827225098210790520,
+            "teacher_return": -1.0,
+            "top1_return": 1.0,
+            "teacher_minus_top1_return": -2.0
+          },
+          {
+            "rollout_index": 7,
+            "continuation_profile": "tempo_baseline",
+            "determinization_index": 3,
+            "determinization_seed": 14827225098210790520,
+            "teacher_return": 1.0,
+            "top1_return": -1.0,
+            "teacher_minus_top1_return": 2.0
+          },
+          {
+            "rollout_index": 8,
+            "continuation_profile": "greedy_bot",
+            "determinization_index": 4,
+            "determinization_seed": 12836922672141474983,
+            "teacher_return": 1.0,
+            "top1_return": -1.0,
+            "teacher_minus_top1_return": 2.0
+          },
+          {
+            "rollout_index": 9,
+            "continuation_profile": "tempo_baseline",
+            "determinization_index": 4,
+            "determinization_seed": 12836922672141474983,
+            "teacher_return": -1.0,
+            "top1_return": 1.0,
+            "teacher_minus_top1_return": -2.0
+          },
+          {
+            "rollout_index": 10,
+            "continuation_profile": "greedy_bot",
+            "determinization_index": 5,
+            "determinization_seed": 1042174106803272630,
+            "teacher_return": -1.0,
+            "top1_return": 1.0,
+            "teacher_minus_top1_return": -2.0
+          },
+          {
+            "rollout_index": 11,
+            "continuation_profile": "tempo_baseline",
+            "determinization_index": 5,
+            "determinization_seed": 1042174106803272630,
+            "teacher_return": 1.0,
+            "top1_return": -1.0,
+            "teacher_minus_top1_return": 2.0
+          },
+          {
+            "rollout_index": 12,
+            "continuation_profile": "greedy_bot",
+            "determinization_index": 6,
+            "determinization_seed": 14260123972480067564,
+            "teacher_return": 1.0,
+            "top1_return": -1.0,
+            "teacher_minus_top1_return": 2.0
+          },
+          {
+            "rollout_index": 13,
+            "continuation_profile": "tempo_baseline",
+            "determinization_index": 6,
+            "determinization_seed": 14260123972480067564,
+            "teacher_return": -1.0,
+            "top1_return": 1.0,
+            "teacher_minus_top1_return": -2.0
+          },
+          {
+            "rollout_index": 14,
+            "continuation_profile": "greedy_bot",
+            "determinization_index": 7,
+            "determinization_seed": 1236626159863176682,
+            "teacher_return": -1.0,
+            "top1_return": 1.0,
+            "teacher_minus_top1_return": -2.0
+          },
+          {
+            "rollout_index": 15,
+            "continuation_profile": "tempo_baseline",
+            "determinization_index": 7,
+            "determinization_seed": 1236626159863176682,
+            "teacher_return": null,
+            "top1_return": null,
+            "teacher_minus_top1_return": null
+          }
+        ],
+        "metrics": {
+          "paired_count": 15,
+          "teacher_mean_return": -0.06666666666666667,
+          "teacher_return_variance": 1.0666666666666667,
+          "top1_mean_return": 0.06666666666666667,
+          "top1_return_variance": 1.0666666666666667,
+          "teacher_minus_top1_advantage": -0.13333333333333333,
+          "paired_return_variance": 4.266666666666667,
+          "teacher_minus_top1_95_lower_bound": -1.1786666666666665,
+          "teacher_over_top1_confidence": 0.0,
+          "continuation_policy_advantages": {
+            "greedy_bot": {
+              "paired_count": 8,
+              "teacher_minus_top1_mean_advantage": 0.0,
+              "paired_return_variance": 4.571428571428571
+            },
+            "tempo_baseline": {
+              "paired_count": 7,
+              "teacher_minus_top1_mean_advantage": -0.2857142857142857,
+              "paired_return_variance": 4.571428571428571
+            }
+          },
+          "teacher_over_top1_supported": false,
+          "teacher_over_top1_failure_reasons": [
+            "paired_rollout_count_incomplete",
+            "mean_advantage_below_frozen_threshold",
+            "candidate_return_variance_above_frozen_threshold",
+            "advantage_95_lower_bound_not_positive",
+            "continuation_profile_advantage_below_frozen_threshold"
+          ],
+          "top1_over_teacher_supported": false,
+          "top1_over_teacher_failure_reasons": [
+            "paired_rollout_count_incomplete",
+            "mean_advantage_below_frozen_threshold",
+            "candidate_return_variance_above_frozen_threshold",
+            "advantage_95_lower_bound_not_positive",
+            "continuation_profile_advantage_below_frozen_threshold"
+          ],
+          "directional_classification": "inconclusive"
+        }
+      },
+      "fail_closed_probes": {}
+    }
+  },
+  "production_static_contract": {
+    "worker_recreates_game_from_sample_and_seed": true,
+    "worker_uses_frozen_simulate_candidate": true,
+    "worker_receives_common_absolute_deadline": true,
+    "worker_receives_frozen_max_steps": true,
+    "parent_uses_process_pool": true,
+    "parent_restores_frozen_schedule_order": true,
+    "parent_uses_frozen_metrics": true,
+    "formal_rollout_executed_in_this_stage": false
+  },
+  "formal_execution_gate": {
+    "parallel_equivalence_passed": true,
+    "formal_three_case_execution_allowed_in_next_stage": true,
+    "required_formal_executor": "execute_parallel_case_with_eight_determinization_tasks_v1",
+    "sequential_retry_allowed": false,
+    "partial_stage_6_14_comparison_use_allowed": false
+  },
+  "integrity": {
+    "failed_confirmation_output_absent": true,
+    "parallel_equivalence_output_written_once": true,
+    "real_rollout_count": 0,
+    "partial_comparison_use_count": 0,
+    "integrity_failure_count": 0
+  },
+  "forbidden_operation_counts": {
+    "real_rollout_runs": 0,
+    "partial_comparison_uses": 0,
+    "dataset_constructions": 0,
+    "objective_constructions": 0,
+    "model_scoring_runs": 0,
+    "training_runs": 0,
+    "fine_tuning_runs": 0,
+    "hyperparameter_tuning_runs": 0,
+    "threshold_tuning_runs": 0,
+    "deadline_or_rollout_limit_changes": 0,
+    "checkpoint_selections": 0,
+    "checkpoint_modifications": 0,
+    "complete_website_dataset_loads": 0,
+    "locked_test_loads": 0,
+    "arena_games": 0,
+    "website_shadow_games": 0,
+    "website_games": 0,
+    "model_controlled_website_actions": 0,
+    "checkpoint_promotions": 0,
+    "capability_claims": 0,
+    "partial_or_unsupported_labels": 0
+  },
+  "interpretation_scope": "synthetic process-isolation equivalence only; no real rollout, model, dataset, objective, training, Arena, website, or capability evidence"
+}

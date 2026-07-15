@@ -1,0 +1,129 @@
+{
+  "schema_version": "website_dataset_card_v1",
+  "manifest_path": "website_dataset_split_manifest_extension_v1.json",
+  "manifest_content_hash": "db209561f6961b289dda668861687fcd7a258a2f283cecaae065501b2006f429",
+  "summary": {
+    "format": "website_danzero_action_value_v1",
+    "source_log_paths": "logs_website_shadow_candidates_smoke,logs_website_shadow_batch_001,logs_website_shadow_batch_002,logs_website_shadow_batch_003,logs_website_shadow_batch_004,logs_website_shadow_batch_005,logs_website_shadow_batch_006,logs_website_shadow_batch_007,logs_website_shadow_batch_008,logs_website_shadow_batch_009,logs_website_shadow_supplement_train_001,logs_website_shadow_supplement_development_001",
+    "output_path": "website_danzero_shadow_extension_v1.pth",
+    "files_scanned": 58,
+    "accepted_games": 58,
+    "rejected_files_or_games": 0,
+    "accepted_decisions": 1473,
+    "wins": 32,
+    "losses": 26,
+    "legal_candidate_total": 42919,
+    "average_legal_candidate_count": 29.13713509843856,
+    "max_legal_candidate_count": 1247,
+    "reject_reason_counts": {},
+    "state_dim": 513,
+    "action_dim": 54,
+    "metric_source": "leaderboard_elo",
+    "bot_tables_only": true,
+    "model_controlled_action_count": 0,
+    "split_status": "frozen",
+    "split_policy": "frozen_manifest_extension_explicit_new_sessions",
+    "split_grouping": "complete_game+source_session+time_block+robot_table_signature",
+    "session_split_assignments": {
+      "logs_website_shadow_candidates_smoke": "train",
+      "logs_website_shadow_batch_001": "train",
+      "logs_website_shadow_batch_002": "train",
+      "logs_website_shadow_batch_003": "train",
+      "logs_website_shadow_batch_004": "train",
+      "logs_website_shadow_batch_005": "train",
+      "logs_website_shadow_batch_006": "development",
+      "logs_website_shadow_batch_007": "development",
+      "logs_website_shadow_batch_008": "locked_test",
+      "logs_website_shadow_batch_009": "locked_test",
+      "logs_website_shadow_supplement_train_001": "train",
+      "logs_website_shadow_supplement_development_001": "development"
+    },
+    "base_split_manifest_path": "website_dataset_split_manifest_050.json",
+    "base_split_manifest_content_hash": "83a58a43ea91f5662e2588494d7bad1b3d9d18de51c30216e5be0e589e0437e4",
+    "extension_session_assignments": {
+      "logs_website_shadow_supplement_train_001": "train",
+      "logs_website_shadow_supplement_development_001": "development"
+    },
+    "coverage": {
+      "independent_games": 58,
+      "decisions": 1473,
+      "candidate_actions": 42919,
+      "win_decisions": 736,
+      "loss_decisions": 737,
+      "seat_coverage": {
+        "0": 1473
+      },
+      "first_player_coverage": {
+        "3": 431,
+        "1": 441,
+        "0": 367,
+        "2": 234
+      },
+      "level_card_coverage_count": 795,
+      "wildcard_coverage_count": 321,
+      "lead_count": 248,
+      "follow_count": 1225,
+      "endgame_count": 1140,
+      "bomb_state_count": 575,
+      "level_distribution": {
+        "J": 122,
+        "2": 83,
+        "3": 150,
+        "T": 185,
+        "8": 110,
+        "5": 46,
+        "Q": 79,
+        "K": 125,
+        "6": 42,
+        "A": 158,
+        "9": 136,
+        "7": 86,
+        "4": 151
+      },
+      "elo_band_coverage": {
+        "2000-2099": 1028,
+        "1900-1999": 445
+      },
+      "robot_table_coverage": {
+        "玩家1|玩家2|玩家3|玩家4": 1473
+      },
+      "source_session_count": 12,
+      "duplicate_state_count": 0,
+      "duplicate_state_rate": 0.0,
+      "information_set_consistent_count": 692,
+      "information_set_inconsistent_count": 781,
+      "information_set_consistent_rate": 0.4697895451459606,
+      "split_game_counts": {
+        "train": 36,
+        "development": 13,
+        "locked_test": 9
+      },
+      "split_decision_counts": {
+        "train": 972,
+        "development": 302,
+        "locked_test": 199
+      },
+      "consistent_split_decision_counts": {
+        "train": 438,
+        "development": 164,
+        "locked_test": 90
+      },
+      "consistent_train_dev_decisions": 602,
+      "consistent_locked_test_decisions": 90,
+      "coverage_gate_passed": true,
+      "information_set_rollout_gate_passed": true,
+      "information_set_rollout_gate_basis": "physical_information_set_consistent_train_development_partition"
+    },
+    "coverage_gate_passed": true,
+    "capability_evidence_eligible": false,
+    "behavior_value_scope": "Q(s,a_behavior)_only",
+    "threshold_passed": true,
+    "split_manifest_path": "website_dataset_split_manifest_extension_v1.json",
+    "split_manifest_content_hash": "db209561f6961b289dda668861687fcd7a258a2f283cecaae065501b2006f429",
+    "data_card_path": "website_dataset_card_extension_v1.json"
+  },
+  "capability_limit": "Behavior logs supervise Q(s,a_behavior) only; unexecuted candidates have no factual return label.",
+  "hidden_information_policy": "decision_time_information_set_only",
+  "locked_test_access": "prohibited_for_training_tuning_checkpoint_selection_and_rule_design",
+  "formal_website_control_data_reuse": "prohibited_until_declared_study_concludes"
+}

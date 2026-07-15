@@ -1,0 +1,209 @@
+{
+  "schema_version": "website_teacher_preference_corrective_dataset_v1_manifest",
+  "dataset_path": "website_teacher_preference_corrective_dataset_v1.pth",
+  "frozen_inputs": {
+    "paths": {
+      "stage_6_4_confirmation": "website_teacher_preference_unpaired_train_confirmation_v1.json",
+      "stage_6_3_audit": "website_teacher_preference_unpaired_evidence_audit_v1.json",
+      "teacher_dataset": "website_information_set_teacher_dataset_v6.pth",
+      "split_manifest": "website_teacher_preference_split_v1.json",
+      "training_report": "website_teacher_preference_training_v1.json",
+      "checkpoint": "models_website_teacher_preference_v1\\website_teacher_preference_final.pth",
+      "arena_evidence": "website_teacher_preference_arena_smoke20_v1.json"
+    },
+    "sha256": {
+      "stage_6_4_confirmation": "8e17377b5a1523d9f0a47af7218d687e062a3ade671c57f387eb4c1a0888cfae",
+      "stage_6_3_audit": "09f52df90d095ab6b3777a046c50901f96fbeb15e6ef5f613343a13be1249383",
+      "teacher_dataset": "a74416e6facb28a1bc64563eba90cb33d460dc9e59cc2109518da142465e15f8",
+      "split_manifest": "5a15e514dc9bc51d77d300837151d9f1a49250f42885cc7940725bcbe4d35107",
+      "training_report": "896192b1d0b4de2caabe20ac17d6a20766fc7f89d6e82a981d834b777932ddd3",
+      "checkpoint": "c54801a9db05100c2fe5a9bf610a64fc7c94dc2cd947dfaab115ff827bd90919",
+      "arena_evidence": "aa45da9de202194102fe8d11e612ad3eb4b51177fd910b9a7948836afd2a1fe6"
+    }
+  },
+  "summary": {
+    "total_pair_count": 28,
+    "pipeline_train_pair_count": 24,
+    "pipeline_development_pair_count": 4,
+    "base_pair_count": 22,
+    "corrective_pair_count": 6,
+    "pipeline_train_game_count": 18,
+    "pipeline_development_game_count": 4,
+    "inconclusive_pair_added_count": 0,
+    "pipeline_development_unpaired_pair_added_count": 0,
+    "dropped_base_sample_count": 0,
+    "locked_test_loaded": false,
+    "pipeline_only": true,
+    "capability_evidence_eligible": false,
+    "checkpoint_promotion_allowed": false,
+    "threshold_passed": true
+  },
+  "frozen_base_samples_sha256": "1cea18e11164aa94b08a6d75930a5cc462d8a98935719b52491c498d5b61bc89",
+  "frozen_base_sample_sha256": [
+    "34259b4f493241287c32250a521023d99dd20de1a179c730123d3709282be8b2",
+    "757f59e160b599caa371b04430093e43482de05930c606d38997fc9275ca8f52",
+    "dc66e7d86539cf3ed30825c1b91cf2a31d69c725cefa7b654c8b6bd7e10783cf",
+    "47af47cf8734ef175b1944c0fcdf015281e394eeed9fb81808b922b29eff23f9",
+    "89b0a700694088d25fdb204c2e1bec817a90c3eb4a6bdf073bb262acb0a76fff",
+    "fca3f4d9176313e06b2e3bfa132545f08caa849e7b0a89037ac788777d8a5855",
+    "1e6b1c12e3cb03c89a42356bc30d89036e795fcf1c5255ce2b245ec8ada408a7",
+    "42b50d6ab7dd038c36989b21f8668373abbd82091862e365a577b79dda60035a",
+    "293dbabd02df2e8d672d22285b78e70974fef33634993a125aa267aaeff54b33",
+    "211f985e08caef19e95a07bfa6b3aca7fa6bfb4160af38584e4000894fd59903",
+    "38ca3969f311bda79127224720d4b700482d8dee89ca9e2320bee4cb2d441cb2",
+    "18ebcf86bd8ee268c902d0478634daef011d4b4c1c231cc74cd21330122e1eb1",
+    "fa8722f193972fe9e8d8c3f88c137b7dbc2a3acf2d19215d7f22e223ae39376b",
+    "d4cf7d0830d114b339972778c28b2379a3f286192ad1365ce38f35b7c51205fc",
+    "048d56c602fe94984a0dd950ea9d8b5cb8e9c36fba069553978277db7ba675d1",
+    "6581ca093ccc0fe28a452aac5fb9885b67f752f3eba0e32f959eddf5d45f49d0",
+    "ebb981979b09c12fbc5f1a89b56a4f6b937e9af4021bd629c0331566cc7c0da1",
+    "7190f8407389278a3a2540efe0e40efc1cccfdc06de3270479a40c1e45880ac8",
+    "ae93e5c1baa2103edfa615ca8b8302921c7b68b5975fbcf1cf387317373d5e14",
+    "1d230c67b1a9307e3277303dff824fd695f062ff1fd5d0e5d2eded8140f6fac3",
+    "b08cf67ddbd5ca610a99f8e574697b94cfa145fe8206c7426b5087d5b8cf5d88",
+    "357f73b7c8d3f9b876ccde5da6cebad45b6785bd933c424b3a5e4c2f1a3b2f7b"
+  ],
+  "pair_ids": [
+    "base:13868:10:teacher_vs_behavior",
+    "base:13872:4:teacher_vs_behavior",
+    "base:13879:6:teacher_vs_behavior",
+    "corrective:13879:6:teacher_vs_top1",
+    "base:13865:8:teacher_vs_behavior",
+    "base:13871:9:teacher_vs_behavior",
+    "base:13882:10:teacher_vs_behavior",
+    "base:13861:10:teacher_vs_behavior",
+    "corrective:13861:10:teacher_vs_top1",
+    "base:13958:12:teacher_vs_behavior",
+    "base:13959:7:teacher_vs_behavior",
+    "corrective:13959:7:teacher_vs_top1",
+    "base:13957:14:teacher_vs_behavior",
+    "corrective:13957:14:teacher_vs_top1",
+    "base:13960:15:teacher_vs_behavior",
+    "corrective:13960:15:teacher_vs_top1",
+    "base:13992:16:teacher_vs_behavior",
+    "base:14000:5:teacher_vs_behavior",
+    "base:14022:16:teacher_vs_behavior",
+    "corrective:14022:16:teacher_vs_top1",
+    "base:14025:20:teacher_vs_behavior",
+    "base:14031:4:teacher_vs_behavior",
+    "base:14038:12:teacher_vs_behavior",
+    "base:14044:9:teacher_vs_behavior",
+    "base:14045:5:teacher_vs_behavior",
+    "base:14058:22:teacher_vs_behavior",
+    "base:14074:9:teacher_vs_behavior",
+    "base:14077:10:teacher_vs_behavior"
+  ],
+  "pair_source_counts": {
+    "frozen_teacher_v6": 22,
+    "stage_6_4_train_confirmation": 6
+  },
+  "pipeline_partition_pair_counts": {
+    "pipeline_development": 4,
+    "pipeline_train": 24
+  },
+  "objective_manifest": {
+    "objective_name": "state_balanced_pairwise_softplus_v1",
+    "formula": "mean_over_states(sum_over_pairs(within_state_pair_weight * softplus(Q_rejected-Q_preferred)))",
+    "state_aggregate_weight": 1.0,
+    "pair_weight_rule": "one_divided_by_pair_count_for_state",
+    "pipeline_train_state_count": 18,
+    "pipeline_development_state_count": 4,
+    "state_weight_sums": {
+      "pipeline_development:13868:10": 1.0,
+      "pipeline_train:13872:4": 1.0,
+      "pipeline_train:13879:6": 1.0,
+      "pipeline_train:13865:8": 1.0,
+      "pipeline_development:13871:9": 1.0,
+      "pipeline_train:13882:10": 1.0,
+      "pipeline_train:13861:10": 1.0,
+      "pipeline_train:13958:12": 1.0,
+      "pipeline_train:13959:7": 1.0,
+      "pipeline_train:13957:14": 1.0,
+      "pipeline_train:13960:15": 1.0,
+      "pipeline_development:13992:16": 1.0,
+      "pipeline_train:14000:5": 1.0,
+      "pipeline_train:14022:16": 1.0,
+      "pipeline_train:14025:20": 1.0,
+      "pipeline_train:14031:4": 1.0,
+      "pipeline_train:14038:12": 1.0,
+      "pipeline_train:14044:9": 1.0,
+      "pipeline_train:14045:5": 1.0,
+      "pipeline_train:14058:22": 1.0,
+      "pipeline_development:14074:9": 1.0,
+      "pipeline_train:14077:10": 1.0
+    },
+    "weights_tuned": false,
+    "executed": false
+  },
+  "exclusions": {
+    "inconclusive_pipeline_train": [
+      {
+        "game_id": "14077",
+        "turn_index": 10,
+        "directional_classification": "inconclusive",
+        "teacher_over_top1_failure_reasons": [
+          "advantage_95_lower_bound_not_positive",
+          "continuation_profile_advantage_below_frozen_threshold"
+        ]
+      },
+      {
+        "game_id": "13882",
+        "turn_index": 10,
+        "directional_classification": "inconclusive",
+        "teacher_over_top1_failure_reasons": [
+          "advantage_95_lower_bound_not_positive",
+          "continuation_profile_advantage_below_frozen_threshold"
+        ]
+      },
+      {
+        "game_id": "14025",
+        "turn_index": 20,
+        "directional_classification": "inconclusive",
+        "teacher_over_top1_failure_reasons": [
+          "mean_advantage_below_frozen_threshold",
+          "advantage_95_lower_bound_not_positive",
+          "continuation_profile_advantage_below_frozen_threshold"
+        ]
+      }
+    ],
+    "pipeline_development_unpaired": [
+      {
+        "game_id": "13992",
+        "turn_index": 16,
+        "reason": "pipeline_development_held_out",
+        "pair_added": false,
+        "action_inspected_in_this_stage": false
+      },
+      {
+        "game_id": "14074",
+        "turn_index": 9,
+        "reason": "pipeline_development_held_out",
+        "pair_added": false,
+        "action_inspected_in_this_stage": false
+      },
+      {
+        "game_id": "13871",
+        "turn_index": 9,
+        "reason": "pipeline_development_held_out",
+        "pair_added": false,
+        "action_inspected_in_this_stage": false
+      }
+    ]
+  },
+  "forbidden_operation_counts": {
+    "rollout_runs": 0,
+    "training_runs": 0,
+    "hyperparameter_searches": 0,
+    "checkpoint_selections": 0,
+    "checkpoint_modifications": 0,
+    "locked_test_loads": 0,
+    "arena_games": 0,
+    "website_shadow_games": 0,
+    "website_games": 0,
+    "model_controlled_website_actions": 0,
+    "checkpoint_promotions": 0,
+    "capability_claims": 0
+  },
+  "status": "completed",
+  "dataset_sha256": "fad7ae18fea8b02cbc88ad4a8a7f8ecee298abe436ef589f5c88d66e42a32707"
+}

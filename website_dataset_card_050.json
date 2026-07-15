@@ -1,0 +1,112 @@
+{
+  "schema_version": "website_dataset_card_v1",
+  "manifest_path": "website_dataset_split_manifest_050.json",
+  "manifest_content_hash": "83a58a43ea91f5662e2588494d7bad1b3d9d18de51c30216e5be0e589e0437e4",
+  "summary": {
+    "format": "website_danzero_action_value_v1",
+    "source_log_paths": "logs_website_shadow_candidates_smoke,logs_website_shadow_batch_001,logs_website_shadow_batch_002,logs_website_shadow_batch_003,logs_website_shadow_batch_004,logs_website_shadow_batch_005,logs_website_shadow_batch_006,logs_website_shadow_batch_007,logs_website_shadow_batch_008,logs_website_shadow_batch_009",
+    "output_path": "website_danzero_shadow_050_frozen.pth",
+    "files_scanned": 50,
+    "accepted_games": 50,
+    "rejected_files_or_games": 0,
+    "accepted_decisions": 1294,
+    "wins": 28,
+    "losses": 22,
+    "legal_candidate_total": 35231,
+    "average_legal_candidate_count": 27.226429675425038,
+    "max_legal_candidate_count": 1123,
+    "reject_reason_counts": {},
+    "state_dim": 513,
+    "action_dim": 54,
+    "metric_source": "leaderboard_elo",
+    "bot_tables_only": true,
+    "model_controlled_action_count": 0,
+    "split_status": "frozen",
+    "split_grouping": "complete_game+source_session+time_block+robot_table_signature",
+    "session_split_assignments": {
+      "logs_website_shadow_candidates_smoke": "train",
+      "logs_website_shadow_batch_001": "train",
+      "logs_website_shadow_batch_002": "train",
+      "logs_website_shadow_batch_003": "train",
+      "logs_website_shadow_batch_004": "train",
+      "logs_website_shadow_batch_005": "train",
+      "logs_website_shadow_batch_006": "development",
+      "logs_website_shadow_batch_007": "development",
+      "logs_website_shadow_batch_008": "locked_test",
+      "logs_website_shadow_batch_009": "locked_test"
+    },
+    "coverage": {
+      "independent_games": 50,
+      "decisions": 1294,
+      "candidate_actions": 35231,
+      "win_decisions": 673,
+      "loss_decisions": 621,
+      "seat_coverage": {
+        "0": 1294
+      },
+      "first_player_coverage": {
+        "3": 402,
+        "1": 354,
+        "0": 317,
+        "2": 221
+      },
+      "level_card_coverage_count": 695,
+      "wildcard_coverage_count": 261,
+      "lead_count": 213,
+      "follow_count": 1081,
+      "endgame_count": 1007,
+      "bomb_state_count": 486,
+      "level_distribution": {
+        "J": 99,
+        "2": 83,
+        "3": 132,
+        "T": 172,
+        "8": 78,
+        "5": 46,
+        "Q": 66,
+        "K": 125,
+        "6": 23,
+        "A": 126,
+        "9": 136,
+        "7": 86,
+        "4": 122
+      },
+      "elo_band_coverage": {
+        "2000-2099": 849,
+        "1900-1999": 445
+      },
+      "robot_table_coverage": {
+        "玩家1|玩家2|玩家3|玩家4": 1294
+      },
+      "source_session_count": 10,
+      "duplicate_state_count": 0,
+      "duplicate_state_rate": 0.0,
+      "information_set_consistent_count": 513,
+      "information_set_inconsistent_count": 781,
+      "information_set_consistent_rate": 0.3964451313755796,
+      "split_game_counts": {
+        "train": 31,
+        "development": 10,
+        "locked_test": 9
+      },
+      "split_decision_counts": {
+        "train": 853,
+        "development": 242,
+        "locked_test": 199
+      },
+      "coverage_gate_passed": true,
+      "information_set_rollout_gate_passed": false
+    },
+    "coverage_gate_passed": true,
+    "capability_evidence_eligible": false,
+    "behavior_value_scope": "Q(s,a_behavior)_only",
+    "threshold_passed": true,
+    "split_manifest_path": "website_dataset_split_manifest_050.json",
+    "split_manifest_content_hash": "83a58a43ea91f5662e2588494d7bad1b3d9d18de51c30216e5be0e589e0437e4",
+    "data_card_path": "website_dataset_card_050.json"
+  },
+  "capability_limit": "Behavior logs supervise Q(s,a_behavior) only; unexecuted candidates have no factual return label.",
+  "hidden_information_policy": "decision_time_information_set_only",
+  "locked_test_access": "prohibited_for_training_tuning_checkpoint_selection_and_rule_design",
+  "formal_website_control_data_reuse": "prohibited_until_declared_study_concludes"
+}

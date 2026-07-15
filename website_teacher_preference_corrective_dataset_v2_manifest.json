@@ -1,0 +1,383 @@
+{
+  "schema_version": "website_teacher_preference_corrective_dataset_v2_manifest",
+  "dataset_path": "website_teacher_preference_corrective_dataset_v2.pth",
+  "frozen_inputs": {
+    "paths": {
+      "stage_6_9_confirmation": "website_teacher_preference_corrective_residual_train_confirmation_v1.json",
+      "corrective_dataset_v1": "website_teacher_preference_corrective_dataset_v1.pth",
+      "corrective_dataset_v1_manifest": "website_teacher_preference_corrective_dataset_v1_manifest.json",
+      "stage_6_8_audit": "website_teacher_preference_corrective_residual_evidence_audit_v1.json",
+      "teacher_dataset": "website_information_set_teacher_dataset_v6.pth",
+      "split_manifest": "website_teacher_preference_split_v1.json",
+      "stage_6_4_confirmation": "website_teacher_preference_unpaired_train_confirmation_v1.json"
+    },
+    "sha256": {
+      "stage_6_9_confirmation": "352cd0dfe0a4c958ba0555b776326a2b58470a980aef461ed49d4c59a7474c7a",
+      "corrective_dataset_v1": "fad7ae18fea8b02cbc88ad4a8a7f8ecee298abe436ef589f5c88d66e42a32707",
+      "corrective_dataset_v1_manifest": "0a5dc4f60091338b65f86f83ad30ae55dc18c058ee8b07535a314510ad96ef0a",
+      "stage_6_8_audit": "676232033f07051670b4407f15aca9f3939d9754ac2dcf4d078957263a1e2a6b",
+      "teacher_dataset": "a74416e6facb28a1bc64563eba90cb33d460dc9e59cc2109518da142465e15f8",
+      "split_manifest": "5a15e514dc9bc51d77d300837151d9f1a49250f42885cc7940725bcbe4d35107",
+      "stage_6_4_confirmation": "8e17377b5a1523d9f0a47af7218d687e062a3ade671c57f387eb4c1a0888cfae"
+    }
+  },
+  "summary": {
+    "total_pair_count": 32,
+    "pipeline_train_pair_count": 28,
+    "pipeline_development_pair_count": 4,
+    "base_pair_count": 22,
+    "stage_6_4_corrective_pair_count": 6,
+    "stage_6_9_residual_corrective_pair_count": 4,
+    "preserved_v1_pair_count": 28,
+    "pipeline_train_game_count": 18,
+    "pipeline_development_game_count": 4,
+    "stage_6_9_inconclusive_pair_added_count": 0,
+    "pipeline_development_residual_pair_added_count": 0,
+    "stage_6_9_excluded_or_heldout_count": 7,
+    "dropped_base_sample_count": 0,
+    "locked_test_loaded": false,
+    "website_dataset_loaded": false,
+    "pipeline_only": true,
+    "capability_evidence_eligible": false,
+    "checkpoint_promotion_allowed": false,
+    "threshold_passed": true
+  },
+  "frozen_base_samples_sha256": "1cea18e11164aa94b08a6d75930a5cc462d8a98935719b52491c498d5b61bc89",
+  "frozen_base_sample_sha256": [
+    "34259b4f493241287c32250a521023d99dd20de1a179c730123d3709282be8b2",
+    "757f59e160b599caa371b04430093e43482de05930c606d38997fc9275ca8f52",
+    "dc66e7d86539cf3ed30825c1b91cf2a31d69c725cefa7b654c8b6bd7e10783cf",
+    "47af47cf8734ef175b1944c0fcdf015281e394eeed9fb81808b922b29eff23f9",
+    "89b0a700694088d25fdb204c2e1bec817a90c3eb4a6bdf073bb262acb0a76fff",
+    "fca3f4d9176313e06b2e3bfa132545f08caa849e7b0a89037ac788777d8a5855",
+    "1e6b1c12e3cb03c89a42356bc30d89036e795fcf1c5255ce2b245ec8ada408a7",
+    "42b50d6ab7dd038c36989b21f8668373abbd82091862e365a577b79dda60035a",
+    "293dbabd02df2e8d672d22285b78e70974fef33634993a125aa267aaeff54b33",
+    "211f985e08caef19e95a07bfa6b3aca7fa6bfb4160af38584e4000894fd59903",
+    "38ca3969f311bda79127224720d4b700482d8dee89ca9e2320bee4cb2d441cb2",
+    "18ebcf86bd8ee268c902d0478634daef011d4b4c1c231cc74cd21330122e1eb1",
+    "fa8722f193972fe9e8d8c3f88c137b7dbc2a3acf2d19215d7f22e223ae39376b",
+    "d4cf7d0830d114b339972778c28b2379a3f286192ad1365ce38f35b7c51205fc",
+    "048d56c602fe94984a0dd950ea9d8b5cb8e9c36fba069553978277db7ba675d1",
+    "6581ca093ccc0fe28a452aac5fb9885b67f752f3eba0e32f959eddf5d45f49d0",
+    "ebb981979b09c12fbc5f1a89b56a4f6b937e9af4021bd629c0331566cc7c0da1",
+    "7190f8407389278a3a2540efe0e40efc1cccfdc06de3270479a40c1e45880ac8",
+    "ae93e5c1baa2103edfa615ca8b8302921c7b68b5975fbcf1cf387317373d5e14",
+    "1d230c67b1a9307e3277303dff824fd695f062ff1fd5d0e5d2eded8140f6fac3",
+    "b08cf67ddbd5ca610a99f8e574697b94cfa145fe8206c7426b5087d5b8cf5d88",
+    "357f73b7c8d3f9b876ccde5da6cebad45b6785bd933c424b3a5e4c2f1a3b2f7b"
+  ],
+  "frozen_v1_pair_ids": [
+    "base:13868:10:teacher_vs_behavior",
+    "base:13872:4:teacher_vs_behavior",
+    "base:13879:6:teacher_vs_behavior",
+    "corrective:13879:6:teacher_vs_top1",
+    "base:13865:8:teacher_vs_behavior",
+    "base:13871:9:teacher_vs_behavior",
+    "base:13882:10:teacher_vs_behavior",
+    "base:13861:10:teacher_vs_behavior",
+    "corrective:13861:10:teacher_vs_top1",
+    "base:13958:12:teacher_vs_behavior",
+    "base:13959:7:teacher_vs_behavior",
+    "corrective:13959:7:teacher_vs_top1",
+    "base:13957:14:teacher_vs_behavior",
+    "corrective:13957:14:teacher_vs_top1",
+    "base:13960:15:teacher_vs_behavior",
+    "corrective:13960:15:teacher_vs_top1",
+    "base:13992:16:teacher_vs_behavior",
+    "base:14000:5:teacher_vs_behavior",
+    "base:14022:16:teacher_vs_behavior",
+    "corrective:14022:16:teacher_vs_top1",
+    "base:14025:20:teacher_vs_behavior",
+    "base:14031:4:teacher_vs_behavior",
+    "base:14038:12:teacher_vs_behavior",
+    "base:14044:9:teacher_vs_behavior",
+    "base:14045:5:teacher_vs_behavior",
+    "base:14058:22:teacher_vs_behavior",
+    "base:14074:9:teacher_vs_behavior",
+    "base:14077:10:teacher_vs_behavior"
+  ],
+  "frozen_v1_pair_semantic_sha256": [
+    "4ca791a654c029f60a5dab3eaf226e57ce60174e9f72de50bfa6c402f5be6de9",
+    "9f2c141e2fd56d9ca091267e384194e1d1ddb28d896ea7df1dba478814bc73e0",
+    "62a8eae5aedb6ad76eaf54c51ffadcb815155f35b9c6631df2453dbd4601aad4",
+    "a6fe8da565e44e41340cc6ca84ea40d56be3e7a482d7b556317caa03863d9593",
+    "3cc66b425f46b9ee39a1bd2b5b72c495e935a0a718226e76e9ac48e9b9a8bbf7",
+    "26539e9587b240df3b8429cb9e4b159bea8bf3b3ef6ae5ac16a85d07e1e8f179",
+    "d2f5e15e6570aac618d6855213574e9cc09193baf06f51907af8502fde2249ea",
+    "328b05c5abe336b95e3e1fcf7978bed3ea6e942cedf87f577e492da0c1f37c99",
+    "e1629e333f9ea73be8f44b9928c5289593b5b3ee041313ab3a9b64287720550b",
+    "58cd475a4c4d6997529ccf8f11d4f2a27087d01191650dfffbea9a9b311710e7",
+    "ecfbe094c6230e1d4e76250213063858677b45074354c2697dda43beafdb5452",
+    "90c1eb31325ea015258e32e511a47141ee4ca3ebf3c17ce8a23c1bc055e84238",
+    "c3671a7634d98619472539e52cdd3a33c49710ebdbc3a2e2fa0f09f58a334b59",
+    "9b01a131ad9a94a42e6fdc9f87f89410fc445ffd711bee31392b4c55c4daa797",
+    "dbfc786acce27e38d691161531da12c5edb3457100baf1ccdf1ca798c3199115",
+    "fc46e543308bbadbe3ff0acc2b33c50ad6579a2ff53c2e0c8c96b2520baeb173",
+    "43c6d1c3ed67e9a35b8e46dd2cbd863c152174aadc49ed245c647ea4e3f1c88a",
+    "56bb4802bbe2d607b3a55289674fcda7f13091c4e70137cc37244d830bd1b651",
+    "714ae3b522656059374f89fa0e59f3bbef62da358099077bbd0b1ce26d6609e2",
+    "721d80cf3e1a95a3909ee8c0052213d2054aa3e17b7d94438c83de69e4f5fb5b",
+    "4c1ebd511293dd2603f3ad8b8de7ebe0e8c6e1115e10c2e61b3ffc750c91b597",
+    "538e92e57b7b2d4c6a9ed472de7005f55d1ff4800ccc5c27d7e1fc62adf34242",
+    "cf8f19f3ccbde8da6333fff08dcc2926b6e60d7c3380f534a78c1cdbcb9e9370",
+    "38ecb140c329c4b4c355938581a282a49480c114538b8efc5e3600c506e3b3ff",
+    "4f428ee2f929fa9106a597ec24794cc2142dcae8ec3f4fc9d4e7ce3407785730",
+    "526c8bb66990dfd54f907b89789fdf0f674f645dd3796d5a065418b68642e26c",
+    "46ddd7b72275b3146f9014965e221b7b0ff3349981befa8184d889da8d389564",
+    "ed748cf2c30419916ea01a1f0b40c345a939bd88a1b5f1c1fa1ffa5027fac18f"
+  ],
+  "new_pair_ids": [
+    "residual_corrective:14044:9:teacher_vs_residual_top1",
+    "residual_corrective:14038:12:teacher_vs_residual_top1",
+    "residual_corrective:14000:5:teacher_vs_residual_top1",
+    "residual_corrective:14022:16:teacher_vs_residual_top1"
+  ],
+  "new_pair_semantic_sha256": [
+    "33a7ce85ed9c4a66773cf8f9d7b2e46d1554822888ffeba28a3f4e01323b59f2",
+    "9b43dc995e870b01638055ac247188bc84ab9fe7c8010b08b25e1473462a6174",
+    "fa40dfc52fcd1d321f7ef97b82752c2f8033513aea92948d2fddec2d9c7e2ac9",
+    "5a43df3f8386fb3160f3370f01bf006160e86d8393393bd05ec89e9e7c384084"
+  ],
+  "pair_ids": [
+    "base:13868:10:teacher_vs_behavior",
+    "base:13872:4:teacher_vs_behavior",
+    "base:13879:6:teacher_vs_behavior",
+    "corrective:13879:6:teacher_vs_top1",
+    "base:13865:8:teacher_vs_behavior",
+    "base:13871:9:teacher_vs_behavior",
+    "base:13882:10:teacher_vs_behavior",
+    "base:13861:10:teacher_vs_behavior",
+    "corrective:13861:10:teacher_vs_top1",
+    "base:13958:12:teacher_vs_behavior",
+    "base:13959:7:teacher_vs_behavior",
+    "corrective:13959:7:teacher_vs_top1",
+    "base:13957:14:teacher_vs_behavior",
+    "corrective:13957:14:teacher_vs_top1",
+    "base:13960:15:teacher_vs_behavior",
+    "corrective:13960:15:teacher_vs_top1",
+    "base:13992:16:teacher_vs_behavior",
+    "base:14000:5:teacher_vs_behavior",
+    "base:14022:16:teacher_vs_behavior",
+    "corrective:14022:16:teacher_vs_top1",
+    "base:14025:20:teacher_vs_behavior",
+    "base:14031:4:teacher_vs_behavior",
+    "base:14038:12:teacher_vs_behavior",
+    "base:14044:9:teacher_vs_behavior",
+    "base:14045:5:teacher_vs_behavior",
+    "base:14058:22:teacher_vs_behavior",
+    "base:14074:9:teacher_vs_behavior",
+    "base:14077:10:teacher_vs_behavior",
+    "residual_corrective:14044:9:teacher_vs_residual_top1",
+    "residual_corrective:14038:12:teacher_vs_residual_top1",
+    "residual_corrective:14000:5:teacher_vs_residual_top1",
+    "residual_corrective:14022:16:teacher_vs_residual_top1"
+  ],
+  "pair_source_counts": {
+    "frozen_teacher_v6": 22,
+    "stage_6_4_train_confirmation": 6,
+    "stage_6_9_residual_train_confirmation": 4
+  },
+  "pipeline_partition_pair_counts": {
+    "pipeline_development": 4,
+    "pipeline_train": 28
+  },
+  "objective_manifest": {
+    "objective_name": "state_balanced_pairwise_softplus_v1",
+    "formula": "mean_over_states(sum_over_pairs(within_state_pair_weight * softplus(Q_rejected-Q_preferred)))",
+    "state_aggregate_weight": 1.0,
+    "pair_weight_rule": "one_divided_by_pair_count_for_state",
+    "pipeline_train_state_count": 18,
+    "pipeline_development_state_count": 4,
+    "state_weight_sums": {
+      "pipeline_development:13868:10": 1.0,
+      "pipeline_train:13872:4": 1.0,
+      "pipeline_train:13879:6": 1.0,
+      "pipeline_train:13865:8": 1.0,
+      "pipeline_development:13871:9": 1.0,
+      "pipeline_train:13882:10": 1.0,
+      "pipeline_train:13861:10": 1.0,
+      "pipeline_train:13958:12": 1.0,
+      "pipeline_train:13959:7": 1.0,
+      "pipeline_train:13957:14": 1.0,
+      "pipeline_train:13960:15": 1.0,
+      "pipeline_development:13992:16": 1.0,
+      "pipeline_train:14000:5": 1.0,
+      "pipeline_train:14022:16": 1.0,
+      "pipeline_train:14025:20": 1.0,
+      "pipeline_train:14031:4": 1.0,
+      "pipeline_train:14038:12": 1.0,
+      "pipeline_train:14044:9": 1.0,
+      "pipeline_train:14045:5": 1.0,
+      "pipeline_train:14058:22": 1.0,
+      "pipeline_development:14074:9": 1.0,
+      "pipeline_train:14077:10": 1.0
+    },
+    "weights_tuned": false,
+    "executed": false,
+    "state_pair_count_distribution": {
+      "one_pair_state_count": 13,
+      "two_pair_state_count": 8,
+      "three_pair_state_count": 1
+    },
+    "two_pair_state_keys": [
+      "pipeline_train:13861:10",
+      "pipeline_train:13879:6",
+      "pipeline_train:13957:14",
+      "pipeline_train:13959:7",
+      "pipeline_train:13960:15",
+      "pipeline_train:14000:5",
+      "pipeline_train:14038:12",
+      "pipeline_train:14044:9"
+    ],
+    "three_pair_state_key": "pipeline_train:14022:16",
+    "partition_normalized_weight_sums": {
+      "pipeline_train": 1.0,
+      "pipeline_development": 1.0
+    }
+  },
+  "exclusions": {
+    "frozen_v1_exclusions": {
+      "inconclusive_pipeline_train": [
+        {
+          "game_id": "14077",
+          "turn_index": 10,
+          "directional_classification": "inconclusive",
+          "teacher_over_top1_failure_reasons": [
+            "advantage_95_lower_bound_not_positive",
+            "continuation_profile_advantage_below_frozen_threshold"
+          ]
+        },
+        {
+          "game_id": "13882",
+          "turn_index": 10,
+          "directional_classification": "inconclusive",
+          "teacher_over_top1_failure_reasons": [
+            "advantage_95_lower_bound_not_positive",
+            "continuation_profile_advantage_below_frozen_threshold"
+          ]
+        },
+        {
+          "game_id": "14025",
+          "turn_index": 20,
+          "directional_classification": "inconclusive",
+          "teacher_over_top1_failure_reasons": [
+            "mean_advantage_below_frozen_threshold",
+            "advantage_95_lower_bound_not_positive",
+            "continuation_profile_advantage_below_frozen_threshold"
+          ]
+        }
+      ],
+      "pipeline_development_unpaired": [
+        {
+          "game_id": "13992",
+          "turn_index": 16,
+          "reason": "pipeline_development_held_out",
+          "pair_added": false,
+          "action_inspected_in_this_stage": false
+        },
+        {
+          "game_id": "14074",
+          "turn_index": 9,
+          "reason": "pipeline_development_held_out",
+          "pair_added": false,
+          "action_inspected_in_this_stage": false
+        },
+        {
+          "game_id": "13871",
+          "turn_index": 9,
+          "reason": "pipeline_development_held_out",
+          "pair_added": false,
+          "action_inspected_in_this_stage": false
+        }
+      ]
+    },
+    "stage_6_9_inconclusive_pipeline_train": [
+      {
+        "game_id": "13957",
+        "turn_index": 14,
+        "directional_classification": "inconclusive",
+        "teacher_over_residual_failure_reasons": [
+          "advantage_95_lower_bound_not_positive",
+          "continuation_profile_advantage_below_frozen_threshold"
+        ],
+        "pair_added": false
+      },
+      {
+        "game_id": "14077",
+        "turn_index": 10,
+        "directional_classification": "inconclusive",
+        "teacher_over_residual_failure_reasons": [
+          "advantage_95_lower_bound_not_positive",
+          "continuation_profile_advantage_below_frozen_threshold"
+        ],
+        "pair_added": false
+      },
+      {
+        "game_id": "13959",
+        "turn_index": 7,
+        "directional_classification": "inconclusive",
+        "teacher_over_residual_failure_reasons": [
+          "mean_advantage_below_frozen_threshold",
+          "advantage_95_lower_bound_not_positive",
+          "continuation_profile_advantage_below_frozen_threshold"
+        ],
+        "pair_added": false
+      },
+      {
+        "game_id": "14025",
+        "turn_index": 20,
+        "directional_classification": "inconclusive",
+        "teacher_over_residual_failure_reasons": [
+          "mean_advantage_below_frozen_threshold",
+          "advantage_95_lower_bound_not_positive",
+          "continuation_profile_advantage_below_frozen_threshold"
+        ],
+        "pair_added": false
+      }
+    ],
+    "stage_6_9_pipeline_development_identity_only": [
+      {
+        "game_id": "13992",
+        "turn_index": 16,
+        "reason": "pipeline_development_held_out",
+        "pair_added": false,
+        "action_inspected_in_this_stage": false
+      },
+      {
+        "game_id": "14074",
+        "turn_index": 9,
+        "reason": "pipeline_development_held_out",
+        "pair_added": false,
+        "action_inspected_in_this_stage": false
+      },
+      {
+        "game_id": "13871",
+        "turn_index": 9,
+        "reason": "pipeline_development_held_out",
+        "pair_added": false,
+        "action_inspected_in_this_stage": false
+      }
+    ]
+  },
+  "forbidden_operation_counts": {
+    "rollout_runs": 0,
+    "training_runs": 0,
+    "fine_tuning_runs": 0,
+    "threshold_tuning_runs": 0,
+    "objective_executions": 0,
+    "hyperparameter_searches": 0,
+    "checkpoint_selections": 0,
+    "checkpoint_modifications": 0,
+    "locked_test_loads": 0,
+    "website_dataset_loads": 0,
+    "arena_games": 0,
+    "website_shadow_games": 0,
+    "website_games": 0,
+    "model_controlled_website_actions": 0,
+    "checkpoint_promotions": 0,
+    "capability_claims": 0
+  },
+  "status": "completed",
+  "dataset_sha256": "40024f7c064f0ebb7999c4ac0f7bc85d77b759a23956cbe596756763d4009d4d"
+}

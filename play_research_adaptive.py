@@ -1,5 +1,6 @@
 import argparse
 import copy
+from functools import lru_cache
 import html
 import itertools
 import json
@@ -57,6 +58,7 @@ ELO_BUCKETS = (
     (2200, 2399, "2200-2399"),
     (2400, None, "2400+"),
 )
+WEBSITE_BOT_SEAT_SIGNATURE = ("\u73a9\u5bb61", "\u73a9\u5bb62", "\u73a9\u5bb63", "\u73a9\u5bb64")
 OBSERVATION_COUNTER_KEYS = (
     "lead_probe_count",
     "possible_overblock_count",
@@ -172,8 +174,35 @@ def load_json(path: Path, default: Any) -> Any:
         return default
 
 
+def redact_runtime_credentials(payload: Any) -> Any:
+    secrets = tuple(
+        value
+        for name in ("GUANDAN_USER", "GUANDAN_PASSWORD")
+        if (value := os.environ.get(name))
+    )
+    if not secrets:
+        return payload
+    if isinstance(payload, str):
+        for secret in secrets:
+            payload = payload.replace(secret, "[REDACTED_RUNTIME_CREDENTIAL]")
+        return payload
+    if isinstance(payload, dict):
+        return {
+            redact_runtime_credentials(key): redact_runtime_credentials(value)
+            for key, value in payload.items()
+        }
+    if isinstance(payload, list):
+        return [redact_runtime_credentials(value) for value in payload]
+    if isinstance(payload, tuple):
+        return tuple(redact_runtime_credentials(value) for value in payload)
+    return payload
+
+
 def save_json(path: Path, payload: Any) -> None:
-    path.write_text(json.dumps(payload, ensure_ascii=False, indent=2), encoding="utf-8")
+    path.write_text(
+        json.dumps(redact_runtime_credentials(payload), ensure_ascii=False, indent=2),
+        encoding="utf-8",
+    )
 
 
 def require_env(require_password: bool = True) -> None:
@@ -227,6 +256,23 @@ class GameDisappearedError(RecoverableGameError):
 class TransientGameUnavailableError(RecoverableGameError):
     def __init__(self, game_id: str, message: str, payload: dict | None = None) -> None:
         super().__init__(game_id, "transient_game_unavailable", message, payload)
+
+
+def website_bot_table_evidence(state: dict) -> dict:
+    seats = tuple(str(value) for value in (state.get("seats") or []))
+    try:
+        your_seat = int(state.get("your_seat"))
+    except (TypeError, ValueError):
+        your_seat = None
+    return {
+        "expected_seats": list(WEBSITE_BOT_SEAT_SIGNATURE),
+        "observed_seats": list(seats),
+        "your_seat": your_seat,
+        "historical_reference_games": 497,
+        "bot_table_verified": bool(seats == WEBSITE_BOT_SEAT_SIGNATURE and your_seat == 0),
+        "strength_identity_available": False,
+        "strength_inference_source": "elo_band_and_observed_results",
+    }
 
 
 def get_json_once(path: str, params: dict | None = None, timeout: float | None = None) -> dict:
@@ -2391,6 +2437,14 @@ def build_game_record(
     shape_summary = shape_guard_counts_from_decisions(decisions)
     shape_v2_summary = shape_guard_v2_counts_from_decisions(decisions)
     plate_delay_summary = plate_delay_guard_counts_from_decisions(decisions)
+    seats = list(final_state.get("seats") or [])
+    opponent_names = [
+        str(seats[seat])
+        for seat in opponent_seats(final_state)
+        if 0 <= int(seat) < len(seats)
+    ]
+    teammate = teammate_seat(final_state)
+    teammate_name = str(seats[teammate]) if 0 <= teammate < len(seats) else None
     return {
         "game_id": str(game_id),
         "completed_at": completed_at or time.strftime("%Y-%m-%d %H:%M:%S"),
@@ -2401,7 +2455,18 @@ def build_game_record(
         "elo_after": elo_result.get("elo_after"),
         "elo_delta": elo_result.get("elo_delta"),
         "elo_bucket": elo_bucket_for_value(elo_result.get("elo_before")),
+        "elo_band_100": elo_band_for_value(elo_result.get("elo_before"), 100),
         "metric_source": "leaderboard_elo",
+        "your_seat": final_state.get("your_seat"),
+        "your_team": final_state.get("your_team"),
+        "teammate_name": teammate_name,
+        "opponent_names": opponent_names,
+        "opponent_signature": "|".join(sorted(opponent_names)) if opponent_names else "unknown",
+        "bot_table_verified": bool(
+            (final_state.get("_bot_table_evidence") or website_bot_table_evidence(final_state)).get(
+                "bot_table_verified"
+            )
+        ),
         "failure_tags": sorted(failure_counts),
         "failure_reason_counts": dict(failure_counts),
         **bait_summary,
@@ -2799,6 +2864,95 @@ def elo_bucket_for_value(value: Any) -> str:
         if (low is None or elo >= low) and (high is None or elo <= high):
             return label
     return "unknown"
+
+
+def elo_band_for_value(value: Any, width: int = 100) -> str:
+    elo = numeric_value(value)
+    if elo is None or int(width) <= 0:
+        return "unknown"
+    low = int(elo // int(width)) * int(width)
+    return f"{low}-{low + int(width) - 1}"
+
+
+def wilson_interval(wins: int, games: int, z: float = 1.959963984540054) -> tuple[float | None, float | None]:
+    if int(games) <= 0:
+        return None, None
+    n = float(games)
+    p = max(0.0, min(1.0, float(wins) / n))
+    denominator = 1.0 + z * z / n
+    center = (p + z * z / (2.0 * n)) / denominator
+    half_width = z * ((p * (1.0 - p) / n + z * z / (4.0 * n * n)) ** 0.5) / denominator
+    return max(0.0, center - half_width), min(1.0, center + half_width)
+
+
+def website_bot_slice_stats(records: list[dict]) -> dict:
+    games = len(records)
+    wins = sum(record.get("outcome") == "win" for record in records)
+    lower, upper = wilson_interval(wins, games)
+    result = {
+        "games": games,
+        "wins": wins,
+        "losses": games - wins,
+        "win_rate": wins / games if games else None,
+        "wilson_95_lower": lower,
+        "wilson_95_upper": upper,
+    }
+    result.update(elo_economy_stats(records))
+    return result
+
+
+def website_bot_goal_summary(
+    results: dict,
+    target_min_games: int = 500,
+    target_win_rate: float = 0.70,
+    target_min_elo: float = 2200.0,
+) -> dict:
+    records = official_game_records(results)
+    verified_records = [record for record in records if record.get("bot_table_verified") is True]
+    target_records = [
+        record
+        for record in verified_records
+        if (numeric_value(record.get("elo_before")) or float("-inf")) >= float(target_min_elo)
+    ]
+    by_elo_band = {}
+    for record in records:
+        band = str(record.get("elo_band_100") or elo_band_for_value(record.get("elo_before"), 100))
+        by_elo_band.setdefault(band, []).append(record)
+    by_opponent_signature = {}
+    for record in records:
+        signature = str(record.get("opponent_signature") or "unknown")
+        by_opponent_signature.setdefault(signature, []).append(record)
+    target_stats = website_bot_slice_stats(target_records)
+    statistical_target_passed = bool(
+        target_stats["games"] >= int(target_min_games)
+        and target_stats["wilson_95_lower"] is not None
+        and target_stats["wilson_95_lower"] >= float(target_win_rate)
+    )
+    return {
+        "goal": "website_bot_win_rate",
+        "metric_source": "leaderboard_elo",
+        "final_state_scores_are_elo": False,
+        "target_min_games": int(target_min_games),
+        "target_win_rate_wilson_lower": float(target_win_rate),
+        "target_min_elo": float(target_min_elo),
+        "overall": website_bot_slice_stats(records),
+        "verified_bot_tables": website_bot_slice_stats(verified_records),
+        "legacy_or_unverified_records": len(records) - len(verified_records),
+        "target_high_elo_segment": target_stats,
+        "by_elo_band_100": {
+            band: website_bot_slice_stats(items) for band, items in sorted(by_elo_band.items())
+        },
+        "by_opponent_signature": {
+            signature: website_bot_slice_stats(items)
+            for signature, items in sorted(by_opponent_signature.items())
+        },
+        "statistical_target_passed": statistical_target_passed,
+        "final_goal_passed": False,
+        "final_goal_note": (
+            "Statistical target is necessary but not sufficient; zero legality/runtime errors and "
+            "confirmed bot-only matchmaking are also required."
+        ),
+    }
 
 
 def elo_bucket_for_record(record: dict) -> str:
@@ -6161,6 +6315,9 @@ def run_summary(
     max_cases: int = 10,
     simulate_casebook_guard: str | None = None,
     simulate_narrow_plate_guard: str | None = None,
+    website_goal_min_games: int = 500,
+    website_goal_win_rate: float = 0.70,
+    website_goal_min_elo: float = 2200.0,
 ) -> None:
     results = load_json(Path(path), {})
     results.setdefault("game_records", [])
@@ -6169,6 +6326,12 @@ def run_summary(
         save_json(Path(path), results)
     profiles = load_json(PROFILE_PATH, {})
     summary = build_research_summary(results, profiles, recent_window)
+    summary["website_bot_goal"] = website_bot_goal_summary(
+        results,
+        website_goal_min_games,
+        website_goal_win_rate,
+        website_goal_min_elo,
+    )
     if loss_drilldown:
         summary["loss_drilldown"] = loss_drilldown_summary(results, loss_drilldown, recent_loss_window)
     if endgame_audit:
@@ -6341,12 +6504,14 @@ def run_game(
     print(f"joined game_id={game_id}")
     before_fields = extract_rating_fields(join_data)
     decisions: list[dict] = []
+    public_history_tracker: list[tuple[int, list[str]]] = []
     scenario = "all_unknown"
     selected_profile = fixed_profile or "tempo_baseline"
     final_state = {}
     rating_after = {}
     turn_count = 0
     submit_desync_count = 0
+    bot_table_evidence = None
 
     while True:
         try:
@@ -6399,6 +6564,31 @@ def run_game(
             raise RuntimeError(f"check_game failed: {state}")
         state["_research_context"] = current_research_context
         before_fields = merge_rating_fields(before_fields, extract_rating_fields(state))
+        if bot_table_evidence is None:
+            bot_table_evidence = website_bot_table_evidence(state)
+            if args.require_bot_table and not bot_table_evidence["bot_table_verified"]:
+                save_error_log(
+                    args.log_dir,
+                    game_id,
+                    selected_profile,
+                    scenario,
+                    "non_bot_table",
+                    {
+                        "bot_table_evidence": bot_table_evidence,
+                        "leaderboard_before": leaderboard_before,
+                        "error_log_saved": True,
+                    },
+                )
+                raise RuntimeError(
+                    "website bot-only gate failed before first action: "
+                    f"observed_seats={bot_table_evidence['observed_seats']} "
+                    f"your_seat={bot_table_evidence['your_seat']}"
+                )
+            if args.require_bot_table:
+                print(
+                    "bot_table_verified=true "
+                    f"signature={json.dumps(bot_table_evidence['observed_seats'], ensure_ascii=False)}"
+                )
 
         if state.get("completed"):
             observe_lead_probe_responses(state, decisions)
@@ -6460,8 +6650,16 @@ def run_game(
             decision.update(lead_probe_metadata(state, game_id, turn_count, selected_profile, scenario, coord))
             decision.update(bait_attempt_observation_metadata(state, selected_profile, coord, decision))
             if args.website_shadow:
+                history_result = live_shadow.extend_public_history(public_history_tracker, state)
+                shadow_state = dict(state)
+                shadow_state["trick_history"] = [
+                    [seat, list(cards)] for seat, cards in history_result["history"]
+                ]
+                shadow_state["_public_history_source"] = history_result["source"]
+                shadow_state["_public_history_consistent"] = history_result["consistent"]
+                shadow_state["_public_history_overlap_count"] = history_result["overlap_count"]
                 decision["website_shadow"] = live_shadow.build_shadow_audit(
-                    state,
+                    shadow_state,
                     coord,
                     coord,
                     suggestion_source=live_shadow.SHADOW_SUGGESTION_SOURCE,
@@ -6685,6 +6883,7 @@ def run_game(
             time.sleep(args.poll)
 
     observe_lead_probe_responses(final_state, decisions)
+    final_state["_bot_table_evidence"] = bot_table_evidence or website_bot_table_evidence(final_state)
     models = models_for_state(final_state, memory, session_models)
     mark_game_seen(models)
     persist_stable_models(final_state, memory, models)
@@ -9809,14 +10008,131 @@ def offline_arena_empty_result(checkpoint: str) -> dict:
     }
 
 
+@lru_cache(maxsize=100_000)
+def offline_exact_remaining_groups_fast(hand_key: tuple[str, ...], level: str) -> int:
+    cards = list(hand_key)
+    card_count = len(cards)
+    if not cards:
+        return 0
+    if engine.recognize(cards, level):
+        return 1
+    if card_count > engine.EXACT_GROUP_HAND_LIMIT:
+        return card_count
+
+    legal_masks_by_index: list[list[int]] = [[] for _ in range(card_count)]
+    legality_cache: dict[tuple[str, ...], bool] = {}
+    for mask in range(1, 1 << card_count):
+        subset = tuple(cards[index] for index in range(card_count) if mask & (1 << index))
+        legal = legality_cache.get(subset)
+        if legal is None:
+            legal = bool(engine.recognize(list(subset), level))
+            legality_cache[subset] = legal
+        if not legal:
+            continue
+        for index in range(card_count):
+            if mask & (1 << index):
+                legal_masks_by_index[index].append(mask)
+
+    @lru_cache(maxsize=None)
+    def solve(remaining_mask: int) -> int:
+        if remaining_mask == 0:
+            return 0
+        first_bit = remaining_mask & -remaining_mask
+        first_index = first_bit.bit_length() - 1
+        best = remaining_mask.bit_count()
+        for play_mask in legal_masks_by_index[first_index]:
+            if play_mask & remaining_mask != play_mask:
+                continue
+            best = min(best, 1 + solve(remaining_mask ^ play_mask))
+            if best == 1:
+                break
+        return best
+
+    return solve((1 << card_count) - 1)
+
+
+def offline_unique_card_combinations(hand: list[str], size: int) -> Any:
+    counts = Counter(hand)
+    unique_cards = sorted(counts)
+    selected: list[str] = []
+
+    def generate(index: int, remaining: int) -> Any:
+        if remaining == 0:
+            yield tuple(selected)
+            return
+        if index >= len(unique_cards):
+            return
+        card = unique_cards[index]
+        max_take = min(counts[card], remaining)
+        for take in range(max_take, -1, -1):
+            selected.extend([card] * take)
+            yield from generate(index + 1, remaining - take)
+            if take:
+                del selected[-take:]
+
+    yield from generate(0, size)
+
+
 def offline_install_arena_baseline_optimizations() -> Any:
     original_choose_all_out = engine.choose_all_out_if_possible
     original_choose_non_bomb_follow = engine.choose_non_bomb_follow
+    original_choose_bomb_to_set_up_finish = engine.choose_bomb_to_set_up_finish
+    original_choose_lead_bomb_to_set_up_finish = engine.choose_lead_bomb_to_set_up_finish
+    original_exact_remaining_groups = engine.exact_remaining_groups
+    original_legal_play_options_cached = engine._legal_play_options_cached
+
+    @lru_cache(maxsize=4096)
+    def arena_legal_play_options_cached(
+        hand_key: tuple[str, ...], level: str
+    ) -> tuple[Any, ...]:
+        hand = list(hand_key)
+        options: dict[tuple[tuple[str, ...], str, str], Any] = {}
+        for size in (1, 2, 3, 4, 5, 6):
+            if size > len(hand):
+                continue
+            for combo in offline_unique_card_combinations(hand, size):
+                cards = tuple(engine.sort_cards(combo, level))
+                for info in engine.recognize(cards, level):
+                    key = (cards, info.type, info.rank)
+                    options[key] = engine.PlayInfo(info.type, info.rank, cards, len(cards))
+
+        wild_card = "H" + level
+        wilds = [card for card in hand if card == wild_card]
+        by_rank: dict[str, list[str]] = {rank: [] for rank in engine.RANKS}
+        for card in hand:
+            if card not in ("B", "R") and card != wild_card:
+                by_rank[card[1]].append(card)
+        for rank, cards_of_rank in by_rank.items():
+            cards_of_rank = engine.sort_cards(cards_of_rank, level)
+            max_size = len(cards_of_rank) + len(wilds)
+            for size in range(7, max_size + 1):
+                need_wild = max(0, size - len(cards_of_rank))
+                if need_wild > len(wilds):
+                    continue
+                selected = cards_of_rank[: size - need_wild] + wilds[:need_wild]
+                cards = tuple(engine.sort_cards(selected, level))
+                key = (cards, "bomb", rank)
+                options[key] = engine.PlayInfo("bomb", rank, cards, len(cards))
+        return tuple(options.values())
 
     def arena_choose_all_out_if_possible(hand: list[str], last_play: list[str], level: str) -> list[str] | None:
         if len(hand) > 10:
             return None
         return original_choose_all_out(hand, last_play, level)
+
+    def arena_choose_bomb_to_set_up_finish(
+        hand: list[str], last_play: list[str], level: str
+    ) -> list[str] | None:
+        if len(hand) > 20:
+            return None
+        return original_choose_bomb_to_set_up_finish(hand, last_play, level)
+
+    def arena_choose_lead_bomb_to_set_up_finish(
+        hand: list[str], level: str
+    ) -> list[str] | None:
+        if len(hand) > 20:
+            return None
+        return original_choose_lead_bomb_to_set_up_finish(hand, level)
 
     def arena_choose_non_bomb_follow(
         hand: list[str],
@@ -9835,19 +10151,24 @@ def offline_install_arena_baseline_optimizations() -> Any:
         if target_size <= 3:
             return original_choose_non_bomb_follow(hand, last_play, level, prefer_strong=prefer_strong)
         options = []
-        for candidate in engine.legal_play_options(hand, level):
-            if candidate.size != target_size:
-                continue
-            if engine.is_bomb(candidate) or engine.server_treats_as_bomb(candidate.cards, level):
+        for combo in offline_unique_card_combinations(hand, target_size):
+            if engine.server_treats_as_bomb(combo, level):
                 continue
             infos = [
                 info
-                for info in engine.safe_follow_infos(list(candidate.cards), last_play, level)
-                if not engine.is_bomb(info) and (info.type, info.size) in target_types
+                for info in engine.safe_follow_infos(combo, last_play, level)
+                if not engine.is_bomb(info)
             ]
-            if not infos:
+            info_types = {info.type for info in infos}
+            if len(info_types) != 1 or not info_types.issubset(
+                {play_type for play_type, _ in target_types}
+            ):
                 continue
-            options.append((engine.candidate_key(candidate.cards, infos[0], hand, level), candidate.cards))
+            for info in infos:
+                if (info.type, info.size) not in target_types:
+                    continue
+                options.append((engine.candidate_key(combo, info, hand, level), combo))
+                break
         if not options:
             return None
         if prefer_strong:
@@ -9871,10 +10192,18 @@ def offline_install_arena_baseline_optimizations() -> Any:
 
     engine.choose_all_out_if_possible = arena_choose_all_out_if_possible
     engine.choose_non_bomb_follow = arena_choose_non_bomb_follow
+    engine.choose_bomb_to_set_up_finish = arena_choose_bomb_to_set_up_finish
+    engine.choose_lead_bomb_to_set_up_finish = arena_choose_lead_bomb_to_set_up_finish
+    engine.exact_remaining_groups = offline_exact_remaining_groups_fast
+    engine._legal_play_options_cached = arena_legal_play_options_cached
 
     def restore() -> None:
         engine.choose_all_out_if_possible = original_choose_all_out
         engine.choose_non_bomb_follow = original_choose_non_bomb_follow
+        engine.choose_bomb_to_set_up_finish = original_choose_bomb_to_set_up_finish
+        engine.choose_lead_bomb_to_set_up_finish = original_choose_lead_bomb_to_set_up_finish
+        engine.exact_remaining_groups = original_exact_remaining_groups
+        engine._legal_play_options_cached = original_legal_play_options_cached
 
     return restore
 
@@ -17391,6 +17720,7 @@ def parse_args() -> argparse.Namespace:
     parser.add_argument("--metric", choices=("elo", "proxy"), default="elo")
     parser.add_argument("--require-elo", action="store_true")
     parser.add_argument("--loop", action="store_true")
+    parser.add_argument("--require-bot-table", action="store_true")
     parser.add_argument("--games", type=int, default=1)
     parser.add_argument("--poll", type=float, default=6)
     parser.add_argument("--delay", type=float, default=8)
@@ -17412,8 +17742,79 @@ def parse_args() -> argparse.Namespace:
     parser.add_argument("--website-shadow-summary", help="Summarize completed online Shadow logs in a directory.")
     parser.add_argument("--shadow-summary-out", default="website_shadow_summary.json")
     parser.add_argument("--shadow-minimum-games", type=int, default=20)
+    parser.add_argument(
+        "--build-website-danzero-dataset",
+        help="Comma-separated website Shadow log directories or files to convert offline.",
+    )
+    parser.add_argument("--website-dataset-out", default="website_danzero_dataset.pth")
+    parser.add_argument("--freeze-website-splits", action="store_true")
+    parser.add_argument("--website-split-manifest-out", default="website_dataset_split_manifest.json")
+    parser.add_argument("--website-data-card-out", default="website_dataset_card.json")
+    parser.add_argument("--website-base-split-manifest")
+    parser.add_argument("--website-extension-session-splits")
+    parser.add_argument("--train-website-danzero-action-value", help="Train the 513+54 Q model from website data.")
+    parser.add_argument("--website-danzero-init", help="Optional compatible DanZero Q checkpoint.")
+    parser.add_argument("--website-danzero-out-dir", default="models_website_danzero_smoke")
+    parser.add_argument("--website-danzero-log-out", default="website_danzero_train.json")
+    parser.add_argument("--website-danzero-epochs", type=int, default=5)
+    parser.add_argument("--website-danzero-batch-size", type=int, default=128)
+    parser.add_argument("--website-danzero-learning-rate", type=float, default=0.00003)
+    parser.add_argument("--website-danzero-validation-split", type=float, default=0.2)
+    parser.add_argument("--website-danzero-allow-provisional-smoke", action="store_true")
+    parser.add_argument(
+        "--train-website-teacher-preference",
+        help="Run the frozen teacher-over-behavior pairwise training smoke.",
+    )
+    parser.add_argument(
+        "--website-teacher-preference-split-out",
+        default="website_teacher_preference_split_v1.json",
+    )
+    parser.add_argument(
+        "--website-teacher-preference-log-out",
+        default="website_teacher_preference_training_v1.json",
+    )
+    parser.add_argument(
+        "--website-teacher-preference-out-dir",
+        default="models_website_teacher_preference_v1",
+    )
+    parser.add_argument("--website-information-set-sanity")
+    parser.add_argument("--information-set-sanity-out", default="website_information_set_sanity.json")
+    parser.add_argument("--information-set-sanity-samples", type=int, default=20)
+    parser.add_argument("--information-set-determinizations", type=int, default=8)
+    parser.add_argument("--website-information-set-cache-equivalence", action="store_true")
+    parser.add_argument(
+        "--information-set-cache-equivalence-out",
+        default="website_information_set_cache_equivalence.json",
+    )
+    parser.add_argument("--information-set-cache-equivalence-samples", type=int, default=200)
+    parser.add_argument("--website-information-set-rollout-eval")
+    parser.add_argument("--information-set-rollout-out", default="website_information_set_rollout.json")
+    parser.add_argument("--information-set-rollout-samples", type=int, default=5)
+    parser.add_argument("--information-set-rollout-candidates", type=int, default=4)
+    parser.add_argument("--information-set-rollouts-per-action", type=int, default=8)
+    parser.add_argument("--information-set-rollout-max-steps", type=int, default=300)
+    parser.add_argument("--information-set-min-advantage", type=float, default=0.15)
+    parser.add_argument("--information-set-max-variance", type=float, default=0.50)
+    parser.add_argument("--information-set-continuation-profiles", default="greedy_bot")
+    parser.add_argument("--information-set-max-seconds-per-case", type=float, default=0.0)
+    parser.add_argument("--information-set-cache-baseline-actions", action="store_true")
+    parser.add_argument("--information-set-risk-priority", action="store_true")
+    parser.add_argument("--information-set-case-keys", default="")
+    parser.add_argument(
+        "--build-website-information-set-teacher-dataset",
+        help="Comma-separated completed website information-set rollout JSON files.",
+    )
+    parser.add_argument("--website-information-set-teacher-base-dataset")
+    parser.add_argument("--website-information-set-teacher-frozen-base")
+    parser.add_argument(
+        "--website-information-set-teacher-out",
+        default="website_information_set_teacher_dataset.pth",
+    )
     parser.add_argument("--summary", help="Print an Elo research summary from research_results.json.")
     parser.add_argument("--recent-window", type=int, default=10)
+    parser.add_argument("--website-goal-min-games", type=int, default=500)
+    parser.add_argument("--website-goal-win-rate", type=float, default=0.70)
+    parser.add_argument("--website-goal-min-elo", type=float, default=2200.0)
     parser.add_argument("--loss-drilldown", help="Profile name for recent loss drilldown in summary mode.")
     parser.add_argument("--endgame-audit", help="Profile name for recent loss endgame block audit in summary mode.")
     parser.add_argument("--preloss-trace", help="Profile name for recent loss preloss trace in summary mode.")
@@ -17703,6 +18104,74 @@ def main() -> None:
         )
         print(json.dumps(result, ensure_ascii=False, indent=2))
         return
+    if args.build_website_danzero_dataset:
+        import website_danzero_dataset
+
+        result = website_danzero_dataset.build_dataset(
+            args.build_website_danzero_dataset,
+            args.website_dataset_out,
+            freeze_splits=args.freeze_website_splits,
+            split_manifest_path=args.website_split_manifest_out,
+            data_card_path=args.website_data_card_out,
+            base_split_manifest_path=args.website_base_split_manifest,
+            extension_session_splits_path=args.website_extension_session_splits,
+        )
+        print(json.dumps(result, ensure_ascii=False, indent=2))
+        return
+    if args.train_website_danzero_action_value:
+        import website_danzero_dataset
+
+        website_danzero_dataset.train_action_value(args)
+        return
+    if args.train_website_teacher_preference:
+        import website_teacher_preference
+
+        website_teacher_preference.run(args)
+        return
+    if args.website_information_set_sanity:
+        import website_information_set
+
+        website_information_set.run_sanity(args, offline_load_guandan_components())
+        return
+    if args.website_information_set_cache_equivalence:
+        import website_information_set
+
+        restore_baseline = offline_install_arena_baseline_optimizations()
+        try:
+            website_information_set.run_baseline_cache_equivalence(
+                args,
+                offline_load_guandan_components(),
+                sys.modules[__name__],
+            )
+        finally:
+            restore_baseline()
+        return
+    if args.website_information_set_rollout_eval:
+        import website_information_set
+        restore_baseline = (
+            offline_install_arena_baseline_optimizations()
+            if "tempo_baseline" in str(args.information_set_continuation_profiles).split(",")
+            else None
+        )
+        try:
+            website_information_set.run_rollout_eval(
+                args,
+                offline_load_guandan_components(),
+                sys.modules[__name__],
+            )
+        finally:
+            if restore_baseline is not None:
+                restore_baseline()
+        return
+    if args.build_website_information_set_teacher_dataset:
+        import website_information_set
+
+        if not args.website_information_set_teacher_base_dataset:
+            raise RuntimeError(
+                "--website-information-set-teacher-base-dataset is required"
+            )
+        website_information_set.build_teacher_dataset(args)
+        return
     if args.offline_env_sanity_check:
         run_offline_env_sanity_check(args)
         return
@@ -17845,6 +18314,9 @@ def main() -> None:
             args.max_cases,
             args.simulate_casebook_guard,
             args.simulate_narrow_plate_guard,
+            args.website_goal_min_games,
+            args.website_goal_win_rate,
+            args.website_goal_min_elo,
         )
         return
     if args.probe_leaderboard:

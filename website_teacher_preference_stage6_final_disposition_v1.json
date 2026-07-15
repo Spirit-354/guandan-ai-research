@@ -1,0 +1,244 @@
+{
+  "schema_version": "website_teacher_preference_stage6_final_disposition_v1",
+  "status": "completed",
+  "frozen_inputs": {
+    "entry_count": 32,
+    "sha256": {
+      "stage_6_13_audit": "2dff04b2be010a10c3f3e77a144f98d1aeca89a885e21cc98be9c51868b53345",
+      "stage_6_12_diagnosis": "e8e12f4fd259bc0c2689100d08bdfb3b71662e29c8af0f1e1013fbc6e9573e9f",
+      "stage_6_9_confirmation": "352cd0dfe0a4c958ba0555b776326a2b58470a980aef461ed49d4c59a7474c7a",
+      "teacher_dataset": "a74416e6facb28a1bc64563eba90cb33d460dc9e59cc2109518da142465e15f8",
+      "split_manifest": "5a15e514dc9bc51d77d300837151d9f1a49250f42885cc7940725bcbe4d35107",
+      "source_train_development_dataset": "e5e220c3c770116ca9d01478e98e610dd6309a0f3d6c17088a8328f62b47174b",
+      "stage_6_1_arena": "aa45da9de202194102fe8d11e612ad3eb4b51177fd910b9a7948836afd2a1fe6",
+      "stage_6_14p_parallel_equivalence": "8e168656c35519aae9054038f0fd31398ac0e9260c419de0534a09bf1f4c59ca",
+      "stage_6_14p_parallel_implementation": "f2093a8c348d9d91435209fd9ee258130b18f7de7b4b7758c0656c1d7a70e2e5",
+      "stage_6_14_confirmation_implementation": "e509ebc50f9fef9a159435d582561e72ac36083f059a0781539ec797c709bf55",
+      "stage_6_14e_confirmation": "450e89f780a33dd543f49f029e735f7fb32e11cd657163c52e6a4301d21f7eb5",
+      "stage_6_14e_formal_implementation": "972b67ed585e9a96f9e8be55b70d0b6585a7e499f6dc692c2861d5e636b9e55d",
+      "corrective_dataset_v2": "40024f7c064f0ebb7999c4ac0f7bc85d77b759a23956cbe596756763d4009d4d",
+      "corrective_dataset_v2_manifest": "ce5141f6254218d9230b15117a88d3c5e6bd374839bcf5fc77b393e2599ec353",
+      "corrective_dataset_v3": "71e90241170882dd97893e71fbe0694368af96525737b55370cd0a60e098ce6f",
+      "corrective_manifest_v3": "c9b25d75da0fc5966e1f29bcbd50dd471971e16fc9f4a368cda5b5ba2f8d822d",
+      "stage_6_15_dataset_builder": "df44cdc1c1e45ddea310324393b2ec0d1693523480b3f78ef4bf70fd369a8d97",
+      "stage_6_11_recipe_authority": "307b92eca7aef2d7fa927dec71f1e2ccd8b87b71d2336c5630f39c24d0a176dd",
+      "stage_6_11_implementation": "cc1c6263644635da01822f9ce8f231610b997d7ddbac932ba19efb24a905f00c",
+      "stage_6_16_training_report": "cac3ecb0542a7f9aaac2654f73f4e3650422be7eb5990bf4c403f3f082145156",
+      "stage_6_16_checkpoint": "8407f897e36b45affc628fbd2fe68dc4c76a5085fad095511c8045bc73ec5aad",
+      "stage_6_16_implementation": "8f3c74b272228cb0423aa192187d64028c4b7bce2f23dd74d12d811c55f76ded",
+      "stage_6_12_implementation": "75af0c847a49484059c103fe12f8db1f4fb447cb04c2161ed1ffe913dea8e008",
+      "stage_6_12_evidence": "e8e12f4fd259bc0c2689100d08bdfb3b71662e29c8af0f1e1013fbc6e9573e9f",
+      "stage_6_17_diagnosis": "1757016ae33628cca075a9cdfc881cd49be7b63f1078ca3f7288f95c7fa00a68",
+      "stage_6_17_implementation": "9231c25d24ee773c0fc376c4e2bb55c6a746897e8d95be2a351fd0c0b6fa85e1",
+      "stage_6_13_implementation": "f49975ace9a3eefd6fa93fafb838463f0b4c2690438856214809ada9d6b31687",
+      "stage_6_4_confirmation": "8e17377b5a1523d9f0a47af7218d687e062a3ade671c57f387eb4c1a0888cfae",
+      "stage_6_18_audit": "b7dc15c779556a972c1b471348cb949bd98d54c1ce1aecb14a3d23cda083681b",
+      "stage_6_18_implementation": "6200af71c14081418b1abfd1fd45d99347c3f20d601ec355014dbbc931a3ea26",
+      "stage_6_19_confirmation": "a1f32207255867dd2a59c7f9043c57038aff37f506746c970f8892f1d852e189",
+      "stage_6_19_implementation": "63d0f047d11d4b92b9a3fcdcd9dd2ee68b939e68fafc19513fb3a1527ec41bdb"
+    },
+    "verification_mode": "raw_bytes_sha256_only_no_semantic_model_or_data_load"
+  },
+  "curated_json_read_accounting": {
+    "parsed_json_file_count": 5,
+    "parsed_paths": [
+      "website_teacher_preference_arena_smoke20_v1.json",
+      "website_teacher_preference_remaining_corrective_training_v1.json",
+      "website_teacher_preference_remaining_corrective_failure_diagnosis_v1.json",
+      "website_teacher_preference_remaining_corrective_final_evidence_audit_v1.json",
+      "website_teacher_preference_remaining_corrective_final_train_confirmation_v1.json"
+    ],
+    "non_json_semantic_load_count": 0
+  },
+  "stage_6_route_chronology": [
+    {
+      "stage": "6.1",
+      "conclusion": "offline_arena_rejected"
+    },
+    {
+      "stage": "6.16",
+      "conclusion": "pipeline_checkpoint_only"
+    },
+    {
+      "stage": "6.17",
+      "conclusion": "static_full_set_incomplete"
+    },
+    {
+      "stage": "6.18",
+      "conclusion": "three_train_residuals_isolated"
+    },
+    {
+      "stage": "6.19",
+      "conclusion": "final_two_comparisons_inconclusive"
+    }
+  ],
+  "stage_6_1_arena_reproduction": {
+    "status": "completed_rejected",
+    "requested_games": 20,
+    "completed_games": 20,
+    "model_wins": 0,
+    "baseline_wins": 20,
+    "model_win_rate": 0.0,
+    "early_screen_min_win_rate": 0.3,
+    "continuation_allowed": false,
+    "checkpoint_promotion_allowed": false,
+    "capability_claim_allowed": false,
+    "integrity_counter_sum": 0
+  },
+  "stage_6_16_checkpoint_reproduction": {
+    "training_run_count": 1,
+    "optimizer_step_count": 60,
+    "checkpoint_sha256": "8407f897e36b45affc628fbd2fe68dc4c76a5085fad095511c8045bc73ec5aad",
+    "checkpoint_reload_verified": true,
+    "metric_eligibility": "pipeline_only_not_capability_evidence",
+    "checkpoint_promotion_allowed": false,
+    "capability_claim_allowed": false
+  },
+  "stage_6_17_static_reproduction": {
+    "state_count": 22,
+    "recorded_legal_action_count": 934,
+    "pipeline_train_teacher_top1": 15,
+    "pipeline_train_state_count": 18,
+    "pipeline_development_teacher_top1": 1,
+    "pipeline_development_state_count": 4,
+    "overall_teacher_top1": 16,
+    "overall_other_top1": 6,
+    "pass_top1": 0,
+    "checkpoint_status": "pipeline_only_unpromoted_not_capability_evidence",
+    "arena_authorized": false
+  },
+  "stage_6_18_evidence_reproduction": {
+    "pipeline_train_residual_count": 3,
+    "pipeline_development_residual_count": 3,
+    "transferred_action_count": 0,
+    "preserved_direct_inconclusive_count": 1,
+    "new_confirmation_needed_count": 2,
+    "development_source_exposure_count": 0
+  },
+  "stage_6_19_confirmation_reproduction": {
+    "executed_train_case_count": 2,
+    "worker_task_count": 16,
+    "schedule_item_count": 32,
+    "requested_rollout_count": 64,
+    "completed_rollout_count": 64,
+    "inconclusive_count": 2,
+    "supported_comparison_count": 0,
+    "timeout_count": 0,
+    "candidate_failure_count": 0,
+    "retry_count": 0,
+    "sequential_fallback_count": 0
+  },
+  "final_train_residuals": [
+    {
+      "game_id": "14077",
+      "turn_index": 10,
+      "pipeline_partition": "pipeline_train",
+      "current_top1_action_index": 0,
+      "current_top1_action_sha256": "a7aaaf7c156c09ab5ad0b8c5d33bb6bb60cd85766562f597d1b89c9be31d053c",
+      "directional_classification": "inconclusive",
+      "provenance": "stage_6_9_preserved_by_stage_6_18",
+      "strong_ordering_label_allowed": false,
+      "rerun_allowed": false
+    },
+    {
+      "game_id": "14031",
+      "turn_index": 4,
+      "pipeline_partition": "pipeline_train",
+      "current_top1_action_index": 2,
+      "current_top1_action_sha256": "44eb6c47c92f2c639293a75a2e4825abf2478d706ca7b45f31e8e9a4afc6bb42",
+      "directional_classification": "inconclusive",
+      "provenance": "stage_6_19_final_train_confirmation",
+      "strong_ordering_label_allowed": false,
+      "rerun_allowed": false
+    },
+    {
+      "game_id": "14025",
+      "turn_index": 20,
+      "pipeline_partition": "pipeline_train",
+      "current_top1_action_index": 2,
+      "current_top1_action_sha256": "8b631095d2fc255edfa14d27e864858829b4f70d910d347d1bff89e38eb903a9",
+      "directional_classification": "inconclusive",
+      "provenance": "stage_6_19_final_train_confirmation",
+      "strong_ordering_label_allowed": false,
+      "rerun_allowed": false
+    }
+  ],
+  "final_train_residual_count": 3,
+  "pipeline_development_heldout": [
+    {
+      "game_id": "13992",
+      "turn_index": 16,
+      "source_exposure_count": 0,
+      "execution_count": 0,
+      "design_use_count": 0
+    },
+    {
+      "game_id": "14074",
+      "turn_index": 9,
+      "source_exposure_count": 0,
+      "execution_count": 0,
+      "design_use_count": 0
+    },
+    {
+      "game_id": "13871",
+      "turn_index": 9,
+      "source_exposure_count": 0,
+      "execution_count": 0,
+      "design_use_count": 0
+    }
+  ],
+  "pipeline_development_heldout_count": 3,
+  "evidence_exhaustion": {
+    "current_residual_supported_teacher_over_current_count": 0,
+    "current_residual_supported_current_over_teacher_count": 0,
+    "current_residual_inconclusive_count": 3,
+    "new_corrective_pair_authorized_count": 0,
+    "new_dataset_extension_authorized": false,
+    "new_training_run_authorized": false,
+    "new_arena_candidate_authorized": false,
+    "unsupported_inference_count": 0
+  },
+  "final_disposition": {
+    "stage_6_status": "completed_rejected",
+    "offline_gate_passed": false,
+    "eligible_offline_candidate_count": 0,
+    "stage_7_authorized": false,
+    "website_control_authorized": false,
+    "capability_claim_allowed": false,
+    "automatic_next_stage_available": false
+  },
+  "interpretation": "Stage 6 work is closed with a negative offline-gate result. This is not a pass, improvement, promotion, deployment, or capability claim.",
+  "evidence_inconsistency_count": 0,
+  "missing_evidence_count": 0,
+  "duplicate_evidence_count": 0,
+  "extra_evidence_count": 0,
+  "forbidden_operation_counts": {
+    "model_loads": 0,
+    "model_scoring_runs": 0,
+    "checkpoint_semantic_loads": 0,
+    "teacher_dataset_semantic_loads": 0,
+    "source_dataset_semantic_loads": 0,
+    "locked_test_loads": 0,
+    "complete_website_dataset_loads": 0,
+    "rollout_runs": 0,
+    "simulation_runs": 0,
+    "arena_games": 0,
+    "website_shadow_games": 0,
+    "website_games": 0,
+    "model_controlled_website_actions": 0,
+    "data_collection_runs": 0,
+    "dataset_constructions": 0,
+    "objective_definitions": 0,
+    "training_runs": 0,
+    "fine_tuning_runs": 0,
+    "hyperparameter_tuning_runs": 0,
+    "threshold_tuning_runs": 0,
+    "checkpoint_selections": 0,
+    "checkpoint_modifications": 0,
+    "checkpoint_promotions": 0,
+    "new_ordering_labels": 0,
+    "unsupported_inferences": 0,
+    "capability_claims": 0,
+    "stage_7_executions": 0
+  }
+}

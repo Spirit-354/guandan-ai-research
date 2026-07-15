@@ -81,6 +81,24 @@ After an online Shadow batch, evaluate the hard gate with:
 python -u -B .\play_research_adaptive.py --website-shadow-summary logs_website_shadow_stage2 --shadow-summary-out website_shadow_summary_stage2.json --shadow-minimum-games 20
 ```
 
+Frozen datasets can be extended without reassigning old sessions by supplying
+both `--website-base-split-manifest` and
+`--website-extension-session-splits`. Every new session must be assigned to
+train or development before collection; adding or changing locked-test games is
+rejected. The current supplement protocol is documented in
+[`docs/research/website-shadow-supplement-plan-v1.md`](docs/research/website-shadow-supplement-plan-v1.md).
+
+Completed stable-seed information-set confirmations can be converted into a
+train-only 513+54 preference dataset without reading locked test data:
+
+```powershell
+python -u -B .\play_research_adaptive.py --build-website-information-set-teacher-dataset rollout_a.json,rollout_b.json --website-information-set-teacher-base-dataset website_danzero_shadow_050_frozen.train_dev.pth --website-information-set-teacher-frozen-base website_information_set_teacher_dataset_v1.pth --website-information-set-teacher-out website_information_set_teacher_dataset_v2.pth
+```
+
+The builder requires complete greedy-plus-tempo rollouts with at least 16 paired
+evaluations, remaps physical cards through the frozen source sample, and keeps
+the training gate closed until 20 independent high-confidence games exist.
+
 ## Distributed DanZero DMC
 
 The Stage 3 runtime uses four shared-policy actors, one GPU learner, a bounded
