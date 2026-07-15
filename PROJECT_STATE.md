@@ -8,7 +8,7 @@ Branch: `agent/stage5-website-bot-adaptation`
 
 Latest completed stage:
 
-- Stage 6.10 Frozen Residual Corrective Dataset Extension.
+- Stage 6.11 Frozen Residual Corrective Training Smoke.
 
 Primary program:
 
@@ -159,6 +159,16 @@ Teacher dataset:
   It preserves all 22 teacher samples and all 28 v1 pair semantics, adds only
   the four Stage 6.9-supported train residual pairs, and contains 28 train plus
   four development pairs across the unchanged 18/4 states.
+- The Stage 6.11 fixed residual corrective training report is
+  `website_teacher_preference_residual_corrective_training_v1.json`, SHA-256
+  `307b92eca7aef2d7fa927dec71f1e2ccd8b87b71d2336c5630f39c24d0a176dd`.
+  Exactly one from-scratch CPU run used the frozen 18 train states/28 pairs;
+  all four development states/pairs were evaluation-only.
+- The ignored residual corrective checkpoint is
+  `models_website_teacher_preference_residual_corrective_v1/website_teacher_preference_residual_corrective_final.pth`,
+  SHA-256
+  `cdb3c18948c9310c88f52789f2fd5a12326859ff653558a6aebe7eb569393105`.
+  It is pipeline-only, unpromoted, and ineligible for capability claims.
 
 Current blocker:
 
@@ -186,10 +196,12 @@ Current blocker:
   residual action over teacher. Only the four supported train comparisons are
   included in corrective dataset v2; the four inconclusive train cases and
   three development residual targets added zero pairs.
-- Stage 6.10 is dataset evidence only. The v2 objective was not executed, no
-  new checkpoint exists, and no improved offline capability has been shown.
-  A separate fixed training stage is required before any new full-legal-set
-  diagnosis or Arena can be considered.
+- Stage 6.11 fit all 28 train pairs and four evaluation-only development pairs,
+  including the four new residual constraints, but pairwise fit is pipeline
+  evidence only. The new checkpoint has not been scored against all 934 frozen
+  legal-action entries, and no improved offline capability has been shown.
+  A separate static full-legal-set diagnosis is required before any Arena can
+  be considered.
 - The eligible extension v5 pool is exhausted: all 277 rollout-eligible states
   were screened, all permitted positive-screen game signals were confirmed or
   exhausted, and three labels passed.
@@ -688,8 +700,8 @@ Acceptance:
 
 Goal: compare candidates against frozen `tempo_baseline`.
 
-Status: Stage 6.10 completed; the frozen v2 dataset contains only the four
-supported residual corrections, but its objective has not executed and no
+Status: Stage 6.11 completed; one fixed residual-corrective pipeline smoke fit
+all frozen pairs, but full-legal-set behavior remains undiagnosed and no
 improved offline capability evidence exists yet.
 
 Constraints:
@@ -938,6 +950,33 @@ Stage 6.10 acceptance:
   `40024f7c064f0ebb7999c4ac0f7bc85d77b759a23956cbe596756763d4009d4d`;
   manifest SHA-256:
   `ce5141f6254218d9230b15117a88d3c5e6bd374839bcf5fc77b393e2599ec353`.
+
+Stage 6.11 acceptance:
+
+- All eight frozen input hashes and every Stage 6.10 sample, pair, weight,
+  split, exclusion, and provenance invariant reproduced exactly before and
+  after training.
+- Exactly one from-scratch CPU run used seed `20260714`, 20 epochs, six states
+  per batch, learning rate `0.001`, no initialization checkpoint, and the
+  unchanged state-balanced pairwise softplus objective. It completed exactly
+  60 optimizer steps using only 18 train states/28 pairs.
+- Development training uses, extra targets, fine-tuning, hyperparameter or
+  threshold searches, and checkpoint selections were zero. All training
+  losses and predictions were finite.
+- Final train state-balanced loss was `0.0000278473`; aggregate, base, Stage
+  6.4 corrective, and Stage 6.9 residual pair accuracies were all `1.0`, with
+  mean margins `21.6998`, `24.6659`, `19.7933`, and `11.2119` respectively.
+- Final development state-balanced loss was `0.0004767285`, pair accuracy was
+  `1.0`, and mean margin was `23.5365`. These metrics were not used for tuning
+  or checkpoint selection.
+- A separate process reloaded the checkpoint and exactly reproduced every
+  aggregate/pair-type metric and prediction digest. Rollout, locked-test or
+  website-dataset load, full-set diagnosis, Arena, website activity,
+  promotion, and capability claims were zero.
+- Curated report SHA-256:
+  `307b92eca7aef2d7fa927dec71f1e2ccd8b87b71d2336c5630f39c24d0a176dd`;
+  ignored checkpoint SHA-256:
+  `cdb3c18948c9310c88f52789f2fd5a12326859ff653558a6aebe7eb569393105`.
 
 Acceptance:
 

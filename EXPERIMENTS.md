@@ -47,8 +47,9 @@ corrective pipeline smoke. Stage 6.7 found 11/22 teacher top-1 states, and
 Stage 6.8 found no direct frozen support for the eight residual train
 orderings. Stage 6.9 confirmed four additional teacher-over-residual train
 comparisons, with four inconclusive and no reverse support. Stage 6.10 froze a
-32-pair residual corrective dataset without executing its objective. No
-capability evidence exists.
+32-pair residual corrective dataset, and Stage 6.11 completed one fixed
+from-scratch pipeline smoke on its 28 train pairs. No capability evidence
+exists.
 
 Accepted strong labels:
 
@@ -1220,6 +1221,46 @@ Decision:
 - Do not run Arena, full-legal-set diagnosis, website Shadow, or website play in
   that training stage.
 
+## Stage 6.11 Frozen Residual Corrective Training Smoke
+
+Status: completed; deterministic pipeline smoke passed without capability
+validation.
+
+Evidence:
+
+- All eight frozen inputs and all Stage 6.10 sample, preserved-pair,
+  residual-pair, weight, split, exclusion, and provenance invariants reproduced
+  exactly before and after training.
+- Exactly one from-scratch CPU run used seed `20260714`, 20 epochs, six states
+  per batch, learning rate `0.001`, no initialization checkpoint, and the
+  unchanged state-balanced pairwise softplus objective. It completed 60
+  optimizer steps using only the 18 train states/28 pairs.
+- Development training uses, extra targets, fine-tuning runs, hyperparameter
+  or threshold searches, checkpoint selections, and nonfinite training losses
+  were zero.
+- Final train state-balanced loss was `0.0000278473`. Aggregate, 18 base, six
+  Stage 6.4 corrective, and four Stage 6.9 residual pair accuracies were all
+  `1.0`; mean margins were `21.6998`, `24.6659`, `19.7933`, and `11.2119`.
+- The four evaluation-only development pairs had state-balanced loss
+  `0.0004767285`, accuracy `1.0`, and mean margin `23.5365`. They did not affect
+  gradients, tuning, or checkpoint selection.
+- A separate process reloaded the final checkpoint and exactly reproduced all
+  train/development aggregate and pair-type metrics plus prediction digests.
+  All forbidden-operation counters remained zero.
+- Curated report:
+  `website_teacher_preference_residual_corrective_training_v1.json`, SHA-256
+  `307b92eca7aef2d7fa927dec71f1e2ccd8b87b71d2336c5630f39c24d0a176dd`.
+  Ignored checkpoint SHA-256:
+  `cdb3c18948c9310c88f52789f2fd5a12326859ff653558a6aebe7eb569393105`.
+
+Decision:
+
+- Keep the new checkpoint pipeline-only, unpromoted, and ineligible for
+  capability claims. Perfect pair fit does not establish full-set behavior.
+- Before any Arena, run only a frozen static full-legal-set ranking diagnosis
+  across the same 22 teacher states and 934 recorded action entries. Reproduce
+  Stage 6.11 metrics separately and do not train or tune in that stage.
+
 ## Model A / Shared Self-Play / BC / PPO / DMC
 
 Status: not eligible for website control.
@@ -1255,23 +1296,22 @@ Decision:
 
 ## Current Next Experiment
 
-Name: Stage 6.11 Frozen Residual Corrective Training Smoke.
+Name: Stage 6.12 Frozen Residual Corrective Full-Legal-Set Diagnosis.
 
 Purpose:
 
-- Execute exactly one fixed, from-scratch CPU pipeline smoke on frozen
-  corrective dataset v2 using the unchanged state-balanced pairwise softplus
-  recipe.
-- Train only on 18 train states and 28 train pairs; keep all four development
-  states/pairs evaluation-only.
+- Score every recorded legal action across the same 22 frozen teacher states
+  with the Stage 6.11 checkpoint, preserving original order and duplicates.
+- Measure teacher rank/top-1 coverage and verify the four new residual
+  constraints without training, tuning, rollout, or Arena.
 
 Acceptance:
 
-- Frozen v2 hashes and all 32 pair/sample/weight invariants reproduce exactly.
-- One seed-`20260714`, 20-epoch, six-state-batch, learning-rate-`0.001` run
-  completes from scratch with 60 optimizer steps and zero development training
-  uses, extra targets, tuning, or checkpoint selection.
-- Independent checkpoint reload exactly reproduces train/development and
-  base/Stage-6.4/Stage-6.9 residual metrics and prediction digests.
-- Rollout, locked-test or website-dataset loads, Arena, website access,
-  promotion, and capability claims remain zero.
+- Exactly 22 states and all 934 recorded legal-action entries are scored once;
+  all eight duplicate vectors remain in recorded positions.
+- A separately accounted frozen-batch replay exactly reproduces Stage 6.11
+  aggregate/base/Stage-6.4/Stage-6.9/development metrics and digests.
+- Report teacher/behavior/other first-max top-1 counts, teacher ranks, pass
+  top-1, actions above teacher, and all four residual corrective outcomes.
+- Training, tuning, checkpoint changes, rollout, locked-test or website data,
+  Arena, website access, promotion, and capability claims remain zero.
