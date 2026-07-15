@@ -726,9 +726,10 @@ Acceptance:
 
 Goal: compare candidates against frozen `tempo_baseline`.
 
-Status: Stage 6.13 completed; all six train residual top-1 actions lack a
-supported ordering, only three new-action cases need direct confirmation, and
-no improved offline capability evidence exists yet.
+Status: Stage 6.14 attempted but not accepted; the three-case confirmation
+requested 96 rollouts but completed only 90 because `13872:4` hit the frozen
+case deadline with six candidate failures. No new comparison is eligible for
+use, and no improved offline capability evidence exists yet.
 
 Constraints:
 
@@ -1056,6 +1057,32 @@ Stage 6.13 acceptance:
   tuning, checkpoint changes, Arena, website activity, promotion, and
   capability claims were zero. Curated SHA-256:
   `2dff04b2be010a10c3f3e77a144f98d1aeca89a885e21cc98be9c51868b53345`.
+
+Stage 6.14 attempted, acceptance not met:
+
+- All seven frozen input hashes matched and the intended curated output path
+  was unused. Preflight reproduced exactly three permitted train cases, three
+  already-inconclusive train exclusions, and three identity-only development
+  exclusions.
+- The frozen Stage 6.9 schedule requested 96 rollouts over the three permitted
+  cases with 48 scheduled action rollouts per continuation profile. The first
+  two cases classified teacher-over-current-top1 as supported; the third,
+  `13872:4`, remained inconclusive.
+- Only 90/96 candidate rollouts completed. One case hit the unchanged 600-second
+  deadline and recorded six candidate failures, so the zero-timeout,
+  zero-failure, and 96/96 gates failed. The writer refused to create the
+  curated output; unsupported or partial labels remained zero.
+- An earlier orchestration attempt was also stopped by an external 600-second
+  command limit before any case-completion output or curated artifact. It was
+  not treated as evidence. A following run printed the same three case
+  directions but was rejected by a generic aggregate assertion before exact
+  failure fields or an artifact were preserved. The final instrumented run
+  established the exact 90/96, one-timeout, six-failure blocker. These retries
+  are an additional reason Stage 6.14 cannot satisfy its one-shot acceptance.
+- Dataset/objective construction, model scoring, training, tuning, checkpoint
+  changes, locked-test or complete-bundle loads, Arena, website activity,
+  promotion, and capability claims remained zero. Stage 6.14 and Stage 6 are
+  not complete, and the active Goal must remain incomplete.
 
 Acceptance:
 

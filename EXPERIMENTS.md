@@ -52,7 +52,9 @@ from-scratch pipeline smoke on its 28 train pairs. Stage 6.12 raised frozen
 teacher full-set top-1 coverage to 13/22, leaving six train and three held-out
 development residual states. Stage 6.13 found no supported ordering for any
 current train top-1 and isolated three actions that still lack a direct paired
-comparison. No capability evidence exists.
+comparison. Stage 6.14 then requested the frozen three-case confirmation but
+completed only 90/96 rollouts because `13872:4` timed out with six candidate
+failures. No capability evidence exists.
 
 Accepted strong labels:
 
@@ -1354,6 +1356,48 @@ Decision:
   `14038:12` index 3, and `13872:4` index 19. Exclude the three already
   inconclusive train cases and all three development targets from execution.
 
+## Stage 6.14 Frozen Three-New-Top1 Counterfactual Confirmation
+
+Status: attempted; acceptance failed and no curated result was written.
+
+Evidence:
+
+- All seven frozen input hashes matched. Preflight selected only `13957:14`
+  index 17, `14038:12` index 3, and `13872:4` index 19, while preserving zero
+  mappings and executions for the three already-inconclusive train cases and
+  all three development cases.
+- The unchanged Stage 6.9 schedule requested 96 action rollouts, with 48
+  scheduled for `greedy_bot` and 48 for frozen `tempo_baseline`.
+- `13957:14` and `14038:12` produced teacher-over-current-top1 supported
+  classifications. `13872:4` remained inconclusive, but the run was not
+  complete enough for any comparison to become usable evidence.
+- Exact terminal accounting was requested 96, completed 90, profile schedule
+  48/48, timeout cases 1, and candidate failures 6. The failure occurred under
+  the unchanged 600-second per-case limit. The zero-timeout, zero-failure, and
+  96/96 gates therefore failed.
+- The one-shot writer rejected the incomplete result before creating
+  `website_teacher_preference_residual_corrective_remaining_train_confirmation_v1.json`.
+  Partial or unsupported labels, datasets, objectives, training runs, model
+  scores, Arena games, website activity, promotion, and capability claims were
+  all zero.
+- A prior outer-command timeout also ended before any case-completion output or
+  curated artifact and was not used as evidence. A following run printed the
+  same three directions but a generic aggregate assertion discarded the exact
+  failure fields before write. The final instrumented run above is the exact
+  diagnosed blocker. The retries themselves also violate the intended one-shot
+  acceptance, so Stage 6.14 cannot be accepted even apart from 90/96.
+
+Decision:
+
+- Do not use either supported-looking direction, because the formal three-case
+  confirmation did not pass its completeness and integrity contract.
+- Do not rerun rollouts, change the 600-second limit, weaken a gate, construct a
+  dataset, train, or enter Arena in the same stage. First perform a no-rollout
+  recovery audit that identifies a semantics-preserving execution path or
+  concludes that the frozen confirmation cannot be completed.
+- Stage 6.14 and Stage 6 remain incomplete; the active Goal must not be marked
+  complete.
+
 ## Model A / Shared Self-Play / BC / PPO / DMC
 
 Status: not eligible for website control.
@@ -1389,23 +1433,21 @@ Decision:
 
 ## Current Next Experiment
 
-Name: Stage 6.14 Frozen Three-New-Top1 Counterfactual Confirmation.
+Name: Stage 6.14R Frozen Confirmation Timeout Recovery Audit.
 
 Purpose:
 
-- Execute only the three frozen train actions that Stage 6.13 found to lack a
-  direct teacher-versus-current-top1 comparison.
-- Apply the unchanged Stage 6.9 paired information-set recipe and strong gates
-  without dataset/objective construction, training, or Arena.
+- Diagnose the confirmed `13872:4` timeout and six candidate failures without
+  executing a new rollout or changing the frozen Stage 6.9 semantics or gates.
+- Determine whether an existing semantics-preserving offline optimization can
+  complete the unchanged recipe, or freeze the confirmation as infeasible.
 
 Acceptance:
 
-- Exactly three train cases map by state, original action index/order, 54D hash,
-  physical identity, and frozen train partition.
-- Exactly 96/96 rollouts complete: three cases, two actions, 16 rollouts per
-  action, split evenly across greedy and frozen-tempo continuations.
-- The three already inconclusive train cases and three development targets have
-  zero executions and rollouts.
-- Dataset/objective construction, training, tuning, checkpoint changes,
-  locked-test or website data, Arena, website access, promotion, and capability
-  claims remain zero.
+- The 90/96, one-timeout, six-failure observation and absent curated output are
+  reproduced from code and terminal evidence without new rollout execution.
+- The exact deadline/failure path and any safe existing optimization boundary
+  are documented and covered by focused tests.
+- New rollouts, threshold/deadline changes, dataset/objective construction,
+  model scoring, training, tuning, checkpoint changes, locked-test or website
+  data, Arena, website access, promotion, and capability claims remain zero.
